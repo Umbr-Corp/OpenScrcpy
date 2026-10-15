@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Download, FolderOpen, RefreshCcw, HelpCircle, Info, X, ExternalLink, Languages, ChevronDown, Sun, Moon, Monitor, Cpu } from 'lucide-react';
+import { Download, FolderOpen, RefreshCcw, HelpCircle, Info, Heart, X, ExternalLink, Languages, ChevronDown, Sun, Moon, Monitor, Cpu } from 'lucide-react';
 import { SUPPORTED_LOCALES, useI18n, type Locale } from '../i18n';
 
 interface HeaderProps {
@@ -149,6 +149,14 @@ export default function Header({ colorMode, onColorModeChange, binaryStatus, onD
                                     className="ds-btn ds-btn-secondary flex-1"
                                 >
                                     {t('header.aboutReleases')} <ExternalLink size={12} />
+                                </a>
+                                <a
+                                    href="https://liberapay.com/mryofc/donate"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="ds-btn ds-btn-secondary flex-1"
+                                >
+                                    <Heart size={12} /> {t('header.aboutDonate')}
                                 </a>
                             </div>
                             <p className="ds-caption" style={{ color: 'var(--text-muted)' }}>

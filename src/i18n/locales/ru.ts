@@ -58,6 +58,7 @@ export const ru: Translations = {
     aboutRepository: 'Репозиторий',
     aboutReleases: 'Релизы',
     aboutLicense: 'Лицензия MIT',
+    aboutDonate: 'Поддержать',
   },
 
   sidebar: {

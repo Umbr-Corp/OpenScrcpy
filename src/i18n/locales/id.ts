@@ -54,7 +54,8 @@ languages: {
         aboutDescription: 'Kendalikan Android dari desktop — mirror, kamera, dan layar virtual dalam satu dasbor yang bersih.',
         aboutRepository: 'Repositori',
         aboutReleases: 'Rilis',
-        aboutLicense: 'Dilisensikan di bawah Lisensi MIT'
+        aboutLicense: 'Dilisensikan di bawah Lisensi MIT',
+        aboutDonate: 'Donasi'
     },
     sidebar: {
         deviceHub: 'Pusat Perangkat',

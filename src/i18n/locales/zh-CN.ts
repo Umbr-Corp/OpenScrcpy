@@ -54,7 +54,8 @@ export const zhCN: Translations = {
         aboutDescription: '在桌面上控制您的安卓设备——镜像、相机和虚拟显示，尽在一个简洁的面板中。',
         aboutRepository: '代码仓库',
         aboutReleases: '发布版本',
-        aboutLicense: '基于 MIT 许可证授权'
+        aboutLicense: '基于 MIT 许可证授权',
+        aboutDonate: '捐赠'
     },
     sidebar: {
         deviceHub: '设备中心',

@@ -55,7 +55,8 @@ export const en = {
         aboutDescription: 'Control your Android from the desktop — mirror, camera, and virtual display in one clean dashboard.',
         aboutRepository: 'Repository',
         aboutReleases: 'Releases',
-        aboutLicense: 'Licensed under the MIT License'
+        aboutLicense: 'Licensed under the MIT License',
+        aboutDonate: 'Donate'
     },
     sidebar: {
         deviceHub: 'Device Hub',

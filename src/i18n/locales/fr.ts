@@ -54,7 +54,8 @@ export const fr: Translations = {
         aboutDescription: 'Contrôlez votre Android depuis le bureau — miroir, caméra et affichage virtuel dans un tableau de bord épuré.',
         aboutRepository: 'Dépôt',
         aboutReleases: 'Versions',
-        aboutLicense: 'Sous licence MIT'
+        aboutLicense: 'Sous licence MIT',
+        aboutDonate: 'Faire un don'
     },
     sidebar: {
         deviceHub: 'Hub d\'Appareils',

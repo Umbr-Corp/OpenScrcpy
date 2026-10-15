@@ -54,7 +54,8 @@ export const zhTW: Translations = {
         aboutDescription: '在桌面上控制您的安卓裝置——鏡像、相機與虛擬顯示，盡在一個簡潔的面板中。',
         aboutRepository: '程式碼倉庫',
         aboutReleases: '發佈版本',
-        aboutLicense: '基於 MIT 授權條款授權'
+        aboutLicense: '基於 MIT 授權條款授權',
+        aboutDonate: '贊助'
     },
     sidebar: {
         deviceHub: '裝置中心',

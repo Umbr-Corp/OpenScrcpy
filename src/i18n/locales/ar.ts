@@ -57,7 +57,8 @@ export const ar: Translations = {
         aboutDescription: 'تحكم في جهاز Android من سطح المكتب — النسخ، الكاميرا، والشاشة الافتراضية في لوحة نظيفة.',
         aboutRepository: 'المستودع',
         aboutReleases: 'الإصدارات',
-        aboutLicense: 'مرخص بموجب رخصة MIT'
+        aboutLicense: 'مرخص بموجب رخصة MIT',
+        aboutDonate: 'تبرع'
     },
     sidebar: {
         deviceHub: 'إدارة الأجهزة',

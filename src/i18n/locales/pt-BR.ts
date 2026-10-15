@@ -54,7 +54,8 @@ export const ptBR: Translations = {
         aboutDescription: 'Controle seu Android pelo computador — espelhamento, câmera e tela virtual em um painel limpo.',
         aboutRepository: 'Repositório',
         aboutReleases: 'Lançamentos',
-        aboutLicense: 'Licenciado sob a Licença MIT'
+        aboutLicense: 'Licenciado sob a Licença MIT',
+        aboutDonate: 'Doar'
     },
     sidebar: {
         deviceHub: 'Hub de Dispositivos',
