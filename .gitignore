@@ -1,4 +1,4 @@
-# Rust / Tauri
+# Native build artifacts
 src-tauri/target
 src-tauri/gen
 

@@ -2,7 +2,7 @@
 name = "openscrcpy"
 version = "1.0.0-beta"
 authors = ["yanhenrique-dev"]
-description = "A modern GUI for Scrcpy written in React and Rust"
+description = "A modern desktop GUI for controlling Android devices"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

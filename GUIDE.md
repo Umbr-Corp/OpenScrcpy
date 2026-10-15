@@ -21,7 +21,7 @@ Before using OpenScrcpy, ensure you have the following:
 - **Android Device**: Running Android 5.0 or higher (Android 12+ required for Camera Mode, Android 11+ for Desktop Mode).
 - **USB Cable**: A high-quality data cable (avoid charging-only cables).
 - **PC**: Windows, macOS, or Linux.
-- **Scrcpy Binaries**: The app can download these for you automatically, but you can also provide your own.
+- **Core Binaries**: The app can download these for you automatically, but you can also provide your own.
 
 ---
 
@@ -30,8 +30,8 @@ Before using OpenScrcpy, ensure you have the following:
 ### 🪟 Windows
 1. Download the latest `.exe` or `.msi` from the [Releases](https://github.com/yanhenrique-dev/OpenScrcpy/releases) page.
 2. Run the installer or standalone executable.
-3. **Smart Setup**: On the first launch, OpenScrcpy will detect if you have `scrcpy` installed. If not, it will offer a one-click download.
-4. **Automated Updates**: When launched, OpenScrcpy v1 beta will automatically check your installed version against Genymobile's latest official release and prompt you with a beautiful one-click update modal if a new version is available.
+3. **Smart Setup**: On the first launch, OpenScrcpy will detect if the core binary is installed. If not, it will offer a one-click download.
+4. **Automated Updates**: When launched, OpenScrcpy v1 beta will automatically check your installed version against the latest official release and prompt you with a beautiful one-click update modal if a new version is available.
 
 ### 🍎 macOS
 1. Download the `.dmg` file matching your architecture (**Intel** or **Apple Silicon/M1/M2**).
@@ -103,26 +103,26 @@ Turn your phone into a professional, hardware-controlled webcam.
 4. **Advanced Controls**:
    - **Camera Torch**: Toggle your device's physical flashlight on or off directly from the GUI.
    - **Camera Zoom**: Adjust the dynamic zoom level slider (1.0x to 5.0x) to frame your feed perfectly.
-   - **Failsafe Resolution**: Standard high-megapixel phone lenses can crash scrcpy if launched at their native 4:3 photo resolution (e.g., `4080x3060`) due to hardware video encoder limits. OpenScrcpy automatically maps your selected resolution and defaults to a safe 1080p standard size (`1920x1080`), ensuring a crash-free experience.
+   - **Failsafe Resolution**: Standard high-megapixel phone lenses can crash the core engine if launched at their native 4:3 photo resolution (e.g., `4080x3060`) due to hardware video encoder limits. OpenScrcpy automatically maps your selected resolution and defaults to a safe 1080p standard size (`1920x1080`), ensuring a crash-free experience.
    - **FPS**: Set to **Auto** (recommended) to let your device run at its native capture frame rate, or select **30 FPS**.
 5. **OBS Integration**: Open **OBS Studio**, add a "Window Capture" source, and select the OpenScrcpy window. Use OBS's **Virtual Camera** to use your phone in Zoom, Teams, or Discord.
 
 ### 🖥️ Desktop Mode (Virtual Display)
 Turn your Android device into a secondary workspace or virtual monitor.
 1. Change **Capture Source** to **Desktop**.
-2. **Flex Display**: Toggle ON **Flex Display**. Dragging and resizing the scrcpy client window borders on your computer will dynamically scale the resolution and aspect ratio of your phone's virtual display on the fly to fit your window perfectly with no black bars.
+2. **Flex Display**: Toggle ON **Flex Display**. Dragging and resizing the mirror window borders on your computer will dynamically scale the resolution and aspect ratio of your phone's virtual display on the fly to fit your window perfectly with no black bars.
 3. **Background Color**: Customize the window borders or letterbox border colors by typing in a hex value (e.g., `#2b2d42`) with a live preview swatch.
 4. **Keep Active**: Enable **Keep Active** to simulate activity and prevent the virtual display from turning off or sleeping during mirroring sessions.
 
 ### 🖥 Graphics Renderer (Render API)
-You can choose which graphics renderer scrcpy should request for video display.
+You can choose which graphics renderer the core engine should request for video display.
 
-- **Auto**: Recommended default. Lets scrcpy choose the best renderer.
+- **Auto**: Recommended default. Lets the engine choose the best renderer.
 - **Manual Selection**: Options like Direct3D, OpenGL, OpenGL ES, Metal, or Software may appear.
 
 Renderer choices are **capability-aware**:
 
-- OpenScrcpy reads what your installed scrcpy build advertises.
+- OpenScrcpy reads what your installed core build advertises.
 - OpenScrcpy filters options by your host OS.
 - Unsupported options are hidden automatically (e.g. Metal is only shown on macOS).
 
@@ -137,7 +137,7 @@ Renderer choices are **capability-aware**:
 - **Device not found?**: Try a different USB port or cable. Ensure "USB Debugging" is still active.
 - **Laggy video?**: Lower the **Bitrate** (8M-12M is usually perfect) or the **Resolution**.
 - **ADB Error?**: If commands are failing, click the **Kill ADB** button in the sidebar. This resets the connection bridge without closing the app.
-- **Binary Error?**: If the app says it cannot find scrcpy, use the **Downloader** in the top right corner.
+- **Binary Error?**: If the app says it cannot find the core binary, use the **Downloader** in the top right corner.
 
 ---
 

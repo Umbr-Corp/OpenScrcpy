@@ -8,12 +8,12 @@
 
 ---
 
-OpenScrcpy v1 is a modern, feature-rich GUI for [scrcpy](https://github.com/Genymobile/scrcpy), built with **Tauri v2**, **React 19**, and **Rust**. It transforms your Android device into a professional tool for gaming, development, and content creation.
+OpenScrcpy v1 is a modern, feature-rich GUI for controlling Android devices. It transforms your Android device into a professional tool for gaming, development, and content creation.
 
 ## 🚀 Key Features
 
 - **✨ Clean Settings-style UI**: A data-forward dashboard interface with light/dark/system modes and a single accent color.
-- **🔄 Automated Binary Updates**: Deep-integrated system that automatically checks if your local `scrcpy` binary is outdated compared to Genymobile's latest official release, prompting you with a beautiful one-click update modal.
+- **🔄 Automated Binary Updates**: Deep-integrated system that automatically checks if your local binary is outdated compared to the latest official release, prompting you with a beautiful one-click update modal.
 - **🎮 Precision Input (OTG)**:
   - **HID Keyboard**: Native hardware simulation for international layouts and special characters.
   - **HID Mouse**: Zero-lag, high-precision cursor control for a "native desktop" feel.
@@ -28,13 +28,13 @@ OpenScrcpy v1 is a modern, feature-rich GUI for [scrcpy](https://github.com/Geny
   - **Failsafe Camera-Size**: Automatically maps resolutions and defaults to safe 1080p dimensions, preventing hardware encoder crashes on high-megapixel devices.
 - **🖥️ Desktop Mode (Virtual Display)**:
   - **Flex Display**: Drag and resize your virtual desktop window dynamically on the fly!
-  - **Background Colors**: Customize scrcpy's border and letterbox color with hex values and a live color swatch.
+  - **Background Colors**: Customize the window border and letterbox color with hex values and a live color swatch.
   - **Keep Active**: Periodic user activity simulator preventing device sleep without changing global settings.
 - **📁 Fluid File Management**:
   - Drag & drop APK installation or file pushing directly to `/sdcard/Download/`.
 - **🖼️ Premium UX**:
   - **Splash Screen**: Zero-flicker startup experience.
-  - **Smart Folder Picker**: Automatically falls back to local `scrcpy-bin` or application executable directories when browsing folders.
+  - **Smart Folder Picker**: Automatically falls back to the local binaries folder or application executable directories when browsing folders.
 
 ---
 
@@ -49,9 +49,9 @@ To learn how to enable **USB Debugging**, set up **Wireless Pairing**, or instal
 ## 🛠️ Development
 
 ### Prerequisites
-- [Node.js](https://nodejs.org/) (v18+)
-- [Rust](https://rust-lang.org/) & Cargo
-- [Tauri v2 Prerequisites](https://v2.tauri.app/start/prerequisites/)
+- A JavaScript runtime (v18 or newer)
+- The Rust toolchain and Cargo
+- The desktop framework's OS-level prerequisites
 
 ### Build Instructions
 1. `npm install`
@@ -75,28 +75,6 @@ environment.systemPackages = [
 ```
 ---
 
-## 💖 Support the Project
-
-If OpenScrcpy helps you in your daily workflow, star the repo and report issues on [GitHub](https://github.com/yanhenrique-dev/OpenScrcpy). Your support keeps the project alive and independent!
-
----
-
-## � Acknowledgments
-
-OpenScrcpy is made possible by the following amazing open-source projects:
-
-- **[scrcpy](https://github.com/Genymobile/scrcpy)**: The ultra-fast core engine.
-- **[Tauri](https://tauri.app/)**: The secure, lightweight framework for the desktop app.
-- **[Lucide Icons](https://lucide.dev/)**: For the clean and consistent iconography.
-- **[React](https://react.dev/)**: Powering the modern, interactive interface.
-
-Based on ScrcpyGUI by KB (kil0bit).
-
----
-
-## �📜 License
+## 📜 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-*OpenScrcpy is an independent project and is not affiliated with Genymobile or scrcpy authors.*
-

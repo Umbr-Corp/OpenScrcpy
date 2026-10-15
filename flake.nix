@@ -29,7 +29,7 @@
           hash = "sha256-BvkfgCL+C5TxORfW9Bl6lyHGpR30G9RiLxmms5ug5H8=";
         };
 
-        # Build the React Frontend
+        # Build the frontend
         frontend = pkgs.buildNpmPackage {
           pname = "${pname}-ui";
           inherit version src;
@@ -87,7 +87,7 @@
               exec = "openscrcpy";
               icon = "openscrcpy";
               desktopName = "OpenScrcpy";
-              comment = "A modern GUI for Scrcpy written in React and Rust";
+              comment = "A modern desktop GUI for controlling Android devices";
               categories = [
                 "Utility"
                 "Development"
@@ -123,7 +123,7 @@
           '';
 
           meta = with pkgs.lib; {
-            description = "A modern GUI for Scrcpy written in React and Rust";
+            description = "A modern desktop GUI for controlling Android devices";
             homepage = "https://github.com/yanhenrique-dev/OpenScrcpy";
             license = licenses.mit;
             maintainers = [ "yanhenrique-dev" ];
