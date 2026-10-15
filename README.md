@@ -1,13 +1,16 @@
-<p align="center">
-  <img src="icon.png" width="128" height="128" alt="OpenScrcpy Icon">
-  <br>
-  <h1>OpenScrcpy</h1>
-  <strong>Control your Android from the desktop. Mirror the screen, use it as a webcam, or open a virtual display.</strong>
-  <br><br>
-  <code>v1.0.0</code> · <code>MIT</code> · <code>Linux / Windows / macOS</code>
-  <br><br>
-  <a href="https://pt.liberapay.com/mryofc/"><img src="https://img.shields.io/liberapay/goal/mryofc.svg?logo=liberapay" alt="Donate on Liberapay"></a>
-</p>
+<div align="center">
+
+<img src="icon.png" width="128" height="128" alt="OpenScrcpy Icon">
+
+# OpenScrcpy
+
+**Control your Android from the desktop. Mirror the screen, use it as a webcam, or open a virtual display.**
+
+`v1.0.0` · `MIT` · `Linux / Windows / macOS`
+
+[![Donate on Liberapay](https://img.shields.io/liberapay/goal/mryofc.svg?logo=liberapay)](https://pt.liberapay.com/mryofc/)
+
+</div>
 
 ---
 
@@ -21,36 +24,24 @@
 
 ## Features
 
-- Mirror, camera and desktop modes. Screen mirroring, phone-as-webcam with lens, torch and zoom controls, and a virtual display with flex resize.
-- Precision input over OTG/HID. Hardware keyboard and mouse simulation, side by side.
-- Wireless pairing with history. Pair Android 11+ devices over Wi-Fi and reconnect in one click.
-- One-click core setup. Automatic core binary download and update checks, right from the header.
-- Render driver selection. Capability-aware graphics backends, filtered by OS.
-- Drag and drop files. Drop an APK to install it, or push any file to `/sdcard/Download/`.
+- **Mirror, camera and desktop modes** — screen mirroring, phone-as-webcam with lens, torch and zoom controls, and a virtual display with flex resize.
+- **Precision input over OTG/HID** — hardware keyboard and mouse simulation, side by side.
+- **Wireless pairing with history** — pair Android 11+ devices over Wi-Fi and reconnect in one click.
+- **One-click core setup** — automatic core binary download and update checks, right from the header.
+- **Render driver selection** — capability-aware graphics backends, filtered by OS.
+- **Drag and drop files** — drop an APK to install it, or push any file to `/sdcard/Download/`.
 
 ---
 
-## Quick start
+## Installation
+
+### Quick start
 
 1. Download the latest release from [Releases](https://github.com/Umbr-Corp/OpenScrcpy/releases).
 2. Enable **USB debugging** on your Android device (plus **Wireless debugging** for Wi-Fi connections).
 3. Follow the full walkthrough in [GUIDE.md](GUIDE.md) or the [Wiki](https://github.com/Umbr-Corp/OpenScrcpy/wiki).
 
----
-
-## Development
-
-### Prerequisites
-- A JavaScript runtime (v18 or newer)
-- The Rust toolchain and Cargo
-- The desktop framework's OS-level prerequisites
-
-### Build instructions
-1. `npm install`
-2. `npm run tauri dev` (Development)
-3. `npm run tauri build` (Production)
-
-## NixOS installation (flakes)
+### NixOS (flakes)
 
 To install it permanently with a desktop launcher, add the flake to your system's `flake.nix`:
 
@@ -65,12 +56,29 @@ environment.systemPackages = [
   inputs.openscrcpy.packages.${pkgs.system}.default
 ];
 ```
+
 ---
 
-## License
+## Development
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+### Prerequisites
+
+- A JavaScript runtime (v18 or newer)
+- The Rust toolchain and Cargo
+- The desktop framework's OS-level prerequisites
+
+### Build
+
+1. `npm install`
+2. `npm run tauri dev` — development
+3. `npm run tauri build` — production
+
+---
 
 ## Security
 
 Found a vulnerability? Read [SECURITY.md](SECURITY.md) — report it privately, never in a public issue.
+
+## License
+
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
