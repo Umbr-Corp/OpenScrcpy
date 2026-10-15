@@ -5,6 +5,8 @@
   <strong>Control your Android from the desktop. Mirror the screen, use it as a webcam, or open a virtual display.</strong>
   <br><br>
   <code>v1.0.0</code> · <code>MIT</code> · <code>Linux / Windows / macOS</code>
+  <br><br>
+  <a href="https://pt.liberapay.com/mryofc/"><img src="https://img.shields.io/liberapay/goal/mryofc.svg?logo=liberapay" alt="Donate on Liberapay"></a>
 </p>
 
 ---
