@@ -23,21 +23,12 @@ export const ptBR: Translations = {
         loading: 'Carregando...'
     },
     header: {
-        themeLabel: 'Tema',
-        themes: {
-            ultraviolet: 'Ultravioleta',
-            astro: 'Azul Astro',
-            carbon: 'Carbono Furtivo',
-            emerald: 'Esmeralda',
-            bloodmoon: 'Lua de Sangue'
-        },
         colorModes: {
             light: 'Claro',
             dark: 'Escuro',
             system: 'Sistema'
         },
         languageLabel: 'Idioma',
-        tagline: 'Espelhar & Controlar Android // Dispositivos com Facilidade',
         scrcpyEngine: 'Motor Scrcpy',
         scrcpyReady: 'Scrcpy Pronto',
         syncingComponents: 'Sincronizando Componentes {progress}%',
@@ -254,19 +245,6 @@ export const ptBR: Translations = {
         githubReleases: 'GitHub Releases',
         successBinariesActive: 'Sucesso! Binários Ativos',
         continueToApp: 'Continuar para o App'
-    },
-    footer: {
-        aboutScrcpyGui: 'Sobre o Scrcpy GUI',
-        github: 'Github',
-        youtube: 'Youtube',
-        website: 'Site',
-        support: 'Apoiar',
-        core: 'Núcleo',
-        client: 'Cliente',
-        ui: 'UI',
-        assets: 'Recursos',
-        appVersion: 'VERSÃO DO APP v{version} • CRIADO COM',
-        byKb: 'POR KB'
     },
     errorBoundary: {
         title: 'Falha do Sistema Detectada',

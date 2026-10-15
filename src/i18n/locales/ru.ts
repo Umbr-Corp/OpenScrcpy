@@ -26,21 +26,12 @@ export const ru: Translations = {
   },
 
   header: {
-    themeLabel: 'Тема',
-    themes: {
-      ultraviolet: 'Ультрафиолет',
-      astro: 'Астро-синий',
-      carbon: 'Карбоновый стелс',
-      emerald: 'Изумруд',
-      bloodmoon: 'Кровавая луна',
-    },
     colorModes: {
       light: 'Светлая',
       dark: 'Тёмная',
       system: 'Системная',
     },
     languageLabel: 'Язык',
-    tagline: 'Трансляция и управление Android-устройствами без лишних сложностей',
     scrcpyEngine: 'Движок scrcpy',
     scrcpyReady: 'scrcpy готов',
     syncingComponents: 'Синхронизация компонентов {progress}%',
@@ -263,20 +254,6 @@ export const ru: Translations = {
     githubReleases: 'GitHub Releases',
     successBinariesActive: 'Готово! Бинарные файлы активны',
     continueToApp: 'Перейти к приложению',
-  },
-
-  footer: {
-    aboutScrcpyGui: 'О Scrcpy GUI',
-    github: 'GitHub',
-    youtube: 'YouTube',
-    website: 'Сайт',
-    support: 'Поддержка',
-    core: 'Ядро',
-    client: 'Клиент',
-    ui: 'UI',
-    assets: 'Ресурсы',
-    appVersion: 'ВЕРСИЯ ПРИЛОЖЕНИЯ v{version} • СОЗДАНО С',
-    byKb: 'ОТ KB',
   },
 
   errorBoundary: {

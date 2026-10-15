@@ -23,21 +23,12 @@ languages: {
         loading: 'Memuat...'
     },
     header: {
-        themeLabel: 'Tema',
-        themes: {
-            ultraviolet: 'Ungu',
-            astro: 'Biru Astro',
-            carbon: 'Karbon',
-            emerald: 'Hijau',
-            bloodmoon: 'Maroon'
-        },
         colorModes: {
             light: 'Terang',
             dark: 'Gelap',
             system: 'Sistem'
         },
         languageLabel: 'Bahasa',
-        tagline: 'Mirror & Kontrol HP Android // dengan Mudah',
         scrcpyEngine: 'Sistem Scrcpy',
         scrcpyReady: 'Scrcpy Siap',
         syncingComponents: 'Menyinkronkan Komponen {progress}%',
@@ -254,19 +245,6 @@ languages: {
         githubReleases: 'GitHub Releases',
         successBinariesActive: 'Berhasil! Aplikasi Siap Dipakai',
         continueToApp: 'Lanjutkan ke Aplikasi'
-    },
-    footer: {
-        aboutScrcpyGui: 'Tentang Scrcpy GUI',
-        github: 'Github',
-        youtube: 'Youtube',
-        website: 'Situs Web',
-        support: 'Dukungan',
-        core: 'Inti',
-        client: 'Klien',
-        ui: 'UI',
-        assets: 'Aset',
-        appVersion: 'VERSI APK v{version} • DIBUAT DENGAN',
-        byKb: 'OLEH KB'
     },
     errorBoundary: {
         title: 'Pelanggaran Sistem Terdeteksi',

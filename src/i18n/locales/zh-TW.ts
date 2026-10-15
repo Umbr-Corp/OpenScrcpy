@@ -23,21 +23,12 @@ export const zhTW: Translations = {
         loading: '載入中...'
     },
     header: {
-        themeLabel: '主題',
-        themes: {
-            ultraviolet: '紫外光',
-            astro: '星際藍',
-            carbon: '碳黑隱形',
-            emerald: '翡翠綠',
-            bloodmoon: '血月'
-        },
         colorModes: {
             light: '淺色',
             dark: '深色',
             system: '系統'
         },
         languageLabel: '語言',
-        tagline: '輕鬆鏡像與控制 Android 裝置',
         scrcpyEngine: 'Scrcpy 引擎',
         scrcpyReady: 'Scrcpy 已就緒',
         syncingComponents: '同步元件中 {progress}%',
@@ -254,19 +245,6 @@ export const zhTW: Translations = {
         githubReleases: 'GitHub',
         successBinariesActive: '安裝成功',
         continueToApp: '進入應用'
-    },
-        footer: {
-        aboutScrcpyGui: '關於 Scrcpy GUI',
-        github: 'GitHub',
-        youtube: 'YouTube',
-        website: '網站',
-        support: '支援',
-        core: '核心',
-        client: '客戶端',
-        ui: '介面',
-        assets: '資源',
-        appVersion: '應用程式版本 v{version} • 製作人員',
-        byKb: 'KB'
     },
     errorBoundary: {
         title: '偵測到系統毀損',

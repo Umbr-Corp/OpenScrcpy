@@ -18,8 +18,8 @@ interface ControlPanelProps {
 
 // Hover states for custom rows use Settings tokens only (no extra hues).
 const dsHoverStyles = `
-.cp-row { border: 1px solid var(--border-base); border-radius: var(--radius-md); background: var(--bg-surface); }
-.cp-row:hover { border-color: var(--primary); }
+.cp-row { border: 1px solid var(--border-base); border-radius: var(--radius-md); background: var(--bg-surface); transition: background 0.09s ease-out, border-color 0.15s cubic-bezier(0.4, 0, 0.2, 1); }
+.cp-row:hover { border-color: var(--primary); background: var(--bg-input); }
 .cp-select:hover { border-color: var(--primary); }
 .cp-opt { border: 1px solid transparent; }
 .cp-opt:hover { border-color: var(--primary); }
@@ -98,7 +98,7 @@ const ToggleRow = ({ checked, onChange, label, hint, icon: Icon }: ToggleRowProp
                 onChange(!checked);
             }
         }}
-        className="cp-row flex items-center justify-between gap-2 cursor-pointer px-2 py-1.5"
+        className="cp-row flex items-center justify-between gap-3 cursor-pointer px-3 py-2"
     >
         <div className="flex items-center gap-2 min-w-0">
             {Icon && (
@@ -193,7 +193,7 @@ export default function ControlPanel({
     };
 
     const PerformanceGrid = ({ showResolution = true, showCodec = true }: { showResolution?: boolean, showCodec?: boolean }) => (
-        <>
+        <div className="space-y-2">
         <div className={`grid ${showResolution ? 'grid-cols-3' : 'grid-cols-2'} gap-2`}>
             {showResolution && (
                 <CustomSelect
@@ -256,7 +256,8 @@ export default function ControlPanel({
                 options={rendererOptions}
             />
         </div>
-        <Tooltip text={t('controlPanel.vsyncTooltip')}>
+        <div className="grid grid-cols-2 gap-3">
+        <Tooltip text={t('controlPanel.vsyncTooltip')} block>
             <ToggleRow
                 checked={config.vsync !== false}
                 onChange={(v) => handleChange('vsync', v)}
@@ -265,7 +266,7 @@ export default function ControlPanel({
             />
         </Tooltip>
         {/* v4.1: ignore encoder constraints */}
-        <Tooltip text={t('controlPanel.ignoreEncoderConstraintsTooltip')}>
+        <Tooltip text={t('controlPanel.ignoreEncoderConstraintsTooltip')} block>
             <ToggleRow
                 checked={!!config.ignoreVideoEncoderConstraints}
                 onChange={(v) => handleChange('ignoreVideoEncoderConstraints', v)}
@@ -273,7 +274,8 @@ export default function ControlPanel({
                 hint="v4.1"
             />
         </Tooltip>
-        </>
+        </div>
+        </div>
     );
 
     return (
@@ -346,9 +348,9 @@ export default function ControlPanel({
                                     {t('controlPanel.inputEnhancementsDescription')}
                                 </p>
 
-                                <div className="grid grid-cols-1 gap-2">
+                                <div className="grid grid-cols-2 gap-3">
                                     {/* HID Keyboard */}
-                                    <Tooltip text={t('controlPanel.hidKeyboardTooltip')}>
+                                    <Tooltip text={t('controlPanel.hidKeyboardTooltip')} block>
                                         <ToggleRow
                                             checked={!!config.hidKeyboard}
                                             onChange={(v) => handleChange('hidKeyboard', v)}
@@ -358,7 +360,7 @@ export default function ControlPanel({
                                     </Tooltip>
 
                                     {/* HID Mouse */}
-                                    <Tooltip text={t('controlPanel.hidMouseTooltip')}>
+                                    <Tooltip text={t('controlPanel.hidMouseTooltip')} block>
                                         <ToggleRow
                                             checked={!!config.hidMouse}
                                             onChange={(v) => handleChange('hidMouse', v)}
@@ -369,7 +371,7 @@ export default function ControlPanel({
 
                                     {/* Advanced: Pure HID (Old OTG Pure) */}
                                     {(config.hidKeyboard || config.hidMouse) && (
-                                        <Tooltip text={t('controlPanel.pureHidTooltip')}>
+                                        <Tooltip text={t('controlPanel.pureHidTooltip')} block>
                                             <ToggleRow
                                                 checked={!!config.otgPure}
                                                 onChange={(v) => handleChange('otgPure', v)}
@@ -475,7 +477,7 @@ export default function ControlPanel({
                                     <span className="ds-caption" style={{ color: 'var(--text-muted)' }}>v4 controls</span>
                                     <span className="ds-badge">{t('controlPanel.badgeNew')}</span>
                                 </div>
-                                <Tooltip text={t('controlPanel.cameraTorchTooltip')}>
+                                <Tooltip text={t('controlPanel.cameraTorchTooltip')} block>
                                     <ToggleRow
                                         checked={!!config.cameraTorch}
                                         onChange={(v) => handleChange('cameraTorch', v)}

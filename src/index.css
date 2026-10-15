@@ -48,13 +48,13 @@
   color-scheme: light;
 }
 
-/* Dark — elevation via lightness steps (all derived from the palette with
-   color-mix, no new hues). Page darkest, surfaces lift slightly per level,
-   accent lifted for contrast on dark backgrounds. */
+/* Dark — deeper background. Elevation via lightness steps anchored on the
+   page base (all derived from the palette with color-mix, no new hues):
+   page darkest, surfaces lift slightly per level. */
 [data-mode='dark'] {
-  --bg-base: #2E2E2E;
-  --bg-surface: color-mix(in srgb, #5C5C5C 38%, #2E2E2E);
-  --bg-input: color-mix(in srgb, #5C5C5C 22%, #2E2E2E);
+  --bg-base: color-mix(in srgb, #2E2E2E 70%, black);
+  --bg-surface: color-mix(in srgb, var(--bg-base) 72%, #5C5C5C);
+  --bg-input: color-mix(in srgb, var(--bg-base) 82%, #5C5C5C);
 
   --text-base: #FAFAFA;
   --text-secondary: #EEEEEE;
@@ -66,12 +66,6 @@
   --border-strong: #808080;
 
   color-scheme: dark;
-}
-
-/* Legacy data-theme values are neutralised (palette replaced them) */
-[data-theme] {
-  --primary: #3B5CF6;
-  --text-on-primary: #FAFAFA;
 }
 
 /* ── Base ─────────────────────────────────────────────── */
@@ -210,9 +204,9 @@ input[type="range"].ds-range { accent-color: var(--primary); height: 4px; cursor
 .ds-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; line-height: 13px; font-weight: 530; border: 1px solid var(--border-base); border-radius: var(--radius-full); padding: 2px 8px; color: var(--text-secondary); background: var(--bg-input); }
 .ds-badge[data-live="true"] { border-color: var(--primary); color: var(--primary); }
 
-/* ── Terminal stays dark in both modes (data surface) ─── */
+/* ── Terminal stays darkest in both modes (data surface) ─── */
 .force-dark, .force-dark.glass {
-  background-color: #2E2E2E !important;
+  background-color: color-mix(in srgb, #2E2E2E 55%, black) !important;
   border-color: #5C5C5C !important;
   color: #FAFAFA !important;
 }

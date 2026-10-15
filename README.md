@@ -1,7 +1,7 @@
 <p align="center">
   <img src="icon.png" width="128" height="128" alt="ScrcpyGUI Icon">
   <br>
-  <h1>ScrcpyGUI v4</h1>
+  <h1>ScrcpyGUI v1 beta</h1>
   <strong>A premium, high-performance Android control experience.</strong>
 </p>
 
@@ -12,12 +12,11 @@
 
 ---
 
-ScrcpyGUI v4 is a modern, feature-rich GUI for [scrcpy](https://github.com/Genymobile/scrcpy), completely rebuilt from the ground up using **Tauri v2**, **React 19**, and **Rust**. It transforms your Android device into a professional tool for gaming, development, and content creation.
+ScrcpyGUI v1 is a modern, feature-rich GUI for [scrcpy](https://github.com/Genymobile/scrcpy), built with **Tauri v2**, **React 19**, and **Rust**. It transforms your Android device into a professional tool for gaming, development, and content creation.
 
 ## 🚀 Key Features
 
-- **✨ Best Looking GUI**: A stunning, modern interface with smooth animations and a premium look and feel.
-- **🎨 Custom Theme Engine**: 5 premium, hand-crafted themes including **Ultraviolet**, **Astro**, **Carbon**, **Emerald**, and **Bloodmoon** to match your workspace setup.
+- **✨ Clean Settings-style UI**: A data-forward dashboard interface with light/dark/system modes and a single accent color.
 - **🔄 Automated Binary Updates**: Deep-integrated system that automatically checks if your local `scrcpy` binary is outdated compared to Genymobile's latest official release, prompting you with a beautiful one-click update modal.
 - **🎮 Precision Input (OTG)**:
   - **HID Keyboard**: Native hardware simulation for international layouts and special characters.
@@ -38,7 +37,7 @@ ScrcpyGUI v4 is a modern, feature-rich GUI for [scrcpy](https://github.com/Genym
 - **📁 Fluid File Management**:
   - Drag & drop APK installation or file pushing directly to `/sdcard/Download/`.
 - **🖼️ Premium UX**:
-  - **Splash Screen**: Zero-flicker, themed startup experience.
+  - **Splash Screen**: Zero-flicker startup experience.
   - **Smart Folder Picker**: Automatically falls back to local `scrcpy-bin` or application executable directories when browsing folders.
 
 ---

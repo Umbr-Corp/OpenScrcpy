@@ -26,21 +26,12 @@ export const ar: Translations = {
         loading: 'جارٍ التحميل...'
     },
     header: {
-        themeLabel: 'السمة',
-        themes: {
-            ultraviolet: 'فوق بنفسجي',
-            astro: 'أزرق فلكي',
-            carbon: 'كربون ستيلث',
-            emerald: 'زمردي',
-            bloodmoon: 'القمر الدموي'
-        },
         colorModes: {
             light: 'فاتح',
             dark: 'داكن',
             system: 'النظام'
         },
         languageLabel: 'اللغة',
-        tagline: 'اعكس شاشة Android وتحكم بها بسهولة',
         scrcpyEngine: 'محرك Scrcpy',
         scrcpyReady: 'Scrcpy جاهز',
         syncingComponents: 'جارٍ مزامنة المكونات {progress}%',
@@ -257,19 +248,6 @@ export const ar: Translations = {
         githubReleases: 'إصدارات GitHub',
         successBinariesActive: 'تم بنجاح! المكونات الأساسية جاهزة',
         continueToApp: 'متابعة إلى التطبيق'
-    },
-    footer: {
-        aboutScrcpyGui: 'حول Scrcpy GUI',
-        github: 'GitHub',
-        youtube: 'YouTube',
-        website: 'الموقع الإلكتروني',
-        support: 'الدعم',
-        core: 'المحرك',
-        client: 'العميل',
-        ui: 'الواجهة',
-        assets: 'الموارد',
-        appVersion: 'إصدار التطبيق v{version} • تم التطوير باستخدام',
-        byKb: 'بواسطة KB'
     },
     errorBoundary: {
         title: 'تم اكتشاف خلل في النظام',

@@ -4,19 +4,22 @@ interface TooltipProps {
     text: string;
     children?: React.ReactNode;
     placement?: 'top' | 'bottom';
+    /** Full-width block row (for wrapping row-like children such as
+     *  toggles). Default inline keeps the "(?)" marker beside labels. */
+    block?: boolean;
 }
 
-export default function Tooltip({ text, children, placement = 'top' }: TooltipProps) {
+export default function Tooltip({ text, children, placement = 'top', block = false }: TooltipProps) {
     const [isVisible, setIsVisible] = useState(false);
 
     return (
         <div
-            className="relative inline-flex items-center"
+            className={block ? "relative block w-full" : "relative inline-flex items-center"}
             onMouseEnter={() => setIsVisible(true)}
             onMouseLeave={() => setIsVisible(false)}
         >
-            <span className="ds-link cursor-help">
-                {children || "(?)"}
+            <span style={{ color: 'inherit', cursor: children ? undefined : 'help', display: block ? 'block' : undefined, width: block ? '100%' : undefined }}>
+                {children || <span className="ds-caption" style={{ color: 'var(--text-muted)' }}>(?)</span>}
             </span>
 
             {isVisible && (

@@ -24,21 +24,12 @@ export const en = {
         loading: 'Loading...'
     },
     header: {
-        themeLabel: 'Theme',
-        themes: {
-            ultraviolet: 'Ultraviolet',
-            astro: 'Astro Blue',
-            carbon: 'Carbon Stealth',
-            emerald: 'Emerald',
-            bloodmoon: 'Blood Moon'
-        },
         colorModes: {
             light: 'Light',
             dark: 'Dark',
             system: 'System'
         },
         languageLabel: 'Language',
-        tagline: 'Mirror & Control Android // Devices Easily',
         scrcpyEngine: 'Scrcpy Engine',
         scrcpyReady: 'Scrcpy Ready',
         syncingComponents: 'Syncing Components {progress}%',
@@ -255,19 +246,6 @@ export const en = {
         githubReleases: 'GitHub Releases',
         successBinariesActive: 'Success! Binaries Active',
         continueToApp: 'Continue to App'
-    },
-    footer: {
-        aboutScrcpyGui: 'About Scrcpy GUI',
-        github: 'Github',
-        youtube: 'Youtube',
-        website: 'Website',
-        support: 'Support',
-        core: 'Core',
-        client: 'Client',
-        ui: 'UI',
-        assets: 'Assets',
-        appVersion: 'APP VERSION v{version} • CREATED WITH',
-        byKb: 'BY KB'
     },
     errorBoundary: {
         title: 'System Breach Detected',

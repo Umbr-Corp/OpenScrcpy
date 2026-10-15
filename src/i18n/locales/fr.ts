@@ -23,21 +23,12 @@ export const fr: Translations = {
         loading: 'Chargement...'
     },
     header: {
-        themeLabel: 'Thème',
-        themes: {
-            ultraviolet: 'Ultraviolet',
-            astro: 'Bleu Astro',
-            carbon: 'Carbone Furtif',
-            emerald: 'Émeraude',
-            bloodmoon: 'Lune de Sang'
-        },
         colorModes: {
             light: 'Clair',
             dark: 'Sombre',
             system: 'Système'
         },
         languageLabel: 'Langue',
-        tagline: 'Miroir & Contrôle Android // Appareils Facilement',
         scrcpyEngine: 'Moteur Scrcpy',
         scrcpyReady: 'Scrcpy Prêt',
         syncingComponents: 'Synchronisation {progress}%',
@@ -254,19 +245,6 @@ export const fr: Translations = {
         githubReleases: 'GitHub Releases',
         successBinariesActive: 'Succès ! Binaires Actifs',
         continueToApp: 'Continuer vers l\'App'
-    },
-    footer: {
-        aboutScrcpyGui: 'À Propos de Scrcpy GUI',
-        github: 'Github',
-        youtube: 'Youtube',
-        website: 'Site Web',
-        support: 'Soutien',
-        core: 'Cœur',
-        client: 'Client',
-        ui: 'UI',
-        assets: 'Ressources',
-        appVersion: 'VERSION APPLI v{version} • CRÉÉ AVEC',
-        byKb: 'PAR KB'
     },
     errorBoundary: {
         title: 'Brèche Système Détectée',

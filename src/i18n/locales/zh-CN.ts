@@ -23,21 +23,12 @@ export const zhCN: Translations = {
         loading: '加载中...'
     },
     header: {
-        themeLabel: '主题',
-        themes: {
-            ultraviolet: '紫外光',
-            astro: '星际蓝',
-            carbon: '碳黑潜行',
-            emerald: '翡翠绿',
-            bloodmoon: '血月'
-        },
         colorModes: {
             light: '浅色',
             dark: '深色',
             system: '系统'
         },
         languageLabel: '语言',
-        tagline: '轻松镜像与控制 Android 设备',
         scrcpyEngine: 'Scrcpy 引擎',
         scrcpyReady: 'Scrcpy 已就绪',
         syncingComponents: '正在同步组件 {progress}%',
@@ -254,19 +245,6 @@ export const zhCN: Translations = {
         githubReleases: 'GitHub',
         successBinariesActive: '安装成功',
         continueToApp: '进入应用'
-    },
-    footer: {
-        aboutScrcpyGui: '关于 Scrcpy GUI',
-        github: 'GitHub',
-        youtube: 'YouTube',
-        website: '网站',
-        support: '支持',
-        core: '核心',
-        client: '客户端',
-        ui: '界面',
-        assets: '资源',
-        appVersion: '应用版本 v{version} • 制作',
-        byKb: 'KB'
     },
     errorBoundary: {
         title: '检测到系统故障',
