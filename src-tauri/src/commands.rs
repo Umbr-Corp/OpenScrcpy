@@ -476,6 +476,49 @@ fn split_args(s: &str) -> Result<Vec<String>, String> {
     Ok(args)
 }
 
+/// Allowlist for release asset file names (used by `download_scrcpy`).
+/// Both the API path and the fallback construct this name, but the API path
+/// echoes a server-provided string, so it is validated before downloading.
+fn is_expected_asset_name(name: &str, extension: &str) -> bool {
+    name.starts_with("scrcpy-")
+        && name.ends_with(extension)
+        && name.len() < 200
+        && name
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '.' || c == '_' || c == '-')
+}
+
+/// Keep only the final path component of a frontend-provided file name, so a
+/// crafted `name` (absolute path or `..` segments) cannot escape the target
+/// directory (used by `save_report`).
+fn safe_file_name(name: &str) -> Option<String> {
+    std::path::Path::new(name)
+        .file_name()
+        .map(|n| n.to_string_lossy().to_string())
+        .filter(|n| !n.is_empty())
+}
+
+/// Sanitize an arbitrary identifier (e.g. a device id from user-typed IPs or
+/// ADB output) for use inside a file name (used for the `--record` filename).
+fn sanitize_filename_component(s: &str) -> String {
+    let cleaned: String = s
+        .chars()
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || c == '.' || c == '_' || c == '-' {
+                c
+            } else {
+                '_'
+            }
+        })
+        .collect();
+    let trimmed = cleaned.trim_matches('.');
+    if trimmed.is_empty() {
+        "device".to_string()
+    } else {
+        trimmed.to_string()
+    }
+}
+
 #[tauri::command]
 pub async fn push_file(device: String, file_path: String, custom_path: Option<String>) -> serde_json::Value {
     let adb_path = get_binary_path("adb", custom_path);
@@ -1044,7 +1087,7 @@ fn recenter_window(pid: u32) {
 /// can be recovered without being able to see or focus it directly. A no-op
 /// if `device` has no tracked process (e.g. nothing is running).
 pub fn recenter_device(state: &ScrcpyState, device: &str) {
-    let pid = state.processes.lock().unwrap().get(device).and_then(|c| c.id());
+    let pid = state.processes.lock().unwrap_or_else(|e| e.into_inner()).get(device).and_then(|c| c.id());
     if let Some(pid) = pid {
         recenter_window(pid);
     }
@@ -1061,7 +1104,7 @@ pub fn recenter_scrcpy_window(state: State<'_, ScrcpyState>, device: String) -> 
 /// which mirror window to act on.
 #[tauri::command]
 pub fn set_active_device(state: State<'_, ScrcpyState>, device: Option<String>) -> Result<(), String> {
-    *state.active_device.lock().unwrap() = device;
+    *state.active_device.lock().unwrap_or_else(|e| e.into_inner()) = device;
     Ok(())
 }
 
@@ -1274,7 +1317,10 @@ fn build_scrcpy_args(config: &ScrcpyConfig, video_dir_fallback: Option<String>, 
                     path = video_dir_fallback.unwrap_or_else(|| ".".to_string());
                  }
 
-                 let filename = format!("scrcpy_{}_{}.mkv", config.device.replace(":", "-"), chrono::Local::now().format("%Y%m%d_%H%M%S"));
+                 // The device id can come from user-typed IPs or ADB output,
+                 // so sanitize it before using it inside a file name.
+                 let safe_device = sanitize_filename_component(&config.device);
+                 let filename = format!("scrcpy_{}_{}.mkv", safe_device, chrono::Local::now().format("%Y%m%d_%H%M%S"));
                  let full_path = std::path::Path::new(&path).join(filename);
                  args.push(format!("--record={}", full_path.to_string_lossy()));
              }
@@ -1463,7 +1509,7 @@ pub async fn run_scrcpy(window: Window, state: State<'_, ScrcpyState>, config: S
     ).await?;
 
     let initial_scrcpy_pid = child.id();
-    state.processes.lock().unwrap().insert(config.device.clone(), child);
+    state.processes.lock().unwrap_or_else(|e| e.into_inner()).insert(config.device.clone(), child);
     let _ = window.emit("scrcpy-status", json!({ "device": config.device, "running": true }));
 
     // Monitor for exit (and orchestrate the audio codec fallback chain)
@@ -1521,7 +1567,7 @@ pub async fn run_scrcpy(window: Window, state: State<'_, ScrcpyState>, config: S
 
             let outcome = {
                 let state_mon = app_handle_mon.state::<ScrcpyState>();
-                let mut processes = state_mon.processes.lock().unwrap();
+                let mut processes = state_mon.processes.lock().unwrap_or_else(|e| e.into_inner());
                 match processes.get_mut(&device_mon) {
                     Some(child) => match child.try_wait() {
                         Ok(Some(status)) => {
@@ -1601,7 +1647,7 @@ pub async fn run_scrcpy(window: Window, state: State<'_, ScrcpyState>, config: S
                                 first_window_pos = None;
                                 last_window_pos = None;
                                 let state_mon = app_handle_mon.state::<ScrcpyState>();
-                                state_mon.processes.lock().unwrap().insert(device_mon.clone(), new_child);
+                                state_mon.processes.lock().unwrap_or_else(|e| e.into_inner()).insert(device_mon.clone(), new_child);
                                 current_audio_flag = new_flag;
                                 chain_index += 1;
                                 continue;
@@ -2000,12 +2046,58 @@ mod tests {
             ]
         );
     }
+
+    #[test]
+    fn test_is_expected_asset_name_accepts_real_releases() {
+        assert!(is_expected_asset_name("scrcpy-win64-v3.3.3.zip", ".zip"));
+        assert!(is_expected_asset_name(
+            "scrcpy-linux-x86_64-v2.7.tar.gz",
+            ".tar.gz"
+        ));
+    }
+
+    #[test]
+    fn test_is_expected_asset_name_rejects_unexpected() {
+        assert!(!is_expected_asset_name("scrcpy-win64-v3.3.3.exe", ".zip"));
+        assert!(!is_expected_asset_name("../evil.zip", ".zip"));
+        assert!(!is_expected_asset_name("/abs/scrcpy-win64-v1.zip", ".zip"));
+        assert!(!is_expected_asset_name("scrcpy-win64-v1.zip ", ".zip"));
+    }
+
+    #[test]
+    fn test_safe_file_name_keeps_final_component() {
+        assert_eq!(
+            safe_file_name("report.json"),
+            Some("report.json".to_string())
+        );
+        assert_eq!(
+            safe_file_name("../../etc/passwd"),
+            Some("passwd".to_string())
+        );
+        assert_eq!(
+            safe_file_name("/tmp/report.json"),
+            Some("report.json".to_string())
+        );
+        assert_eq!(safe_file_name(""), None);
+    }
+
+    #[test]
+    fn test_sanitize_filename_component_allowlists() {
+        assert_eq!(
+            sanitize_filename_component("192.168.1.50:5555"),
+            "192.168.1.50_5555"
+        );
+        assert_eq!(sanitize_filename_component("emulator-5554"), "emulator-5554");
+        assert_eq!(sanitize_filename_component("../../evil"), "_.._evil");
+        assert_eq!(sanitize_filename_component("..."), "device");
+        assert_eq!(sanitize_filename_component(""), "device");
+    }
 }
 
 #[tauri::command]
 pub async fn stop_scrcpy(state: State<'_, ScrcpyState>, device: String) -> Result<(), String> {
     let child = {
-        let mut processes = state.processes.lock().unwrap();
+        let mut processes = state.processes.lock().unwrap_or_else(|e| e.into_inner());
         processes.remove(&device)
     };
 
@@ -2017,7 +2109,7 @@ pub async fn stop_scrcpy(state: State<'_, ScrcpyState>, device: String) -> Resul
              // only refreshes its own sample every ~3s, so stopping right
              // after a move could otherwise persist a stale, pre-move spot.
              if let Some(pos) = try_capture_window_pos(pid) {
-                 state.final_capture_hint.lock().unwrap().insert(device.clone(), pos);
+                 state.final_capture_hint.lock().unwrap_or_else(|e| e.into_inner()).insert(device.clone(), pos);
              }
 
              #[cfg(target_os = "windows")]
@@ -2061,8 +2153,8 @@ pub async fn download_scrcpy(window: Window) -> Result<(), String> {
         return Err("Unsupported OS for auto-download".to_string());
     };
 
-    window.emit("scrcpy-log", format!("[SYSTEM] Detecting platform: {} ({})", os_tag, arch_tag)).unwrap();
-    window.emit("scrcpy-status", json!({ "type": "downloading", "success": true, "message": format!("Fetching latest {} release...", arch_tag) })).unwrap();
+    let _ = window.emit("scrcpy-log", format!("[SYSTEM] Detecting platform: {} ({})", os_tag, arch_tag));
+    let _ = window.emit("scrcpy-status", json!({ "type": "downloading", "success": true, "message": format!("Fetching latest {} release...", arch_tag) }));
 
     let client = reqwest::Client::builder().user_agent("OpenScrcpy-Downloader").build().map_err(|e| e.to_string())?;
     
@@ -2090,7 +2182,7 @@ pub async fn download_scrcpy(window: Window) -> Result<(), String> {
                 }
             }
         } else if resp.status() == reqwest::StatusCode::FORBIDDEN {
-            window.emit("scrcpy-log", "[SYSTEM] API rate limited, attempting fallback discovery...").unwrap();
+            let _ = window.emit("scrcpy-log", "[SYSTEM] API rate limited, attempting fallback discovery...");
             used_fallback = true;
         }
     } else {
@@ -2108,7 +2200,7 @@ pub async fn download_scrcpy(window: Window) -> Result<(), String> {
             if tag.starts_with('v') {
                 filename = format!("scrcpy-{}-{}{}", arch_tag, tag, extension);
                 download_url = format!("https://github.com/Genymobile/scrcpy/releases/download/{}/{}", tag, filename);
-                window.emit("scrcpy-log", format!("[SYSTEM] Discovered latest tag via fallback: {}", tag)).unwrap();
+                let _ = window.emit("scrcpy-log", format!("[SYSTEM] Discovered latest tag via fallback: {}", tag));
             }
         }
     }
@@ -2117,12 +2209,20 @@ pub async fn download_scrcpy(window: Window) -> Result<(), String> {
         return Err(format!("Could not find {} binary. (API rate limit might be active)", arch_tag));
     }
 
-    window.emit("scrcpy-log", format!("[SYSTEM] Found asset: {}", filename)).unwrap();
+    // Only accept asset names matching the expected scrcpy release pattern.
+    // The fallback path builds this name itself, but the API path echoes a
+    // server-provided string, so validate it before downloading.
+    if !is_expected_asset_name(&filename, extension) {
+        return Err("Unexpected release asset name, aborting download".to_string());
+    }
+
+    let _ = window.emit("scrcpy-log", format!("[SYSTEM] Found asset: {}", filename));
     
     let current_dir = std::env::current_exe()
         .ok()
         .and_then(|p| p.parent().map(|p| p.to_path_buf()))
-        .unwrap_or_else(|| std::env::current_dir().unwrap());
+        .or_else(|| std::env::current_dir().ok())
+        .ok_or_else(|| "Could not determine application directory".to_string())?;
         
     let temp_archive_path = current_dir.join(format!("scrcpy_temp{}", extension));
     let extract_path = current_dir.join("scrcpy-bin");
@@ -2132,7 +2232,7 @@ pub async fn download_scrcpy(window: Window) -> Result<(), String> {
         let mut download_resp = client.get(&download_url).send().await.map_err(|e| format!("Failed to connect to download URL: {}", e))?;
         let total_size = download_resp.content_length().unwrap_or(0);
         
-        window.emit("scrcpy-log", format!("[SYSTEM] Downloading: {} MB", total_size / 1024 / 1024)).unwrap();
+        let _ = window.emit("scrcpy-log", format!("[SYSTEM] Downloading: {} MB", total_size / 1024 / 1024));
 
         let mut downloaded: u64 = 0;
         while let Some(chunk) = download_resp.chunk().await.map_err(|e| e.to_string())? {
@@ -2145,8 +2245,8 @@ pub async fn download_scrcpy(window: Window) -> Result<(), String> {
         }
     }
     
-    window.emit("scrcpy-log", "[SYSTEM] Download finished. Starting extraction...").unwrap();
-    window.emit("scrcpy-status", json!({ "type": "downloading", "success": true, "message": "Extracting binaries..." })).unwrap();
+    let _ = window.emit("scrcpy-log", "[SYSTEM] Download finished. Starting extraction...");
+    let _ = window.emit("scrcpy-status", json!({ "type": "downloading", "success": true, "message": "Extracting binaries..." }));
 
     if extract_path.exists() {
         let _ = std::fs::remove_dir_all(&extract_path);
@@ -2159,12 +2259,12 @@ pub async fn download_scrcpy(window: Window) -> Result<(), String> {
     std::fs::create_dir_all(&temp_extract_dir).map_err(|e| e.to_string())?;
 
     if extension == ".zip" {
-        window.emit("scrcpy-log", "[SYSTEM] Decompressing ZIP archive...").unwrap();
+        let _ = window.emit("scrcpy-log", "[SYSTEM] Decompressing ZIP archive...");
         let file = std::fs::File::open(&temp_archive_path).map_err(|e| format!("Failed to open zip: {}", e))?;
         let mut archive = zip::ZipArchive::new(file).map_err(|e| format!("Failed to read zip archive: {}", e))?;
         archive.extract(&temp_extract_dir).map_err(|e| format!("Failed to extract: {}", e))?;
     } else {
-        window.emit("scrcpy-log", "[SYSTEM] Decompressing TAR.GZ archive...").unwrap();
+        let _ = window.emit("scrcpy-log", "[SYSTEM] Decompressing TAR.GZ archive...");
         let file = std::fs::File::open(&temp_archive_path).map_err(|e| format!("Failed to open tar.gz: {}", e))?;
         let tar = GzDecoder::new(file);
         let mut archive = Archive::new(tar);
@@ -2190,11 +2290,25 @@ pub async fn download_scrcpy(window: Window) -> Result<(), String> {
         }
     }
     
+    // Confirm the extracted tree actually contains the scrcpy binary before
+    // trusting it. The release feed publishes no checksum, so this is a
+    // best-effort check against a wrong or tampered archive.
+    let exe_ext = std::env::consts::EXE_EXTENSION;
+    let expected_bin = if exe_ext.is_empty() {
+        "scrcpy".to_string()
+    } else {
+        format!("scrcpy.{}", exe_ext)
+    };
+    if !extract_path.join(&expected_bin).is_file() {
+        let _ = std::fs::remove_dir_all(&extract_path);
+        return Err("Downloaded archive did not contain the expected scrcpy binary".to_string());
+    }
+
     // Cleanup
     if temp_extract_dir.exists() { let _ = std::fs::remove_dir_all(&temp_extract_dir); }
     if temp_archive_path.exists() { let _ = std::fs::remove_file(&temp_archive_path); }
 
-    window.emit("scrcpy-status", json!({ "type": "download-complete", "success": true, "message": extract_path.to_string_lossy() })).unwrap();
+    let _ = window.emit("scrcpy-status", json!({ "type": "download-complete", "success": true, "message": extract_path.to_string_lossy() }));
     Ok(())
 }
 
@@ -2213,8 +2327,11 @@ pub async fn save_report(app_handle: tauri::AppHandle, content: String, name: St
 
     let downloads = app_handle.path().download_dir()
         .map_err(|e| e.to_string())?;
-    
-    let path = downloads.join(&name);
+
+    // Keep only the final path component so a crafted `name` cannot escape
+    // the downloads directory (absolute paths or `..` segments).
+    let safe_name = safe_file_name(&name).ok_or_else(|| "Invalid report name".to_string())?;
+    let path = downloads.join(&safe_name);
     fs::write(&path, content).map_err(|e| e.to_string())?;
     
     Ok(path.to_string_lossy().to_string())
@@ -2225,7 +2342,8 @@ pub async fn get_scrcpy_bin_dir() -> Result<String, String> {
     let current_dir = std::env::current_exe()
         .ok()
         .and_then(|p| p.parent().map(|p| p.to_path_buf()))
-        .unwrap_or_else(|| std::env::current_dir().unwrap());
+        .or_else(|| std::env::current_dir().ok())
+        .ok_or_else(|| "Could not determine application directory".to_string())?;
         
     let extract_path = current_dir.join("scrcpy-bin");
     

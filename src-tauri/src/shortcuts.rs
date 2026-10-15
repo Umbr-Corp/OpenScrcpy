@@ -56,7 +56,7 @@ pub fn register<R: Runtime>(app: &AppHandle<R>) -> Result<(), Box<dyn std::error
 
 fn recenter_active_device<R: Runtime>(app: &AppHandle<R>) {
     let state = app.state::<ScrcpyState>();
-    let device = state.active_device.lock().unwrap().clone();
+    let device = state.active_device.lock().unwrap_or_else(|e| e.into_inner()).clone();
     if let Some(device) = device {
         crate::commands::recenter_device(&state, &device);
     }
