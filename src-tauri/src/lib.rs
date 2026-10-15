@@ -97,11 +97,6 @@ pub fn run() {
             #[cfg(target_os = "windows")]
             grab::register(app.handle());
 
-            // Show splashscreen instantly
-            if let Some(splash_window) = app.get_webview_window("splashscreen") {
-                splash_window.show().unwrap();
-            }
-
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -127,7 +122,6 @@ pub fn run() {
             commands::get_scrcpy_bin_dir,
             commands::run_terminal_command,
             commands::check_scrcpy_update,
-            close_splashscreen,
             get_app_version
         ])
         .run(tauri::generate_context!())
@@ -137,17 +131,4 @@ pub fn run() {
 #[tauri::command]
 fn get_app_version(app: tauri::AppHandle) -> String {
     app.package_info().version.to_string()
-}
-
-#[tauri::command]
-async fn close_splashscreen(window: tauri::Window) {
-    // Get the main window
-    if let Some(main_window) = window.get_webview_window("main") {
-        // Show the main window
-        main_window.show().unwrap();
-    }
-    // Close the splashscreen window
-    if let Some(splash_window) = window.get_webview_window("splashscreen") {
-        splash_window.close().unwrap();
-    }
 }

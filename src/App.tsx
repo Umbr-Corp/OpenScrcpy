@@ -103,14 +103,11 @@ function App() {
   };
 
   useEffect(() => {
-    // Initial setup: fetch version and close splashscreen
+    // Initial setup: fetch version
     const initApp = async () => {
       try {
         const v = await getVersion();
         setAppVersion(v);
-
-        const { invoke } = await import('@tauri-apps/api/core');
-        await invoke('close_splashscreen');
       } catch (e) {
         console.error("Initialization failed:", e);
       }

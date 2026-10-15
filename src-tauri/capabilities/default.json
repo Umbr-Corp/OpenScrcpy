@@ -3,8 +3,7 @@
   "identifier": "default",
   "description": "Capability for the main window",
   "windows": [
-    "main",
-    "splashscreen"
+    "main"
   ],
   "permissions": [
     "core:default",
