@@ -2,7 +2,7 @@
   <img src="icon.png" width="128" height="128" alt="OpenScrcpy Icon">
   <br>
   <h1>OpenScrcpy</h1>
-  <strong>Control your Android from the desktop — mirror, camera, and virtual display in one clean dashboard.</strong>
+  <strong>Control your Android from the desktop. Mirror the screen, use it as a webcam, or open a virtual display.</strong>
   <br><br>
   <code>v1.0.0</code> · <code>MIT</code> · <code>Linux / Windows / macOS</code>
 </p>
@@ -19,16 +19,16 @@
 
 ## Features
 
-- **Mirror, Camera & Desktop modes** — screen mirroring, phone-as-webcam with lens/torch/zoom controls, and a virtual display with flex resize.
-- **Precision input (OTG/HID)** — hardware keyboard and mouse simulation, side by side, for lag-free control.
-- **Wireless pairing & history** — pair Android 11+ devices over Wi-Fi and reconnect in one click.
-- **One-click core setup** — automatic core binary download and update checks, right from the header.
-- **Render driver selection** — capability-aware, OS-filtered graphics backends.
-- **Drag & drop files** — drop an APK to install it, or push any file to `/sdcard/Download/`.
+- Mirror, camera and desktop modes. Screen mirroring, phone-as-webcam with lens, torch and zoom controls, and a virtual display with flex resize.
+- Precision input over OTG/HID. Hardware keyboard and mouse simulation, side by side.
+- Wireless pairing with history. Pair Android 11+ devices over Wi-Fi and reconnect in one click.
+- One-click core setup. Automatic core binary download and update checks, right from the header.
+- Render driver selection. Capability-aware graphics backends, filtered by OS.
+- Drag and drop files. Drop an APK to install it, or push any file to `/sdcard/Download/`.
 
 ---
 
-## Quick Start
+## Quick start
 
 1. Download the latest release from [Releases](https://github.com/Umbr-Corp/OpenScrcpy/releases).
 2. Enable **USB debugging** on your Android device (plus **Wireless debugging** for Wi-Fi connections).
@@ -43,12 +43,12 @@
 - The Rust toolchain and Cargo
 - The desktop framework's OS-level prerequisites
 
-### Build Instructions
+### Build instructions
 1. `npm install`
 2. `npm run tauri dev` (Development)
 3. `npm run tauri build` (Production)
 
-## ❄️ NixOS Installation (flakes)
+## NixOS installation (flakes)
 
 To install it permanently with a desktop launcher, add the flake to your system's `flake.nix`:
 
@@ -65,6 +65,6 @@ environment.systemPackages = [
 ```
 ---
 
-## 📜 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
