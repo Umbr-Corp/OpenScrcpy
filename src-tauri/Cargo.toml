@@ -1,0 +1,47 @@
+[package]
+name = "scrcpy-gui-v3"
+version = "1.0.0-beta"
+authors = ["KB-kil0bit"]
+description = "A modern GUI for Scrcpy written in React and Rust"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+# The `_lib` suffix may seem redundant but it is necessary
+# to make the lib name unique and wouldn't conflict with the bin name.
+# This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
+name = "scrcpy_gui_v3_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+reqwest = { version = "0.13", default-features = false, features = ["json", "native-tls"] }
+zip = "8.1.0"
+flate2 = "1.0"
+tar = "0.4"
+tokio = { version = "1.49.0", features = ["full"] }
+tauri-plugin-shell = "2.3.5"
+tauri-plugin-dialog = "2.7.0"
+chrono = "0.4.43"
+# Global OS shortcuts: Ctrl+Alt+Shift+C to recentre the active mirror window
+# (all platforms) and Ctrl+Alt+Shift+W to drag the borderless scrcpy window
+# with the mouse (Windows-only). See src/shortcuts.rs and src/grab.rs.
+tauri-plugin-global-shortcut = "2"
+
+# Windows-only: read the scrcpy mirror window's client-area position natively
+# (EnumWindows + ClientToScreen) to persist it across sessions. Pinned to the
+# 0.61 line already resolved transitively by tao/wry, so Cargo unifies onto a
+# single compiled copy (no duplicate `windows` version).
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.61", features = [
+    "Win32_Foundation",
+    "Win32_UI_WindowsAndMessaging",
+    "Win32_Graphics_Gdi",
+    "Win32_System_LibraryLoader",
+] }

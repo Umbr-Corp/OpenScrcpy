@@ -1,0 +1,688 @@
+import { useState, useEffect, useRef } from 'react';
+import { Play, Square, Monitor, Camera, LayoutGrid, ChevronDown, Lock, Unlock, Settings2, Video, ExternalLink, Keyboard, Mouse } from 'lucide-react';
+import { RenderDriverSupport, ScrcpyConfig } from '../../hooks/useScrcpy';
+import Tooltip from '../Tooltip';
+import { buildRendererOptions, mapRendererSelection } from './rendererOptions';
+import { useI18n } from '../../i18n';
+
+interface ControlPanelProps {
+    config: ScrcpyConfig;
+    setConfig: (c: ScrcpyConfig) => void;
+    onStart: () => void;
+    onStop: () => void;
+    isRunning: boolean;
+    onListOptions: (arg: string) => void;
+    detectedCameras?: { id: string, name: string }[];
+    renderDriverSupport?: RenderDriverSupport;
+}
+
+// Hover states for custom rows use Settings tokens only (no extra hues).
+const dsHoverStyles = `
+.cp-row { border: 1px solid var(--border-base); border-radius: var(--radius-md); background: var(--bg-surface); }
+.cp-row:hover { border-color: var(--primary); }
+.cp-select:hover { border-color: var(--primary); }
+.cp-opt { border: 1px solid transparent; }
+.cp-opt:hover { border-color: var(--primary); }
+`;
+
+const BitrateControl = ({ label, value, onChange }: { label: string, value: number, onChange: (val: number) => void }) => {
+    const [localValue, setLocalValue] = useState(value);
+
+    // Sync from parent if parent changes externally (e.g. preset load)
+    useEffect(() => {
+        setLocalValue(value);
+    }, [value]);
+
+    return (
+        <div className="space-y-1">
+            <div className="flex justify-between items-center">
+                <span className="ds-label">{label}</span>
+                <span className="ds-caption tabular-nums" style={{ color: 'var(--primary)' }}>{localValue}M</span>
+            </div>
+            <input
+                type="range"
+                min="1"
+                max="50"
+                value={localValue}
+                onChange={(e) => setLocalValue(parseInt(e.target.value))}
+                onMouseUp={() => onChange(localValue)}
+                onTouchEnd={() => onChange(localValue)}
+                className="ds-range w-full"
+            />
+        </div>
+    );
+};
+
+const VDSlider = ({ label, value, min, max, unit = "", onChange }: { label: string, value: number, min: number, max: number, unit?: string, onChange: (val: number) => void }) => {
+    const [localValue, setLocalValue] = useState(value);
+    useEffect(() => setLocalValue(value), [value]);
+
+    return (
+        <div className="space-y-1">
+            <div className="flex justify-between items-center">
+                <span className="ds-label">{label}</span>
+                <span className="ds-caption tabular-nums" style={{ color: 'var(--primary)' }}>{localValue}{unit}</span>
+            </div>
+            <input
+                type="range"
+                min={min}
+                max={max}
+                value={localValue}
+                onChange={(e) => setLocalValue(parseInt(e.target.value))}
+                onMouseUp={() => onChange(localValue)}
+                className="ds-range w-full"
+            />
+        </div>
+    );
+};
+
+interface ToggleRowProps {
+    checked: boolean;
+    onChange: (v: boolean) => void;
+    label: string;
+    hint?: string;
+    icon?: any;
+}
+
+// Single settings toggle row: label on the left, .ds-toggle on the right.
+// Keyboard accessible (role="switch"); hover uses the primary border token.
+const ToggleRow = ({ checked, onChange, label, hint, icon: Icon }: ToggleRowProps) => (
+    <div
+        role="switch"
+        aria-checked={checked}
+        tabIndex={0}
+        onClick={() => onChange(!checked)}
+        onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onChange(!checked);
+            }
+        }}
+        className="cp-row flex items-center justify-between gap-2 cursor-pointer px-2 py-1.5"
+    >
+        <div className="flex items-center gap-2 min-w-0">
+            {Icon && (
+                <span style={{ color: checked ? 'var(--primary)' : 'var(--text-muted)' }} className="flex items-center shrink-0">
+                    <Icon size={12} />
+                </span>
+            )}
+            <span className="ds-label truncate">{label}</span>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+            {hint && <span className="ds-badge">{hint}</span>}
+            <span className="ds-toggle" data-on={checked ? 'true' : 'false'} aria-hidden="true">
+                <span />
+            </span>
+        </div>
+    </div>
+);
+
+export default function ControlPanel({
+    config,
+    setConfig,
+    onStart,
+    onStop,
+    isRunning,
+    onListOptions,
+    detectedCameras = [],
+    renderDriverSupport = { hostOs: 'unknown', supportsRenderDriver: false, supportedDrivers: [] }
+}: ControlPanelProps) {
+    const { t } = useI18n();
+
+    const handleChange = (field: keyof ScrcpyConfig, value: any) => {
+        setConfig({ ...config, [field]: value });
+    };
+
+    const rendererOptions = buildRendererOptions(renderDriverSupport, t('controlPanel.rendererAuto'));
+
+    const CustomSelect = ({ value, onChange, options, label, className = "" }: { value: any, onChange: (val: any) => void, options: { value: any, label: string }[], label?: string, className?: string }) => {
+        const [isOpen, setIsOpen] = useState(false);
+        const containerRef = useRef<HTMLDivElement>(null);
+
+        useEffect(() => {
+            const handleClickOutside = (event: MouseEvent) => {
+                if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+                    setIsOpen(false);
+                }
+            };
+            if (isOpen) document.addEventListener('mousedown', handleClickOutside);
+            return () => document.removeEventListener('mousedown', handleClickOutside);
+        }, [isOpen]);
+
+        const selectedOption = options.find(opt => opt.value === value) || { value, label: t('controlPanel.custom') };
+
+        return (
+            <div className={`relative ${className}`} ref={containerRef}>
+                {label && <span className="ds-label block" style={{ marginBottom: 4 }}>{label}</span>}
+                <button
+                    type="button"
+                    aria-haspopup="listbox"
+                    aria-expanded={isOpen}
+                    onClick={() => setIsOpen(!isOpen)}
+                    className="ds-select-btn cp-select w-full flex items-center justify-between gap-2"
+                >
+                    <span className="truncate">{selectedOption?.label}</span>
+                    <ChevronDown size={14} style={{ color: 'var(--text-muted)', transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.09s ease-out' }} />
+                </button>
+
+                {isOpen && (
+                    <div role="listbox" className="ds-panel ds-fade-in absolute left-0 right-0 z-[100] py-1" style={{ marginTop: 4, padding: 4 }}>
+                        {options.map((opt) => (
+                            <button
+                                key={opt.value}
+                                type="button"
+                                role="option"
+                                aria-selected={opt.value === value}
+                                onClick={() => {
+                                    onChange(opt.value);
+                                    setIsOpen(false);
+                                }}
+                                className="ds-btn-tertiary cp-opt w-full"
+                                style={{
+                                    justifyContent: 'flex-start',
+                                    ...(opt.value === value ? { color: 'var(--primary)' } : {})
+                                }}
+                            >
+                                {opt.label}
+                            </button>
+                        ))}
+                    </div>
+                )}
+            </div>
+        );
+    };
+
+    const PerformanceGrid = ({ showResolution = true, showCodec = true }: { showResolution?: boolean, showCodec?: boolean }) => (
+        <>
+        <div className={`grid ${showResolution ? 'grid-cols-3' : 'grid-cols-2'} gap-2`}>
+            {showResolution && (
+                <CustomSelect
+                    label={t('controlPanel.resolution')}
+                    value={config.res || "0"}
+                    onChange={(val) => handleChange('res', val)}
+                    options={[
+                        { value: "0", label: t('controlPanel.resolutionOriginal') },
+                        { value: "3840", label: "4K" },
+                        { value: "2560", label: "2K" },
+                        { value: "1920", label: "1080p" },
+                        { value: "1600", label: "900p" },
+                        { value: "1280", label: "720p" },
+                        { value: "1024", label: "576p" },
+                        { value: "800", label: "480p" },
+                    ]}
+                />
+            )}
+            {showCodec && (
+                <CustomSelect
+                    label={t('controlPanel.codec')}
+                    value={config.codec || "h264"}
+                    onChange={(val) => handleChange('codec', val)}
+                    options={[
+                        { value: "h264", label: "H.264" },
+                        { value: "h265", label: "H.265" },
+                        { value: "av1", label: "AV1" },
+                        { value: "vp8", label: "VP8" },
+                        { value: "vp9", label: "VP9" },
+                    ]}
+                />
+            )}
+            <CustomSelect
+                label={t('controlPanel.fps')}
+                value={config.fps === undefined || config.fps === null ? 0 : config.fps}
+                onChange={(val) => handleChange('fps', parseInt(val) === 0 ? undefined : parseInt(val))}
+                options={[
+                    { value: 0, label: t('controlPanel.rendererAuto') || "Automatic" },
+                    { value: 30, label: "30" },
+                    { value: 60, label: "60" },
+                    { value: 90, label: "90" },
+                    { value: 120, label: "120" },
+                ]}
+            />
+            <CustomSelect
+                label={t('controlPanel.rotation')}
+                value={config.rotation || "0"}
+                onChange={(val) => handleChange('rotation', val)}
+                options={[
+                    { value: "0", label: "0°" },
+                    { value: "270", label: "-90°" },
+                    { value: "90", label: "+90°" },
+                    { value: "180", label: "180°" },
+                ]}
+            />
+            <CustomSelect
+                label={t('controlPanel.graphicsRenderer')}
+                value={config.renderDriver || 'auto'}
+                onChange={(val) => handleChange('renderDriver', mapRendererSelection(val))}
+                options={rendererOptions}
+            />
+        </div>
+        <Tooltip text={t('controlPanel.vsyncTooltip')}>
+            <ToggleRow
+                checked={config.vsync !== false}
+                onChange={(v) => handleChange('vsync', v)}
+                label={t('controlPanel.vsync')}
+                hint={t('controlPanel.vsyncHint')}
+            />
+        </Tooltip>
+        {/* v4.1: ignore encoder constraints */}
+        <Tooltip text={t('controlPanel.ignoreEncoderConstraintsTooltip')}>
+            <ToggleRow
+                checked={!!config.ignoreVideoEncoderConstraints}
+                onChange={(v) => handleChange('ignoreVideoEncoderConstraints', v)}
+                label={t('controlPanel.ignoreEncoderConstraints')}
+                hint="v4.1"
+            />
+        </Tooltip>
+        </>
+    );
+
+    return (
+        <main className="lg:col-span-6 space-y-4">
+            <style>{dsHoverStyles}</style>
+            <section className="ds-card p-3">
+                <span className="ds-label block" style={{ color: 'var(--text-secondary)', marginBottom: 8 }}>{t('controlPanel.captureSource')}</span>
+                <div className="ds-tabs" role="tablist" aria-label={t('controlPanel.captureSource')}>
+                    <button
+                        type="button"
+                        role="tab"
+                        aria-selected={config.sessionMode === 'mirror'}
+                        data-active={config.sessionMode === 'mirror' ? 'true' : 'false'}
+                        onClick={() => handleChange('sessionMode', 'mirror')}
+                        className="ds-tab"
+                    >
+                        <Monitor size={16} />
+                        <span>{t('controlPanel.screen')}</span>
+                    </button>
+                    <button
+                        type="button"
+                        role="tab"
+                        aria-selected={config.sessionMode === 'camera'}
+                        data-active={config.sessionMode === 'camera' ? 'true' : 'false'}
+                        onClick={() => handleChange('sessionMode', 'camera')}
+                        className="ds-tab"
+                    >
+                        <Camera size={16} />
+                        <span>{t('controlPanel.camera')}</span>
+                    </button>
+                    <button
+                        type="button"
+                        role="tab"
+                        aria-selected={config.sessionMode === 'desktop'}
+                        data-active={config.sessionMode === 'desktop' ? 'true' : 'false'}
+                        onClick={() => handleChange('sessionMode', 'desktop')}
+                        className="ds-tab"
+                    >
+                        <LayoutGrid size={16} />
+                        <span>{t('controlPanel.desktop')}</span>
+                    </button>
+                </div>
+            </section>
+
+            <section className="ds-card p-3 space-y-3">
+                <div className="flex justify-between items-center" style={{ borderBottom: '1px solid var(--border-base)', paddingBottom: 8 }}>
+                    <h2 className="ds-label ds-strong">{t('controlPanel.engineConfiguration')}</h2>
+                    <div className="flex gap-1.5">
+                        {config.sessionMode === 'mirror' && (config.hidKeyboard || config.hidMouse) && config.otgPure && (
+                            <span className="ds-badge">
+                                {t('controlPanel.otgOnly')}
+                            </span>
+                        )}
+                        <span className="ds-badge" data-live={isRunning ? 'true' : 'false'}>
+                            {isRunning ? t('controlPanel.active') : t('controlPanel.ready')}
+                        </span>
+                    </div>
+                </div>
+
+                <div className="space-y-2.5">
+                    {/* Screen Config */}
+                    {config.sessionMode === 'mirror' && (
+                        <>
+                            <div className="ds-panel p-3 space-y-3">
+                                <div className="flex items-center gap-2">
+                                    <Keyboard size={12} style={{ color: 'var(--primary)' }} />
+                                    <span className="ds-label ds-strong">{t('controlPanel.inputEnhancements')}</span>
+                                </div>
+                                <p className="ds-caption" style={{ color: 'var(--text-secondary)' }}>
+                                    {t('controlPanel.inputEnhancementsDescription')}
+                                </p>
+
+                                <div className="grid grid-cols-1 gap-2">
+                                    {/* HID Keyboard */}
+                                    <Tooltip text={t('controlPanel.hidKeyboardTooltip')}>
+                                        <ToggleRow
+                                            checked={!!config.hidKeyboard}
+                                            onChange={(v) => handleChange('hidKeyboard', v)}
+                                            icon={Keyboard}
+                                            label={t('controlPanel.hidKeyboard')}
+                                        />
+                                    </Tooltip>
+
+                                    {/* HID Mouse */}
+                                    <Tooltip text={t('controlPanel.hidMouseTooltip')}>
+                                        <ToggleRow
+                                            checked={!!config.hidMouse}
+                                            onChange={(v) => handleChange('hidMouse', v)}
+                                            icon={Mouse}
+                                            label={t('controlPanel.hidMouse')}
+                                        />
+                                    </Tooltip>
+
+                                    {/* Advanced: Pure HID (Old OTG Pure) */}
+                                    {(config.hidKeyboard || config.hidMouse) && (
+                                        <Tooltip text={t('controlPanel.pureHidTooltip')}>
+                                            <ToggleRow
+                                                checked={!!config.otgPure}
+                                                onChange={(v) => handleChange('otgPure', v)}
+                                                label={t('controlPanel.pureHid')}
+                                            />
+                                        </Tooltip>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div
+                                className="space-y-2.5"
+                                aria-disabled={!!config.otgPure}
+                                style={config.otgPure ? { opacity: 0.45, pointerEvents: 'none' } : { opacity: 1 }}
+                            >
+                                <PerformanceGrid />
+                                <BitrateControl label={t('controlPanel.bitrate')} value={config.bitrate || 8} onChange={(v) => handleChange('bitrate', v)} />
+                            </div>
+                        </>
+                    )}
+
+                    {/* Camera Config */}
+                    {config.sessionMode === 'camera' && (
+                        <div className="space-y-3">
+                            {/* Webcam Pro Tip */}
+                            <div className="ds-panel p-3 flex gap-3">
+                                <div className="ds-inset flex items-center justify-center shrink-0" style={{ padding: 6, alignSelf: 'flex-start', color: 'var(--primary)' }}>
+                                    <Video size={14} />
+                                </div>
+                                <div className="space-y-1 min-w-0">
+                                    <div className="flex items-center justify-between gap-2">
+                                        <h4 className="ds-label ds-strong">{t('controlPanel.webcamProTip')}</h4>
+                                        <a
+                                            href="https://obsproject.com/"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="ds-link flex items-center gap-1 shrink-0"
+                                        >
+                                            {t('controlPanel.getObs')} <ExternalLink size={10} />
+                                        </a>
+                                    </div>
+                                    <p className="ds-caption" style={{ color: 'var(--text-secondary)' }}>
+                                        {t('controlPanel.webcamProTipTextBefore')} <span className="ds-strong">{t('controlPanel.webcamProTipObs')}</span> {t('controlPanel.webcamProTipAndStart')} <span className="ds-strong">{t('controlPanel.webcamProTipVirtualCamera')}</span>{t('controlPanel.webcamProTipTextAfter')}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="space-y-1">
+                                <div className="flex justify-between items-center">
+                                    <div className="flex items-center gap-1.5">
+                                        <span className="ds-label">{t('controlPanel.cameraDevice')}</span>
+                                        <Tooltip text={t('controlPanel.cameraDeviceTooltip')} placement="top" />
+                                    </div>
+                                    <div className="flex items-center gap-1.5">
+                                        <Tooltip text={t('controlPanel.refreshLensesTooltip')} placement="top" />
+                                        <button
+                                            type="button"
+                                            onClick={() => onListOptions("--list-cameras")}
+                                            className="ds-btn-tertiary"
+                                        >
+                                            {t('controlPanel.refreshLenses')}
+                                        </button>
+                                    </div>
+                                </div>
+                                <CustomSelect
+                                    value={config.cameraId || ""}
+                                    onChange={(val) => handleChange('cameraId', val)}
+                                    options={[
+                                        { value: "", label: t('controlPanel.autoSelect') },
+                                        ...detectedCameras.map(cam => ({ value: cam.id, label: cam.name }))
+                                    ]}
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-2">
+                                <CustomSelect
+                                    label={t('controlPanel.codec')}
+                                    value={config.codec || "h264"}
+                                    onChange={(val) => handleChange('codec', val)}
+                                    options={[
+                                        { value: "h264", label: "H.264" },
+                                        { value: "h265", label: "H.265" },
+                                        { value: "av1", label: "AV1" },
+                                        { value: "vp8", label: "VP8" },
+                                        { value: "vp9", label: "VP9" },
+                                    ]}
+                                />
+                                <CustomSelect
+                                    label={t('controlPanel.aspect')}
+                                    value={config.cameraAr || "0"}
+                                    onChange={(val) => handleChange('cameraAr', val)}
+                                    options={[
+                                        { value: "0", label: t('controlPanel.aspectDefault') },
+                                        { value: "16:9", label: "16:9" },
+                                        { value: "4:3", label: "4:3" },
+                                    ]}
+                                />
+                            </div>
+
+                            {/* v4: Camera Torch + Camera Zoom */}
+                            <div className="ds-panel p-2.5 space-y-2">
+                                <div className="flex items-center gap-2">
+                                    <span className="ds-caption" style={{ color: 'var(--text-muted)' }}>v4 controls</span>
+                                    <span className="ds-badge">{t('controlPanel.badgeNew')}</span>
+                                </div>
+                                <Tooltip text={t('controlPanel.cameraTorchTooltip')}>
+                                    <ToggleRow
+                                        checked={!!config.cameraTorch}
+                                        onChange={(v) => handleChange('cameraTorch', v)}
+                                        label={t('controlPanel.cameraTorch')}
+                                    />
+                                </Tooltip>
+                                <div className="space-y-1">
+                                    <div className="flex justify-between items-center">
+                                        <div className="flex items-center gap-1.5">
+                                            <span className="ds-label">{t('controlPanel.cameraZoom')}</span>
+                                            <Tooltip text={t('controlPanel.cameraZoomTooltip')} placement="top" />
+                                        </div>
+                                        <span className="ds-caption tabular-nums" style={{ color: 'var(--primary)' }}>{(config.cameraZoom || 1.0).toFixed(1)}x</span>
+                                    </div>
+                                    <input
+                                        type="range"
+                                        min={10}
+                                        max={50}
+                                        value={Math.round((config.cameraZoom || 1.0) * 10)}
+                                        onChange={(e) => handleChange('cameraZoom', parseInt(e.target.value) / 10)}
+                                        className="ds-range w-full"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="space-y-2.5">
+                                <PerformanceGrid showCodec={false} />
+                                <BitrateControl label={t('controlPanel.bitrate')} value={config.bitrate || 8} onChange={(v) => handleChange('bitrate', v)} />
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Desktop Config */}
+                    {config.sessionMode === 'desktop' && (
+                        <div className="space-y-3">
+                            <div className="ds-panel p-3 space-y-4">
+                                <div className="flex items-center justify-between" style={{ borderBottom: '1px solid var(--border-base)', paddingBottom: 8 }}>
+                                    <div className="flex items-center gap-2">
+                                        <Settings2 size={12} style={{ color: 'var(--primary)' }} />
+                                        <h3 className="ds-label ds-strong">{t('controlPanel.virtualDisplayEngine')}</h3>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        {/* v4: Flex Display toggle */}
+                                        <Tooltip text={t('controlPanel.flexDisplayTooltip')}>
+                                            <button
+                                                type="button"
+                                                aria-pressed={!!config.flexDisplay}
+                                                onClick={() => handleChange('flexDisplay', !config.flexDisplay)}
+                                                className="ds-btn-tertiary"
+                                                style={config.flexDisplay ? { color: 'var(--primary)' } : undefined}
+                                                title={t('controlPanel.flexDisplay')}
+                                            >
+                                                <span className="ds-badge" data-live={config.flexDisplay ? 'true' : 'false'}>
+                                                    {t('controlPanel.flexDisplay')}
+                                                </span>
+                                            </button>
+                                        </Tooltip>
+                                        <button
+                                            type="button"
+                                            aria-pressed={!!config.aspectRatioLock}
+                                            onClick={() => handleChange('aspectRatioLock', !config.aspectRatioLock)}
+                                            className="ds-btn-tertiary"
+                                            style={config.aspectRatioLock ? { color: 'var(--primary)' } : undefined}
+                                            title={t('controlPanel.ratioLockTitle')}
+                                        >
+                                            {config.aspectRatioLock ? <Lock size={10} /> : <Unlock size={10} />}
+                                            <span>{t('controlPanel.ratioLock')}</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+                                    <VDSlider
+                                        label={t('controlPanel.width')}
+                                        value={config.vdWidth || 1920}
+                                        min={480} max={3840}
+                                        unit="px"
+                                        onChange={(val: number) => {
+                                            if (config.aspectRatioLock && config.vdWidth && config.vdHeight) {
+                                                const ratio = config.vdHeight / config.vdWidth;
+                                                setConfig({ ...config, vdWidth: val, vdHeight: Math.round(val * ratio) });
+                                            } else {
+                                                handleChange('vdWidth', val);
+                                            }
+                                        }}
+                                    />
+                                    <VDSlider
+                                        label={t('controlPanel.height')}
+                                        value={config.vdHeight || 1080}
+                                        min={360} max={2160}
+                                        unit="px"
+                                        onChange={(val: number) => {
+                                            if (config.aspectRatioLock && config.vdWidth && config.vdHeight) {
+                                                const ratio = config.vdWidth / config.vdHeight;
+                                                setConfig({ ...config, vdHeight: val, vdWidth: Math.round(val * ratio) });
+                                            } else {
+                                                handleChange('vdHeight', val);
+                                            }
+                                        }}
+                                    />
+                                    <div className="space-y-1">
+                                        <div className="flex justify-between items-center">
+                                            <div className="flex items-center gap-1.5">
+                                                <span className="ds-label">{t('controlPanel.uiScaling')}</span>
+                                                <Tooltip text={t('controlPanel.uiScalingTooltip')} placement="top" />
+                                            </div>
+                                            <span className="ds-caption tabular-nums" style={{ color: 'var(--primary)' }}>{config.vdDpi || 420} DPI</span>
+                                        </div>
+                                        <input
+                                            type="range"
+                                            min={120}
+                                            max={640}
+                                            value={config.vdDpi || 420}
+                                            onChange={(e) => handleChange('vdDpi', parseInt(e.target.value))}
+                                            className="ds-range w-full"
+                                        />
+                                    </div>
+                                    <CustomSelect
+                                        label={t('controlPanel.quickPresets')}
+                                        value={(() => {
+                                            const w = config.vdWidth;
+                                            const h = config.vdHeight;
+                                            if (w === 1920 && h === 1080) return "1080p";
+                                            if (w === 2560 && h === 1440) return "1440p";
+                                            if (w === 3840 && h === 2160) return "4k";
+                                            if (w === 2560 && h === 1080) return "ultrawide";
+                                            return "custom";
+                                        })()}
+                                        onChange={(val: string) => {
+                                            if (val === '1080p') setConfig({ ...config, vdWidth: 1920, vdHeight: 1080 });
+                                            if (val === '1440p') setConfig({ ...config, vdWidth: 2560, vdHeight: 1440 });
+                                            if (val === '4k') setConfig({ ...config, vdWidth: 3840, vdHeight: 2160 });
+                                            if (val === 'ultrawide') setConfig({ ...config, vdWidth: 2560, vdHeight: 1080 });
+                                        }}
+                                        options={[
+                                            { value: "1080p", label: t('controlPanel.preset1080p') },
+                                            { value: "1440p", label: t('controlPanel.preset1440p') },
+                                            { value: "4k", label: t('controlPanel.preset4k') },
+                                            { value: "ultrawide", label: t('controlPanel.presetUltrawide') },
+                                        ]}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="space-y-2.5">
+                                <PerformanceGrid showResolution={false} />
+                                <BitrateControl label={t('controlPanel.bitrate')} value={config.bitrate || 8} onChange={(v) => handleChange('bitrate', v)} />
+                                {/* v4: Background Color for Desktop mode */}
+                                <div className="space-y-1">
+                                    <div className="flex items-center gap-1.5">
+                                        <span className="ds-label">{t('controlPanel.backgroundColor')}</span>
+                                        <Tooltip text={t('controlPanel.backgroundColorTooltip')} placement="top" />
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <div
+                                            className="shrink-0"
+                                            style={{ width: 20, height: 20, borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-base)', backgroundColor: config.backgroundColor || '#222222' }}
+                                        />
+                                        <input
+                                            type="text"
+                                            placeholder="#1a1a1a"
+                                            value={config.backgroundColor || ''}
+                                            onChange={(e) => handleChange('backgroundColor', e.target.value)}
+                                            className="ds-input flex-1 font-mono"
+                                        />
+                                        {config.backgroundColor && (
+                                            <button type="button" onClick={() => handleChange('backgroundColor', '')} className="ds-btn-tertiary">
+                                                {t('controlPanel.backgroundColorNone')}
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </section>
+
+            <div className="pt-2">
+                {!isRunning ? (
+                    <button
+                        type="button"
+                        onClick={onStart}
+                        className="ds-btn ds-btn-primary w-full"
+                        style={{ padding: '12px 16px' }}
+                    >
+                        <span className="flex items-center justify-center gap-3">
+                            <Play size={18} />
+                            {config.sessionMode === 'mirror'
+                                ? ((config.hidKeyboard || config.hidMouse) && config.otgPure ? t('controlPanel.initializeOtg') : t('controlPanel.startMission'))
+                                : config.sessionMode === 'camera' ? t('controlPanel.engageCamera') : t('controlPanel.ejectToDesktop')}
+                        </span>
+                    </button>
+                ) : (
+                    <button
+                        type="button"
+                        onClick={onStop}
+                        className="ds-btn ds-btn-danger w-full"
+                        style={{ padding: '12px 16px' }}
+                    >
+                        <span className="flex items-center justify-center gap-3">
+                            <Square size={18} />
+                            {t('controlPanel.stopSession')}
+                        </span>
+                    </button>
+                )}
+            </div>
+        </main>
+    );
+}
