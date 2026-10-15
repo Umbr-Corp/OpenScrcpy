@@ -68,3 +68,7 @@ environment.systemPackages = [
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Security
+
+Found a vulnerability? Read [SECURITY.md](SECURITY.md) — report it privately, never in a public issue.
