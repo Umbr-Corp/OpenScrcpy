@@ -32,7 +32,7 @@
 
 1. Download the latest release from [Releases](https://github.com/Umbr-Corp/OpenScrcpy/releases).
 2. Enable **USB debugging** on your Android device (plus **Wireless debugging** for Wi-Fi connections).
-3. Follow the full walkthrough in [GUIDE.md](GUIDE.md).
+3. Follow the full walkthrough in [GUIDE.md](GUIDE.md) or the [Wiki](https://github.com/Umbr-Corp/OpenScrcpy/wiki).
 
 ---
 
