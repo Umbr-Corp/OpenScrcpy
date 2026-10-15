@@ -1,7 +1,7 @@
 <p align="center">
   <img src="icon.png" width="128" height="128" alt="OpenScrcpy Icon">
   <br>
-  <h1>OpenScrcpy v1 beta</h1>
+  <h1>OpenScrcpy</h1>
   <strong>Control your Android from the desktop — mirror, camera, and virtual display in one clean dashboard.</strong>
   <br><br>
   <code>v1.0.0-beta</code> · <code>MIT</code> · <code>Linux / Windows / macOS</code>
