@@ -135,7 +135,7 @@ export default function Header({ colorMode, onColorModeChange, binaryStatus, onD
                             </p>
                             <div className="flex gap-2 w-full">
                                 <a
-                                    href="https://github.com/yanhenrique-dev/OpenScrcpy"
+                                    href="https://github.com/Umbr-Corp/OpenScrcpy"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="ds-btn ds-btn-secondary flex-1"
@@ -143,7 +143,7 @@ export default function Header({ colorMode, onColorModeChange, binaryStatus, onD
                                     {t('header.aboutRepository')} <ExternalLink size={12} />
                                 </a>
                                 <a
-                                    href="https://github.com/yanhenrique-dev/OpenScrcpy/releases"
+                                    href="https://github.com/Umbr-Corp/OpenScrcpy/releases"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="ds-btn ds-btn-secondary flex-1"

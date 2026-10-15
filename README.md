@@ -4,7 +4,7 @@
   <h1>OpenScrcpy</h1>
   <strong>Control your Android from the desktop — mirror, camera, and virtual display in one clean dashboard.</strong>
   <br><br>
-  <code>v1.0.0-beta</code> · <code>MIT</code> · <code>Linux / Windows / macOS</code>
+  <code>v1.0.0</code> · <code>MIT</code> · <code>Linux / Windows / macOS</code>
 </p>
 
 ---
@@ -30,7 +30,7 @@
 
 ## Quick Start
 
-1. Download the latest release from [Releases](https://github.com/yanhenrique-dev/OpenScrcpy/releases).
+1. Download the latest release from [Releases](https://github.com/Umbr-Corp/OpenScrcpy/releases).
 2. Enable **USB debugging** on your Android device (plus **Wireless debugging** for Wi-Fi connections).
 3. Follow the full walkthrough in [GUIDE.md](GUIDE.md).
 
@@ -53,7 +53,7 @@
 To install it permanently with a desktop launcher, add the flake to your system's `flake.nix`:
 
 ```nix
-inputs.openscrcpy.url = "github:yanhenrique-dev/OpenScrcpy";
+inputs.openscrcpy.url = "github:Umbr-Corp/OpenScrcpy";
 ```
 
 Then add it to your system packages:

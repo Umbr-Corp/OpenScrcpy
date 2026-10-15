@@ -18,7 +18,7 @@
         pkgs = nixpkgs.legacyPackages.${system};
 
         pname = "openscrcpy";
-        version = "1.0.0-beta";
+        version = "1.0.0";
 
         # Fetch the source code from GitHub.
         # NOTE: refresh `hash` after pushing (nix flake update).
@@ -124,7 +124,7 @@
 
           meta = with pkgs.lib; {
             description = "A modern desktop GUI for controlling Android devices";
-            homepage = "https://github.com/yanhenrique-dev/OpenScrcpy";
+            homepage = "https://github.com/Umbr-Corp/OpenScrcpy";
             license = licenses.mit;
             maintainers = [ "yanhenrique-dev" ];
           };
