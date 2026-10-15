@@ -163,9 +163,9 @@ export const en = {
         preset4k: '4K ultra',
         presetUltrawide: '21:9 ultra-wide',
         initializeOtg: 'Initialize OTG',
-        startMission: 'Start mission',
-        engageCamera: 'Engage camera',
-        ejectToDesktop: 'Eject to desktop',
+        startMission: 'Start mirroring',
+        engageCamera: 'Start camera',
+        ejectToDesktop: 'Start virtual display',
         stopSession: 'Stop session',
         // v4 features
         flexDisplay: 'Flex display',
@@ -178,6 +178,7 @@ export const en = {
         backgroundColorTooltip: 'Hex color for the window background/letterbox area (e.g. #1a1a1a). Leave blank for default dark gray. (scrcpy v4+)',
         backgroundColorNone: 'Default',
         badgeNew: 'New',
+        cameraControls: 'Camera controls',
         // v4.1 features
         ignoreEncoderConstraints: 'Ignore encoder constraints',
         ignoreEncoderConstraintsTooltip: 'Skip video encoder size constraints entirely. Use this if scrcpy fails to start or has resolution issues due to the device reporting incorrect encoder limits (scrcpy v4.1+).',
@@ -266,6 +267,7 @@ export const en = {
     alerts: {
         noDeviceSelectedTitle: 'No Device Selected',
         noDeviceSelectedMessage: "Please select a device from the sidebar to continue. Hint: If you just connected your phone, click 'Refresh' in the sidebar to update the list.",
+        noDeviceForListOptions: 'Select a device from the sidebar to list its options.',
         updateAvailableTitle: 'Update Available',
         updateAvailableMessage: 'A new version of Scrcpy (v{latest}) is available. Your installed version is v{local}. Would you like to update now?',
         updateBtn: 'Update Now',

@@ -180,6 +180,7 @@ export const ar: Translations = {
         backgroundColorTooltip: 'لون الخلفية بصيغة Hex (مثل ‎#1a1a1a). اتركه فارغًا لاستخدام اللون الرمادي الداكن الافتراضي (Scrcpy v4+).',
         backgroundColorNone: 'الافتراضي',
         badgeNew: 'جديد',
+        cameraControls: 'أدوات الكاميرا',
         // v4.1 features
         ignoreEncoderConstraints: 'Ignore Encoder Constraints',
         ignoreEncoderConstraintsTooltip: 'Skip video encoder size constraints entirely. Use this if scrcpy fails to start or has resolution issues due to the device reporting incorrect encoder limits (scrcpy v4.1+).'
@@ -268,6 +269,7 @@ export const ar: Translations = {
     alerts: {
         noDeviceSelectedTitle: 'لم يتم تحديد جهاز',
         noDeviceSelectedMessage: 'يرجى اختيار جهاز من الشريط الجانبي للمتابعة. تلميح: إذا قمت بتوصيل هاتفك للتو، فانقر على "تحديث" في الشريط الجانبي لتحديث القائمة.',
+        noDeviceForListOptions: 'اختر جهازًا من القائمة الجانبية أولًا.',
         updateAvailableTitle: 'يتوفر تحديث',
         updateAvailableMessage: 'يتوفر إصدار جديد من Scrcpy (v{latest}). الإصدار المثبت لديك هو v{local}. هل ترغب في التحديث الآن؟',
         updateBtn: 'تحديث الآن',

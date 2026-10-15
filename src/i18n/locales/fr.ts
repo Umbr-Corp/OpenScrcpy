@@ -162,9 +162,9 @@ export const fr: Translations = {
         preset4k: '4K Ultra',
         presetUltrawide: '21:9 Ultra-Large',
         initializeOtg: 'Initialiser OTG',
-        startMission: 'Démarrer la Mission',
-        engageCamera: 'Activer la Caméra',
-        ejectToDesktop: 'Éjecter vers le Bureau',
+        startMission: 'Démarrer le miroir',
+        engageCamera: 'Démarrer la caméra',
+        ejectToDesktop: 'Démarrer l’affichage virtuel',
         stopSession: 'Arrêter la Session',
         // v4 features
         flexDisplay: 'Affichage Flexible',
@@ -177,6 +177,7 @@ export const fr: Translations = {
         backgroundColorTooltip: 'Couleur hex pour le fond/letterbox de la fenêtre (ex. #1a1a1a). Laisser vide pour gris foncé par défaut. (scrcpy v4+)',
         backgroundColorNone: 'Défaut',
         badgeNew: 'NOUVEAU',
+        cameraControls: 'Réglages caméra',
         // v4.1 features
         ignoreEncoderConstraints: 'Ignore Encoder Constraints',
         ignoreEncoderConstraintsTooltip: 'Skip video encoder size constraints entirely. Use this if scrcpy fails to start or has resolution issues due to the device reporting incorrect encoder limits (scrcpy v4.1+).',
@@ -265,6 +266,7 @@ export const fr: Translations = {
     alerts: {
         noDeviceSelectedTitle: 'Aucun Appareil Sélectionné',
         noDeviceSelectedMessage: "Veuillez sélectionner un appareil dans la barre latérale pour continuer. Astuce : si vous venez de connecter votre téléphone, cliquez sur « Actualiser » dans la barre latérale pour mettre à jour la liste.",
+        noDeviceForListOptions: 'Sélectionnez un appareil dans la barre latérale pour voir ses options.',
         updateAvailableTitle: 'Mise à jour disponible',
         updateAvailableMessage: 'Une nouvelle version de Scrcpy (v{latest}) est disponible. Votre version installée est v{local}. Voulez-vous mettre à jour maintenant ?',
         updateBtn: 'Mettre à jour',

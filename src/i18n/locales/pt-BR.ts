@@ -162,9 +162,9 @@ export const ptBR: Translations = {
         preset4k: '4K Ultra',
         presetUltrawide: '21:9 Ultra-Wide',
         initializeOtg: 'Inicializar OTG',
-        startMission: 'Iniciar Missão',
-        engageCamera: 'Ativar Câmera',
-        ejectToDesktop: 'Ejetar para Desktop',
+        startMission: 'Iniciar espelhamento',
+        engageCamera: 'Iniciar câmera',
+        ejectToDesktop: 'Iniciar tela virtual',
         stopSession: 'Encerrar Sessão',
         // v4 features
         flexDisplay: 'Tela Flexível',
@@ -177,6 +177,7 @@ export const ptBR: Translations = {
         backgroundColorTooltip: 'Cor hex para o fundo/letterbox da janela (ex. #1a1a1a). Deixe vazio para cinza escuro padrão. (scrcpy v4+)',
         backgroundColorNone: 'Padrão',
         badgeNew: 'NOVO',
+        cameraControls: 'Controles da câmera',
         // v4.1 features
         ignoreEncoderConstraints: 'Ignore Encoder Constraints',
         ignoreEncoderConstraintsTooltip: 'Skip video encoder size constraints entirely. Use this if scrcpy fails to start or has resolution issues due to the device reporting incorrect encoder limits (scrcpy v4.1+).',
@@ -265,6 +266,7 @@ export const ptBR: Translations = {
     alerts: {
         noDeviceSelectedTitle: 'Nenhum Dispositivo Selecionado',
         noDeviceSelectedMessage: 'Selecione um dispositivo na barra lateral para continuar. Dica: se você acabou de conectar seu telefone, clique em "Atualizar" na barra lateral para atualizar a lista.',
+        noDeviceForListOptions: 'Selecione um dispositivo na barra lateral para ver as opções dele.',
         updateAvailableTitle: 'Atualização Disponível',
         updateAvailableMessage: 'Uma nova versão do Scrcpy (v{latest}) está disponível. Sua versão instalada é v{local}. Deseja atualizar agora?',
         updateBtn: 'Atualizar Agora',

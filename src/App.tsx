@@ -355,6 +355,12 @@ function App() {
                   onListOptions={(arg) => {
                     if (activeDevice) {
                       listScrcpyOptions(activeDevice, arg);
+                    } else {
+                      showAlert(
+                        t('alerts.noDeviceSelectedTitle'),
+                        t('alerts.noDeviceForListOptions'),
+                        'warning'
+                      );
                     }
                   }}
                 />

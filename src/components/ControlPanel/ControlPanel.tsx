@@ -33,6 +33,9 @@ const BitrateControl = ({ label, value, onChange }: { label: string, value: numb
         setLocalValue(value);
     }, [value]);
 
+    // Commit on release (mouse/touch) or key-up, so keyboard nudges also apply.
+    const commit = () => onChange(localValue);
+
     return (
         <div className="space-y-1">
             <div className="flex justify-between items-center">
@@ -44,9 +47,11 @@ const BitrateControl = ({ label, value, onChange }: { label: string, value: numb
                 min="1"
                 max="50"
                 value={localValue}
+                aria-label={label}
                 onChange={(e) => setLocalValue(parseInt(e.target.value))}
-                onMouseUp={() => onChange(localValue)}
-                onTouchEnd={() => onChange(localValue)}
+                onMouseUp={commit}
+                onTouchEnd={commit}
+                onKeyUp={commit}
                 className="ds-range w-full"
             />
         </div>
@@ -56,6 +61,8 @@ const BitrateControl = ({ label, value, onChange }: { label: string, value: numb
 const VDSlider = ({ label, value, min, max, unit = "", onChange }: { label: string, value: number, min: number, max: number, unit?: string, onChange: (val: number) => void }) => {
     const [localValue, setLocalValue] = useState(value);
     useEffect(() => setLocalValue(value), [value]);
+
+    const commit = () => onChange(localValue);
 
     return (
         <div className="space-y-1">
@@ -68,8 +75,11 @@ const VDSlider = ({ label, value, min, max, unit = "", onChange }: { label: stri
                 min={min}
                 max={max}
                 value={localValue}
+                aria-label={label}
                 onChange={(e) => setLocalValue(parseInt(e.target.value))}
-                onMouseUp={() => onChange(localValue)}
+                onMouseUp={commit}
+                onTouchEnd={commit}
+                onKeyUp={commit}
                 className="ds-range w-full"
             />
         </div>
@@ -471,10 +481,10 @@ export default function ControlPanel({
                                 />
                             </div>
 
-                            {/* v4: Camera Torch + Camera Zoom */}
+                            {/* Camera torch + zoom */}
                             <div className="ds-panel p-2.5 space-y-2">
                                 <div className="flex items-center gap-2">
-                                    <span className="ds-caption" style={{ color: 'var(--text-muted)' }}>v4 controls</span>
+                                    <span className="ds-caption" style={{ color: 'var(--text-muted)' }}>{t('controlPanel.cameraControls')}</span>
                                     <span className="ds-badge">{t('controlPanel.badgeNew')}</span>
                                 </div>
                                 <Tooltip text={t('controlPanel.cameraTorchTooltip')} block>
@@ -504,7 +514,7 @@ export default function ControlPanel({
                             </div>
 
                             <div className="space-y-2.5">
-                                <PerformanceGrid showCodec={false} />
+                                <PerformanceGrid showCodec={false} showResolution={false} />
                                 <BitrateControl label={t('controlPanel.bitrate')} value={config.bitrate || 8} onChange={(v) => handleChange('bitrate', v)} />
                             </div>
                         </div>

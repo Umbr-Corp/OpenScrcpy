@@ -162,9 +162,9 @@ languages: {
         preset4k: '4K Ultra',
         presetUltrawide: '21:9 Ultra-Wide',
         initializeOtg: 'Inisialisasi OTG',
-        startMission: 'Mulai Sesi',
-        engageCamera: 'Aktifkan Kamera',
-        ejectToDesktop: 'Pindahkan ke Jendela Sendiri',
+        startMission: 'Mulai pencerminan',
+        engageCamera: 'Mulai kamera',
+        ejectToDesktop: 'Mulai layar virtual',
         stopSession: 'Hentikan Sesi',
         // v4 features
         flexDisplay: 'Tampilan Fleksibel',
@@ -177,6 +177,7 @@ languages: {
         backgroundColorTooltip: 'Warna hex untuk latar belakang jendela/area letterbox (mis. #1a1a1a). Kosongkan untuk abu-abu gelap bawaan. (scrcpy v4+)',
         backgroundColorNone: 'Bawaan',
         badgeNew: 'BARU',
+        cameraControls: 'Kontrol kamera',
         // v4.1 features
         ignoreEncoderConstraints: 'Ignore Encoder Constraints',
         ignoreEncoderConstraintsTooltip: 'Skip video encoder size constraints entirely. Use this if scrcpy fails to start or has resolution issues due to the device reporting incorrect encoder limits (scrcpy v4.1+).',
@@ -265,6 +266,7 @@ languages: {
     alerts: {
         noDeviceSelectedTitle: 'Belum Ada HP yang Dipilih',
         noDeviceSelectedMessage: "Pilih HP di menu samping untuk lanjut. Tips: Jika HP baru dicolok/disambung, klik 'Segarkan' untuk memperbarui daftar.",
+        noDeviceForListOptions: 'Pilih perangkat dari sidebar untuk melihat opsinya.',
         updateAvailableTitle: 'Ada Update',
         updateAvailableMessage: 'Versi baru Scrcpy (v{latest}) tersedia. Versi yang terpasang adalah v{local}. Mau update sekarang?',
         updateBtn: 'Update Sekarang',

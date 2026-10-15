@@ -162,9 +162,9 @@ export const zhCN: Translations = {
         preset4k: '4K 超高清',
         presetUltrawide: '21:9 超宽屏',
         initializeOtg: '初始化 OTG',
-        startMission: '开始',
-        engageCamera: '启用摄像头',
-        ejectToDesktop: '投射到桌面',
+        startMission: '开始镜像',
+        engageCamera: '开始相机',
+        ejectToDesktop: '开始虚拟显示',
         stopSession: '停止',
         // v4 features
         flexDisplay: '弹性显示',
@@ -177,6 +177,7 @@ export const zhCN: Translations = {
         backgroundColorTooltip: '窗口背景/外边区域的十六进制颜色（如 #1a1a1a）。留空则使用默认深灰色。（scrcpy v4+）',
         backgroundColorNone: '默认',
         badgeNew: '新',
+        cameraControls: '相机控制',
         // v4.1 features
         ignoreEncoderConstraints: '忽略编码器限制',
         ignoreEncoderConstraintsTooltip: '完全跳过视频编码器尺寸限制。如果 scrcpy 因设备报告错误的编码器限制而无法启动或出现分辨率问题，请使用此选项（scrcpy v4.1+）。'
@@ -265,6 +266,7 @@ export const zhCN: Translations = {
     alerts: {
         noDeviceSelectedTitle: '未选择设备',
         noDeviceSelectedMessage: '请先从侧边栏选择一个设备再继续。提示：如果你刚接入手机，请点击侧边栏中的“刷新”以更新列表。',
+        noDeviceForListOptions: '请先在侧边栏选择一个设备以查看其选项。',
         updateAvailableTitle: '有可用更新',
         updateAvailableMessage: 'Scrcpy 新版本 (v{latest}) 已发布。您当前安装的版本是 v{local}。是否现在更新？',
         updateBtn: '立即更新',

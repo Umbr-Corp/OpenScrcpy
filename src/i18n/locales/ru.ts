@@ -167,8 +167,8 @@ export const ru: Translations = {
     preset4k: '4K Ultra',
     presetUltrawide: '21:9 сверхширокий',
     initializeOtg: 'Инициализировать OTG',
-    startMission: 'Начать миссию',
-    engageCamera: 'Включить камеру',
+    startMission: 'Начать зеркалирование',
+    engageCamera: 'Начать камеру',
     ejectToDesktop: 'Перейти на рабочий стол',
     stopSession: 'Остановить сессию',
     // v4 features
@@ -182,6 +182,7 @@ export const ru: Translations = {
     backgroundColorTooltip: 'HEX-цвет фона/полос окна (ex. #1a1a1a). Оставьте пустым для тёмно-серого по умолчанию. (scrcpy v4+)',
     backgroundColorNone: 'По умолчанию',
     badgeNew: 'НОВОЕ',
+    cameraControls: 'Параметры камеры',
     // v4.1 features
     ignoreEncoderConstraints: 'Игнорировать ограничения энкодера',
     ignoreEncoderConstraintsTooltip: 'Полностью пропустить ограничения размера видеоэнкодера. Используйте, если scrcpy не запускается или возникают проблемы с разрешением из-за некорректных данных об ограничениях, сообщаемых устройством (scrcpy v4.1+).',
@@ -276,6 +277,7 @@ export const ru: Translations = {
   alerts: {
     noDeviceSelectedTitle: 'Устройство не выбрано',
     noDeviceSelectedMessage: 'Выберите устройство на боковой панели, чтобы продолжить.\nПодсказка: если вы только что подключили телефон, нажмите «Обновить» на боковой панели, чтобы обновить список.',
+    noDeviceForListOptions: 'Выберите устройство на боковой панели, чтобы получить список параметров.',
     updateAvailableTitle: 'Доступно обновление',
     updateAvailableMessage: 'Доступна новая версия Scrcpy (v{latest}). Ваша установленная версия, v{local}. Хотите обновить сейчас?',
     updateBtn: 'Обновить сейчас',
