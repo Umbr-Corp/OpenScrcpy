@@ -177,6 +177,7 @@ export const zhCN: Translations = {
         backgroundColorTooltip: '窗口背景/外边区域的十六进制颜色（如 #1a1a1a）。留空则使用默认深灰色。（scrcpy v4+）',
         backgroundColorNone: '默认',
         badgeNew: '新',
+        cameraControls: '相机控制',
         // v4.1 features
         ignoreEncoderConstraints: '忽略编码器限制',
         ignoreEncoderConstraintsTooltip: '完全跳过视频编码器尺寸限制。如果 scrcpy 因设备报告错误的编码器限制而无法启动或出现分辨率问题，请使用此选项（scrcpy v4.1+）。'
@@ -272,6 +273,7 @@ export const zhCN: Translations = {
     },
     logs: {
         noDeviceForDragDrop: '[警告] 未选择设备，无法执行拖放操作。',
+        noDeviceForListOptions: '请先在侧边栏选择一个设备以查看其选项。',
         customScrcpyPathSet: '[系统] 自定义 scrcpy 路径已设置为：{path}',
         customScrcpyPathCleared: '[系统] 已清除自定义 scrcpy 路径，正在使用系统默认值。',
         newDeviceDiscovered: '[系统] 发现新设备：{device}',

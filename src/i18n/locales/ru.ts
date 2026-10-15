@@ -167,8 +167,8 @@ export const ru: Translations = {
     preset4k: '4K Ultra',
     presetUltrawide: '21:9 сверхширокий',
     initializeOtg: 'Инициализировать OTG',
-    startMission: 'Начать миссию',
-    engageCamera: 'Включить камеру',
+    startMission: 'Начать зеркалирование',
+    engageCamera: 'Начать камеру',
     ejectToDesktop: 'Перейти на рабочий стол',
     stopSession: 'Остановить сессию',
     // v4 features
@@ -182,6 +182,7 @@ export const ru: Translations = {
     backgroundColorTooltip: 'HEX-цвет фона/полос окна (ex. #1a1a1a). Оставьте пустым для тёмно-серого по умолчанию. (scrcpy v4+)',
     backgroundColorNone: 'По умолчанию',
     badgeNew: 'НОВОЕ',
+    cameraControls: 'Параметры камеры',
     // v4.1 features
     ignoreEncoderConstraints: 'Игнорировать ограничения энкодера',
     ignoreEncoderConstraintsTooltip: 'Полностью пропустить ограничения размера видеоэнкодера. Используйте, если scrcpy не запускается или возникают проблемы с разрешением из-за некорректных данных об ограничениях, сообщаемых устройством (scrcpy v4.1+).',
@@ -284,6 +285,7 @@ export const ru: Translations = {
 
   logs: {
     noDeviceForDragDrop: '[WARN] Устройство не выбрано для операции drag-and-drop.',
+    noDeviceForListOptions: 'Выберите устройство на боковой панели, чтобы получить список параметров.',
     customScrcpyPathSet: '[SYSTEM] Пользовательский путь к scrcpy задан: {path}',
     customScrcpyPathCleared: '[SYSTEM] Пользовательский путь к scrcpy сброшен.\nИспользуется системное значение по умолчанию.',
     newDeviceDiscovered: '[SYSTEM] Обнаружено новое устройство: {device}',

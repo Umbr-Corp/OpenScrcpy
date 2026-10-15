@@ -177,6 +177,7 @@ export const fr: Translations = {
         backgroundColorTooltip: 'Couleur hex pour le fond/letterbox de la fenêtre (ex. #1a1a1a). Laisser vide pour gris foncé par défaut. (scrcpy v4+)',
         backgroundColorNone: 'Défaut',
         badgeNew: 'NOUVEAU',
+        cameraControls: 'Réglages caméra',
         // v4.1 features
         ignoreEncoderConstraints: 'Ignore Encoder Constraints',
         ignoreEncoderConstraintsTooltip: 'Skip video encoder size constraints entirely. Use this if scrcpy fails to start or has resolution issues due to the device reporting incorrect encoder limits (scrcpy v4.1+).',
@@ -272,6 +273,7 @@ export const fr: Translations = {
     },
     logs: {
         noDeviceForDragDrop: '[WARN] Aucun appareil sélectionné pour l\'opération de glisser-déposer.',
+        noDeviceForListOptions: 'Sélectionnez un appareil dans la barre latérale pour lister ses options.',
         customScrcpyPathSet: '[SYSTEM] Chemin scrcpy personnalisé défini sur : {path}',
         customScrcpyPathCleared: '[SYSTEM] Chemin scrcpy personnalisé effacé. Utilisation du système par défaut.',
         newDeviceDiscovered: '[SYSTEM] Nouvel appareil détecté : {device}',

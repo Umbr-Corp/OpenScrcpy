@@ -163,7 +163,7 @@ export const zhTW: Translations = {
         presetUltrawide: '21:9 超寬',
         initializeOtg: '初始化 OTG',
         startMission: '開始',
-        engageCamera: '啟用相機',
+        engageCamera: '開始相機',
         ejectToDesktop: '輸出至桌面',
         stopSession: '停止',
         // v4 features
@@ -177,6 +177,7 @@ export const zhTW: Translations = {
         backgroundColorTooltip: '視窗背景/外邊區域的十六進位顏色（如 #1a1a1a）。留白則使用預設深灰色。（scrcpy v4+）',
         backgroundColorNone: '預設',
         badgeNew: '新',
+        cameraControls: '相機控制',
         // v4.1 features
         ignoreEncoderConstraints: '忽略編碼器限制',
         ignoreEncoderConstraintsTooltip: '完全跳過視訊編碼器尺寸限制。若因裝置回報錯誤的編碼器限制導致 scrcpy 無法啟動或解析度問題，請使用此項 (scrcpy v4.1+)。',
@@ -272,6 +273,7 @@ export const zhTW: Translations = {
     },
     logs: {
         noDeviceForDragDrop: '[警告] 未選擇裝置，無法進行拖放操作。',
+        noDeviceForListOptions: '請先在側邊欄選擇一個裝置以查看其選項。',
         customScrcpyPathSet: '[系統] 自訂 scrcpy 路徑設為：{path}',
         customScrcpyPathCleared: '[系統] 已清除自訂 scrcpy 路徑。正在使用系統預設路徑。',
         newDeviceDiscovered: '[系統] 發現新裝置：{device}',

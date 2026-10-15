@@ -180,6 +180,7 @@ export const ar: Translations = {
         backgroundColorTooltip: 'لون الخلفية بصيغة Hex (مثل ‎#1a1a1a). اتركه فارغًا لاستخدام اللون الرمادي الداكن الافتراضي (Scrcpy v4+).',
         backgroundColorNone: 'الافتراضي',
         badgeNew: 'جديد',
+        cameraControls: 'أدوات الكاميرا',
         // v4.1 features
         ignoreEncoderConstraints: 'Ignore Encoder Constraints',
         ignoreEncoderConstraintsTooltip: 'Skip video encoder size constraints entirely. Use this if scrcpy fails to start or has resolution issues due to the device reporting incorrect encoder limits (scrcpy v4.1+).'
@@ -275,6 +276,7 @@ export const ar: Translations = {
     },
     logs: {
         noDeviceForDragDrop: '[تحذير] لم يتم تحديد جهاز لعملية السحب والإفلات.',
+        noDeviceForListOptions: 'اختر جهازًا من القائمة الجانبية أولاً.',
         customScrcpyPathSet: '[النظام] تم تعيين مسار Scrcpy المخصص إلى: {path}',
         customScrcpyPathCleared: '[النظام] تمت إزالة مسار Scrcpy المخصص. سيتم استخدام المسار الافتراضي.',
         newDeviceDiscovered: '[النظام] تم اكتشاف جهاز جديد: {device}',

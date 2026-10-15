@@ -177,6 +177,7 @@ languages: {
         backgroundColorTooltip: 'Warna hex untuk latar belakang jendela/area letterbox (mis. #1a1a1a). Kosongkan untuk abu-abu gelap bawaan. (scrcpy v4+)',
         backgroundColorNone: 'Bawaan',
         badgeNew: 'BARU',
+        cameraControls: 'Kontrol kamera',
         // v4.1 features
         ignoreEncoderConstraints: 'Ignore Encoder Constraints',
         ignoreEncoderConstraintsTooltip: 'Skip video encoder size constraints entirely. Use this if scrcpy fails to start or has resolution issues due to the device reporting incorrect encoder limits (scrcpy v4.1+).',
@@ -272,6 +273,7 @@ languages: {
     },
     logs: {
         noDeviceForDragDrop: '[PERINGATAN] Pilih perangkat dulu sebelum drag & drop file.',
+        noDeviceForListOptions: 'Pilih perangkat dari sidebar untuk melihat opsinya.',
         customScrcpyPathSet: '[SISTEM] Jalur scrcpy diatur manual ke: {path}',
         customScrcpyPathCleared: '[SISTEM] Jalur scrcpy manual dihapus. Menggunakan bawaan sistem.',
         newDeviceDiscovered: '[SISTEM] Perangkat baru ditemukan: {device}',

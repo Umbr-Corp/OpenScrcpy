@@ -163,9 +163,9 @@ export const en = {
         preset4k: '4K ultra',
         presetUltrawide: '21:9 ultra-wide',
         initializeOtg: 'Initialize OTG',
-        startMission: 'Start mission',
-        engageCamera: 'Engage camera',
-        ejectToDesktop: 'Eject to desktop',
+        startMission: 'Start mirroring',
+        engageCamera: 'Start camera',
+        ejectToDesktop: 'Start virtual display',
         stopSession: 'Stop session',
         // v4 features
         flexDisplay: 'Flex display',
@@ -178,6 +178,7 @@ export const en = {
         backgroundColorTooltip: 'Hex color for the window background/letterbox area (e.g. #1a1a1a). Leave blank for default dark gray. (scrcpy v4+)',
         backgroundColorNone: 'Default',
         badgeNew: 'New',
+        cameraControls: 'Camera controls',
         // v4.1 features
         ignoreEncoderConstraints: 'Ignore encoder constraints',
         ignoreEncoderConstraintsTooltip: 'Skip video encoder size constraints entirely. Use this if scrcpy fails to start or has resolution issues due to the device reporting incorrect encoder limits (scrcpy v4.1+).',
@@ -273,6 +274,7 @@ export const en = {
     },
     logs: {
         noDeviceForDragDrop: '[WARN] No device selected for drag-and-drop operation.',
+        noDeviceForListOptions: 'Select a device from the sidebar to list its options.',
         customScrcpyPathSet: '[SYSTEM] Custom scrcpy path set to: {path}',
         customScrcpyPathCleared: '[SYSTEM] Custom scrcpy path cleared. Using system default.',
         newDeviceDiscovered: '[SYSTEM] New device discovered: {device}',
