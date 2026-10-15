@@ -49,7 +49,7 @@ export const en = {
         manualStep4Before: 'Select the unzipped folder containing the',
         manualStep4Executable: 'scrcpy',
         manualStep4After: 'executable.',
-        manualNote: 'Note: ScrcpyGUI will remember this custom path for future sessions.',
+        manualNote: 'Note: OpenScrcpy will remember this custom path for future sessions.',
         gotIt: 'Got it'
     },
     sidebar: {

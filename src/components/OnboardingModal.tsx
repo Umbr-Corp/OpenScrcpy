@@ -43,7 +43,7 @@ export default function OnboardingModal({
                     <div className="hidden md:flex md:w-1/3 p-8 flex-col justify-between relative overflow-hidden" style={{ background: 'var(--bg-input)', borderRight: '1px solid var(--border-base)' }}>
                         <div className="relative z-10">
                             <h2 className="ds-body ds-strong">
-                                scrcpy <span style={{ color: 'var(--primary)' }}>GUI</span>
+                                Open<span style={{ color: 'var(--primary)' }}>Scrcpy</span>
                             </h2>
                             <p className="ds-caption mt-2" style={{ color: 'var(--primary)' }}>{t('onboarding.coreInitialization')}</p>
                         </div>

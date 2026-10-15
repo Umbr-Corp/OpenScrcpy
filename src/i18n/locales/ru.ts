@@ -51,7 +51,7 @@ export const ru: Translations = {
     manualStep4Before: 'Выберите распакованную папку, содержащую исполняемый файл',
     manualStep4Executable: 'scrcpy',
     manualStep4After: '.',
-    manualNote: 'Примечание: ScrcpyGUI запомнит этот пользовательский путь для следующих запусков.',
+    manualNote: 'Примечание: OpenScrcpy запомнит этот пользовательский путь для следующих запусков.',
     gotIt: 'Понятно',
   },
 

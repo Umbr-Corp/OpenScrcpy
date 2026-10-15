@@ -48,7 +48,7 @@ export const zhTW: Translations = {
         manualStep4Before: '選擇包含',
         manualStep4Executable: 'scrcpy',
         manualStep4After: '執行檔的資料夾。',
-        manualNote: '注意：ScrcpyGUI 會記住此自訂路徑。',
+        manualNote: '注意：OpenScrcpy 會記住此自訂路徑。',
         gotIt: '了解'
     },
     sidebar: {

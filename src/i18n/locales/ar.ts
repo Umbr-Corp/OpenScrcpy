@@ -51,7 +51,7 @@ export const ar: Translations = {
         manualStep4Before: 'حدد المجلد الذي يحتوي على الملف التنفيذي',
         manualStep4Executable: 'scrcpy',
         manualStep4After: '.',
-        manualNote: 'ملاحظة: سيتذكر ScrcpyGUI هذا المسار المخصص في الجلسات القادمة.',
+        manualNote: 'ملاحظة: سيتذكر OpenScrcpy هذا المسار المخصص في الجلسات القادمة.',
         gotIt: 'حسنًا'
     },
     sidebar: {
@@ -124,7 +124,7 @@ export const ar: Translations = {
         graphicsRenderer: 'محرك الرسوميات',
         vsync: 'المزامنة العمودية VSync',
         vsyncHint: 'منع تمزق الشاشة',
-        vsyncTooltip: 'مزامنة عرض الإطارات مع معدل تحديث الشاشة لمنع تمزق الصورة. مفعلة افتراضيًا في Scrcpy GUI. يمكن إيقافها لتقليل تأخر الإدخال قليلاً.',
+        vsyncTooltip: 'مزامنة عرض الإطارات مع معدل تحديث الشاشة لمنع تمزق الصورة. مفعلة افتراضيًا في OpenScrcpy. يمكن إيقافها لتقليل تأخر الإدخال قليلاً.',
         rendererAuto: 'تلقائي',
         custom: 'مخصص',
         webcamProTip: 'نصيحة لاستخدام الهاتف ككاميرا ويب',

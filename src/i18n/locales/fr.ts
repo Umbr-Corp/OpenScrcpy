@@ -48,7 +48,7 @@ export const fr: Translations = {
         manualStep4Before: 'Sélectionnez le dossier décompressé contenant l\'exécutable',
         manualStep4Executable: 'scrcpy',
         manualStep4After: '.',
-        manualNote: 'Remarque : ScrcpyGUI mémorisera ce chemin personnalisé pour les prochaines sessions.',
+        manualNote: 'Remarque : OpenScrcpy mémorisera ce chemin personnalisé pour les prochaines sessions.',
         gotIt: 'Compris'
     },
     sidebar: {

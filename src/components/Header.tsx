@@ -106,7 +106,7 @@ export default function Header({ colorMode, onColorModeChange, binaryStatus, onD
             {/* Brand — left */}
             <div className="flex items-center gap-2 flex-shrink-0">
                 <h1 className="ds-body ds-strong" style={{ fontSize: 17, lineHeight: '20px', color: 'var(--text-base)' }}>
-                    Scrcpy GUI
+                    OpenScrcpy
                 </h1>
                 <span className="ds-badge">V{version}</span>
             </div>

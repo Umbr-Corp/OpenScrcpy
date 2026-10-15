@@ -1,6 +1,6 @@
-# 📖 ScrcpyGUI v4 - User Guide
+# 📖 OpenScrcpy v1 beta - User Guide
 
-This guide provides everything you need to know to get started with ScrcpyGUI, from initial setup to advanced feature usage.
+This guide provides everything you need to know to get started with OpenScrcpy, from initial setup to advanced feature usage.
 
 ---
 
@@ -16,7 +16,7 @@ This guide provides everything you need to know to get started with ScrcpyGUI, f
 
 ## 🛠 Prerequisites
 
-Before using ScrcpyGUI, ensure you have the following:
+Before using OpenScrcpy, ensure you have the following:
 
 - **Android Device**: Running Android 5.0 or higher (Android 12+ required for Camera Mode, Android 11+ for Desktop Mode).
 - **USB Cable**: A high-quality data cable (avoid charging-only cables).
@@ -28,14 +28,14 @@ Before using ScrcpyGUI, ensure you have the following:
 ## 🚀 Installation Guide
 
 ### 🪟 Windows
-1. Download the latest `.exe` or `.msi` from the [Releases](https://github.com/kil0bit-kb/scrcpy-gui/releases) page.
+1. Download the latest `.exe` or `.msi` from the [Releases](https://github.com/yanhenrique-dev/OpenScrcpy/releases) page.
 2. Run the installer or standalone executable.
-3. **Smart Setup**: On the first launch, ScrcpyGUI will detect if you have `scrcpy` installed. If not, it will offer a one-click download.
-4. **Automated Updates**: When launched, ScrcpyGUI v4 will automatically check your installed version against Genymobile's latest official release and prompt you with a beautiful one-click update modal if a new version is available.
+3. **Smart Setup**: On the first launch, OpenScrcpy will detect if you have `scrcpy` installed. If not, it will offer a one-click download.
+4. **Automated Updates**: When launched, OpenScrcpy v1 beta will automatically check your installed version against Genymobile's latest official release and prompt you with a beautiful one-click update modal if a new version is available.
 
 ### 🍎 macOS
 1. Download the `.dmg` file matching your architecture (**Intel** or **Apple Silicon/M1/M2**).
-2. Drag the **ScrcpyGUI** icon into your **Applications** folder.
+2. Drag the **OpenScrcpy** icon into your **Applications** folder.
 3. **Security Note**: Since the app is not signed by Apple, you may need to:
    - Go to **System Settings > Privacy & Security**.
    - Scroll down to "Security" and click **Open Anyway**.
@@ -52,7 +52,7 @@ Before using ScrcpyGUI, ensure you have the following:
 
 ## 📱 Android Device Setup
 
-You must enable **Developer Options** and **USB Debugging** on your phone for ScrcpyGUI to communicate with it.
+You must enable **Developer Options** and **USB Debugging** on your phone for OpenScrcpy to communicate with it.
 
 ### 1. Enable Developer Options
 1. Open **Settings** on your Android device.
@@ -74,23 +74,23 @@ You must enable **Developer Options** and **USB Debugging** on your phone for Sc
 1. Plug your phone into your PC via USB.
 2. A prompt will appear on your phone: "Allow USB Debugging?".
 3. Check **Always allow from this computer** and tap **Allow**.
-4. In ScrcpyGUI, click the **Refresh** button in the header if the device doesn't appear automatically.
+4. In OpenScrcpy, click the **Refresh** button in the header if the device doesn't appear automatically.
 
 ### Wireless Connection (Android 11+)
 1. Ensure both your Phone and PC are on the **same Wi-Fi network**.
 2. In **Developer Options**, toggle ON **Wireless Debugging**.
 3. Tap on the **Wireless Debugging** text to enter its settings.
-4. In ScrcpyGUI, click the **🌐 Wireless Connect** button in the sidebar.
+4. In OpenScrcpy, click the **🌐 Wireless Connect** button in the sidebar.
 5. Tap **Pair device with pairing code** on your phone.
-6. Enter the **IP Address**, **Port**, and **Pairing Code** shown on your phone into ScrcpyGUI.
-7. Once paired, ScrcpyGUI will remember your device for future one-click connections!
+6. Enter the **IP Address**, **Port**, and **Pairing Code** shown on your phone into OpenScrcpy.
+7. Once paired, OpenScrcpy will remember your device for future one-click connections!
 
 ---
 
 ## 🎮 Feature Guide
 
 ### ⌨️ HID Keyboard & Mouse (OTG Mode)
-ScrcpyGUI v4 features advanced hardware simulation (HID) for a lag-free experience.
+OpenScrcpy v1 beta features advanced hardware simulation (HID) for a lag-free experience.
 - **HID Keyboard**: Simulates a real USB keyboard. This is the **only way** to fix issues with Polish accents, special characters, and international layouts.
 - **HID Mouse**: Provides a high-precision, native cursor feel. Eliminates the "double cursor" or lag found in standard mirroring.
 - **Pure HID (No Mirror)**: Perfect for when you only want to use your PC as a "controller" for your phone (e.g., typing long messages or playing games while looking at the phone screen).
@@ -98,14 +98,14 @@ ScrcpyGUI v4 features advanced hardware simulation (HID) for a lag-free experien
 ### 📹 Pro Camera Mode (Webcam)
 Turn your phone into a professional, hardware-controlled webcam.
 1. Change **Capture Source** to **Camera**.
-2. **Scan Lenses**: Click the **Refresh Lenses** button. ScrcpyGUI will instantly scan your phone and populate a spacious dropdown with all physical camera lenses, native resolutions, and zoom capabilities.
+2. **Scan Lenses**: Click the **Refresh Lenses** button. OpenScrcpy will instantly scan your phone and populate a spacious dropdown with all physical camera lenses, native resolutions, and zoom capabilities.
 3. **Select Camera**: Select your desired lens (e.g., Ultra-Wide, Front, or Main Back) from the list.
 4. **Advanced Controls**:
    - **Camera Torch**: Toggle your device's physical flashlight on or off directly from the GUI.
    - **Camera Zoom**: Adjust the dynamic zoom level slider (1.0x to 5.0x) to frame your feed perfectly.
-   - **Failsafe Resolution**: Standard high-megapixel phone lenses can crash scrcpy if launched at their native 4:3 photo resolution (e.g., `4080x3060`) due to hardware video encoder limits. ScrcpyGUI automatically maps your selected resolution and defaults to a safe 1080p standard size (`1920x1080`), ensuring a crash-free experience.
+   - **Failsafe Resolution**: Standard high-megapixel phone lenses can crash scrcpy if launched at their native 4:3 photo resolution (e.g., `4080x3060`) due to hardware video encoder limits. OpenScrcpy automatically maps your selected resolution and defaults to a safe 1080p standard size (`1920x1080`), ensuring a crash-free experience.
    - **FPS**: Set to **Auto** (recommended) to let your device run at its native capture frame rate, or select **30 FPS**.
-5. **OBS Integration**: Open **OBS Studio**, add a "Window Capture" source, and select the ScrcpyGUI window. Use OBS's **Virtual Camera** to use your phone in Zoom, Teams, or Discord.
+5. **OBS Integration**: Open **OBS Studio**, add a "Window Capture" source, and select the OpenScrcpy window. Use OBS's **Virtual Camera** to use your phone in Zoom, Teams, or Discord.
 
 ### 🖥️ Desktop Mode (Virtual Display)
 Turn your Android device into a secondary workspace or virtual monitor.
@@ -122,12 +122,12 @@ You can choose which graphics renderer scrcpy should request for video display.
 
 Renderer choices are **capability-aware**:
 
-- ScrcpyGUI reads what your installed scrcpy build advertises.
-- ScrcpyGUI filters options by your host OS.
+- OpenScrcpy reads what your installed scrcpy build advertises.
+- OpenScrcpy filters options by your host OS.
 - Unsupported options are hidden automatically (e.g. Metal is only shown on macOS).
 
 ### 📂 File Transfers & APKs
-- **Install Apps**: Just drag an `.apk` file from your PC and drop it anywhere into the ScrcpyGUI window.
+- **Install Apps**: Just drag an `.apk` file from your PC and drop it anywhere into the OpenScrcpy window.
 - **Transfer Files**: Drag any file into the window to automatically push it to your device's `/sdcard/Download/` folder.
 
 ---
@@ -141,4 +141,4 @@ Renderer choices are **capability-aware**:
 
 ---
 
-*Found a bug or have a suggestion? Open an issue on [GitHub](https://github.com/kil0bit-kb/scrcpy-gui/issues)!*
+*Found a bug or have a suggestion? Open an issue on [GitHub](https://github.com/yanhenrique-dev/OpenScrcpy/issues)!*

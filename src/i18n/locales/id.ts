@@ -48,7 +48,7 @@ languages: {
         manualStep4Before: 'Pilih folder yang diekstrak',
         manualStep4Executable: 'scrcpy',
         manualStep4After: 'execute',
-        manualNote: 'Catatan: ScrcpyGUI akan mengingat jalur kustom ini untuk sesi mendatang.',
+        manualNote: 'Catatan: OpenScrcpy akan mengingat jalur kustom ini untuk sesi mendatang.',
         gotIt: 'Mengerti'
     },
     sidebar: {

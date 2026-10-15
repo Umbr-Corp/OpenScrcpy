@@ -65,7 +65,7 @@ export default class ErrorBoundary extends React.Component<Props, State> {
         };
 
         try {
-            const fileName = `scrcpy-gui-diagnostics-${Date.now()}.json`;
+            const fileName = `openscrcpy-diagnostics-${Date.now()}.json`;
             await invoke('save_report', {
                 content: JSON.stringify(diagnostics, null, 2),
                 name: fileName

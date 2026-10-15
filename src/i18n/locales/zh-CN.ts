@@ -48,7 +48,7 @@ export const zhCN: Translations = {
         manualStep4Before: '选择包含',
         manualStep4Executable: 'scrcpy',
         manualStep4After: '可执行文件的文件夹。',
-        manualNote: '注意：ScrcpyGUI 会记住这个自定义路径，以便后续会话继续使用。',
+        manualNote: '注意：OpenScrcpy 会记住这个自定义路径，以便后续会话继续使用。',
         gotIt: '知道了'
     },
     sidebar: {

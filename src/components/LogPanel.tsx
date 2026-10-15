@@ -71,7 +71,7 @@ const LogPanel = memo(({ logs, onClear, onAddLog, onRunCommand }: LogPanelProps)
                             };
 
                             try {
-                                const fileName = `scrcpy-gui-logs-${Date.now()}.json`;
+                                const fileName = `openscrcpy-logs-${Date.now()}.json`;
                                 await invoke('save_report', {
                                     content: JSON.stringify(data, null, 2),
                                     name: fileName

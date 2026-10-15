@@ -1,18 +1,14 @@
 <p align="center">
-  <img src="icon.png" width="128" height="128" alt="ScrcpyGUI Icon">
+  <img src="icon.png" width="128" height="128" alt="OpenScrcpy Icon">
   <br>
-  <h1>ScrcpyGUI v1 beta</h1>
+  <h1>OpenScrcpy v1 beta</h1>
   <strong>A premium, high-performance Android control experience.</strong>
-</p>
-
-<p align="center">
-  <img width="850" alt="ScrcpyGUI Interface" src="https://github.com/user-attachments/assets/a416fcd3-295a-4a01-8769-6f9da429b028" />
 </p>
 
 
 ---
 
-ScrcpyGUI v1 is a modern, feature-rich GUI for [scrcpy](https://github.com/Genymobile/scrcpy), built with **Tauri v2**, **React 19**, and **Rust**. It transforms your Android device into a professional tool for gaming, development, and content creation.
+OpenScrcpy v1 is a modern, feature-rich GUI for [scrcpy](https://github.com/Genymobile/scrcpy), built with **Tauri v2**, **React 19**, and **Rust**. It transforms your Android device into a professional tool for gaming, development, and content creation.
 
 ## 🚀 Key Features
 
@@ -67,38 +63,34 @@ To learn how to enable **USB Debugging**, set up **Wireless Pairing**, or instal
 To install it permanently with a desktop launcher, add the flake to your system's `flake.nix`:
 
 ```nix
-inputs.scrcpy-gui.url = "github:kil0bit-kb/scrcpy-gui";
+inputs.openscrcpy.url = "github:yanhenrique-dev/OpenScrcpy";
 ```
 
 Then add it to your system packages:
 
 ```nix
 environment.systemPackages = [
-  inputs.scrcpy-gui.packages.${pkgs.system}.default
+  inputs.openscrcpy.packages.${pkgs.system}.default
 ];
 ```
 ---
 
 ## 💖 Support the Project
 
-If ScrcpyGUI helps you in your daily workflow, consider supporting its development on Patreon. Your support keeps the project alive and independent!
-
-<p align="left">
-  <a href="https://www.patreon.com/cw/KB_kilObit">
-    <img src="https://img.shields.io/badge/Patreon-Support_KB-F96854?style=for-the-badge&logo=patreon" alt="Support on Patreon">
-  </a>
-</p>
+If OpenScrcpy helps you in your daily workflow, star the repo and report issues on [GitHub](https://github.com/yanhenrique-dev/OpenScrcpy). Your support keeps the project alive and independent!
 
 ---
 
 ## � Acknowledgments
 
-ScrcpyGUI is made possible by the following amazing open-source projects:
+OpenScrcpy is made possible by the following amazing open-source projects:
 
 - **[scrcpy](https://github.com/Genymobile/scrcpy)**: The ultra-fast core engine.
 - **[Tauri](https://tauri.app/)**: The secure, lightweight framework for the desktop app.
 - **[Lucide Icons](https://lucide.dev/)**: For the clean and consistent iconography.
 - **[React](https://react.dev/)**: Powering the modern, interactive interface.
+
+Based on ScrcpyGUI by KB (kil0bit).
 
 ---
 
@@ -106,5 +98,5 @@ ScrcpyGUI is made possible by the following amazing open-source projects:
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-*ScrcpyGUI is an independent project and is not affiliated with Genymobile or scrcpy authors.*
+*OpenScrcpy is an independent project and is not affiliated with Genymobile or scrcpy authors.*
 

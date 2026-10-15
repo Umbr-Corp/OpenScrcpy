@@ -1,5 +1,5 @@
 {
-  description = "ScrcpyGUI Native NixOS Flake";
+  description = "OpenScrcpy Native NixOS Flake";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -17,13 +17,14 @@
       let
         pkgs = nixpkgs.legacyPackages.${system};
 
-        pname = "scrcpy-gui";
-        version = "4.0.0";
+        pname = "openscrcpy";
+        version = "1.0.0-beta";
 
-        # Fetch the source code from GitHub
+        # Fetch the source code from GitHub.
+        # NOTE: refresh `hash` after pushing (nix flake update).
         src = pkgs.fetchFromGitHub {
-          owner = "kil0bit-kb";
-          repo = "scrcpy-gui";
+          owner = "yanhenrique-dev";
+          repo = "OpenScrcpy";
           rev = "v${version}";
           hash = "sha256-BvkfgCL+C5TxORfW9Bl6lyHGpR30G9RiLxmms5ug5H8=";
         };
@@ -82,10 +83,10 @@
 
           desktopItems = [
             (pkgs.makeDesktopItem {
-              name = "scrcpy-gui-v3";
-              exec = "scrcpy-gui-v3";
-              icon = "scrcpy-gui-v3";
-              desktopName = "ScrcpyGUI";
+              name = "openscrcpy";
+              exec = "openscrcpy";
+              icon = "openscrcpy";
+              desktopName = "OpenScrcpy";
               comment = "A modern GUI for Scrcpy written in React and Rust";
               categories = [
                 "Utility"
@@ -97,15 +98,15 @@
           postInstall = ''
             # Install the standard sized icons
             for size in 32 64 128; do
-              install -Dm644 icons/''${size}x''${size}.png $out/share/icons/hicolor/''${size}x''${size}/apps/scrcpy-gui-v3.png
+              install -Dm644 icons/''${size}x''${size}.png $out/share/icons/hicolor/''${size}x''${size}/apps/openscrcpy.png
             done
 
             # Install high-resolution icons for GNOME/modern desktops
-            install -Dm644 icons/128x128@2x.png $out/share/icons/hicolor/256x256/apps/scrcpy-gui-v3.png
-            install -Dm644 icons/icon.png $out/share/icons/hicolor/512x512/apps/scrcpy-gui-v3.png
+            install -Dm644 icons/128x128@2x.png $out/share/icons/hicolor/256x256/apps/openscrcpy.png
+            install -Dm644 icons/icon.png $out/share/icons/hicolor/512x512/apps/openscrcpy.png
 
             # Install a fallback pixmap just in case
-            install -Dm644 icons/icon.png $out/share/pixmaps/scrcpy-gui-v3.png
+            install -Dm644 icons/icon.png $out/share/pixmaps/openscrcpy.png
           '';
 
           preFixup = ''
@@ -123,9 +124,9 @@
 
           meta = with pkgs.lib; {
             description = "A modern GUI for Scrcpy written in React and Rust";
-            homepage = "https://github.com/kil0bit-kb/scrcpy-gui";
+            homepage = "https://github.com/yanhenrique-dev/OpenScrcpy";
             license = licenses.mit;
-            maintainers = [ "bonnjalal" ];
+            maintainers = [ "yanhenrique-dev" ];
           };
         };
       }

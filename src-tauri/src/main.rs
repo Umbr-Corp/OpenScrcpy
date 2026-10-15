@@ -2,5 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    scrcpy_gui_v3_lib::run()
+    open_scrcpy_lib::run()
 }

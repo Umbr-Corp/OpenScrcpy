@@ -2063,7 +2063,7 @@ pub async fn download_scrcpy(window: Window) -> Result<(), String> {
     window.emit("scrcpy-log", format!("[SYSTEM] Detecting platform: {} ({})", os_tag, arch_tag)).unwrap();
     window.emit("scrcpy-status", json!({ "type": "downloading", "success": true, "message": format!("Fetching latest {} release...", arch_tag) })).unwrap();
 
-    let client = reqwest::Client::builder().user_agent("ScrcpyGui-Downloader").build().map_err(|e| e.to_string())?;
+    let client = reqwest::Client::builder().user_agent("OpenScrcpy-Downloader").build().map_err(|e| e.to_string())?;
     
     // Attempt to get the latest release via API, but fallback to redirect scraping if rate limited
     let mut download_url = String::new();
@@ -2262,7 +2262,7 @@ pub fn get_local_scrcpy_version(custom_path: Option<String>) -> Option<String> {
 
 pub async fn get_latest_scrcpy_version() -> Result<String, String> {
     let client = reqwest::Client::builder()
-        .user_agent("ScrcpyGui-Updater")
+        .user_agent("OpenScrcpy-Updater")
         .build()
         .map_err(|e| e.to_string())?;
 
