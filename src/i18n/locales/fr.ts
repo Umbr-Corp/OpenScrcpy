@@ -162,9 +162,9 @@ export const fr: Translations = {
         preset4k: '4K Ultra',
         presetUltrawide: '21:9 Ultra-Large',
         initializeOtg: 'Initialiser OTG',
-        startMission: 'Démarrer la Mission',
-        engageCamera: 'Activer la Caméra',
-        ejectToDesktop: 'Éjecter vers le Bureau',
+        startMission: 'Démarrer le miroir',
+        engageCamera: 'Démarrer la caméra',
+        ejectToDesktop: 'Démarrer l’affichage virtuel',
         stopSession: 'Arrêter la Session',
         // v4 features
         flexDisplay: 'Affichage Flexible',
@@ -266,6 +266,7 @@ export const fr: Translations = {
     alerts: {
         noDeviceSelectedTitle: 'Aucun Appareil Sélectionné',
         noDeviceSelectedMessage: "Veuillez sélectionner un appareil dans la barre latérale pour continuer. Astuce : si vous venez de connecter votre téléphone, cliquez sur « Actualiser » dans la barre latérale pour mettre à jour la liste.",
+        noDeviceForListOptions: 'Sélectionnez un appareil dans la barre latérale pour voir ses options.',
         updateAvailableTitle: 'Mise à jour disponible',
         updateAvailableMessage: 'Une nouvelle version de Scrcpy (v{latest}) est disponible. Votre version installée est v{local}. Voulez-vous mettre à jour maintenant ?',
         updateBtn: 'Mettre à jour',
@@ -273,7 +274,6 @@ export const fr: Translations = {
     },
     logs: {
         noDeviceForDragDrop: '[WARN] Aucun appareil sélectionné pour l\'opération de glisser-déposer.',
-        noDeviceForListOptions: 'Sélectionnez un appareil dans la barre latérale pour lister ses options.',
         customScrcpyPathSet: '[SYSTEM] Chemin scrcpy personnalisé défini sur : {path}',
         customScrcpyPathCleared: '[SYSTEM] Chemin scrcpy personnalisé effacé. Utilisation du système par défaut.',
         newDeviceDiscovered: '[SYSTEM] Nouvel appareil détecté : {device}',

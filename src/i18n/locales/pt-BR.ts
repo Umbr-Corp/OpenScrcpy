@@ -162,9 +162,9 @@ export const ptBR: Translations = {
         preset4k: '4K Ultra',
         presetUltrawide: '21:9 Ultra-Wide',
         initializeOtg: 'Inicializar OTG',
-        startMission: 'Iniciar Missão',
-        engageCamera: 'Ativar Câmera',
-        ejectToDesktop: 'Ejetar para Desktop',
+        startMission: 'Iniciar espelhamento',
+        engageCamera: 'Iniciar câmera',
+        ejectToDesktop: 'Iniciar tela virtual',
         stopSession: 'Encerrar Sessão',
         // v4 features
         flexDisplay: 'Tela Flexível',
@@ -266,6 +266,7 @@ export const ptBR: Translations = {
     alerts: {
         noDeviceSelectedTitle: 'Nenhum Dispositivo Selecionado',
         noDeviceSelectedMessage: 'Selecione um dispositivo na barra lateral para continuar. Dica: se você acabou de conectar seu telefone, clique em "Atualizar" na barra lateral para atualizar a lista.',
+        noDeviceForListOptions: 'Selecione um dispositivo na barra lateral para ver as opções dele.',
         updateAvailableTitle: 'Atualização Disponível',
         updateAvailableMessage: 'Uma nova versão do Scrcpy (v{latest}) está disponível. Sua versão instalada é v{local}. Deseja atualizar agora?',
         updateBtn: 'Atualizar Agora',
@@ -273,7 +274,6 @@ export const ptBR: Translations = {
     },
     logs: {
         noDeviceForDragDrop: '[WARN] Nenhum dispositivo selecionado para a operação de arrastar e soltar.',
-        noDeviceForListOptions: 'Selecione um dispositivo na barra lateral para listar as opções dele.',
         customScrcpyPathSet: '[SYSTEM] Caminho personalizado do scrcpy definido como: {path}',
         customScrcpyPathCleared: '[SYSTEM] Caminho personalizado do scrcpy removido. Usando padrão do sistema.',
         newDeviceDiscovered: '[SYSTEM] Novo dispositivo descoberto: {device}',

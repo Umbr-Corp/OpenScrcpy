@@ -267,6 +267,7 @@ export const en = {
     alerts: {
         noDeviceSelectedTitle: 'No Device Selected',
         noDeviceSelectedMessage: "Please select a device from the sidebar to continue. Hint: If you just connected your phone, click 'Refresh' in the sidebar to update the list.",
+        noDeviceForListOptions: 'Select a device from the sidebar to list its options.',
         updateAvailableTitle: 'Update Available',
         updateAvailableMessage: 'A new version of Scrcpy (v{latest}) is available. Your installed version is v{local}. Would you like to update now?',
         updateBtn: 'Update Now',
@@ -274,7 +275,6 @@ export const en = {
     },
     logs: {
         noDeviceForDragDrop: '[WARN] No device selected for drag-and-drop operation.',
-        noDeviceForListOptions: 'Select a device from the sidebar to list its options.',
         customScrcpyPathSet: '[SYSTEM] Custom scrcpy path set to: {path}',
         customScrcpyPathCleared: '[SYSTEM] Custom scrcpy path cleared. Using system default.',
         newDeviceDiscovered: '[SYSTEM] New device discovered: {device}',

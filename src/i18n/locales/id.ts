@@ -162,9 +162,9 @@ languages: {
         preset4k: '4K Ultra',
         presetUltrawide: '21:9 Ultra-Wide',
         initializeOtg: 'Inisialisasi OTG',
-        startMission: 'Mulai Sesi',
-        engageCamera: 'Aktifkan Kamera',
-        ejectToDesktop: 'Pindahkan ke Jendela Sendiri',
+        startMission: 'Mulai pencerminan',
+        engageCamera: 'Mulai kamera',
+        ejectToDesktop: 'Mulai layar virtual',
         stopSession: 'Hentikan Sesi',
         // v4 features
         flexDisplay: 'Tampilan Fleksibel',
@@ -266,6 +266,7 @@ languages: {
     alerts: {
         noDeviceSelectedTitle: 'Belum Ada HP yang Dipilih',
         noDeviceSelectedMessage: "Pilih HP di menu samping untuk lanjut. Tips: Jika HP baru dicolok/disambung, klik 'Segarkan' untuk memperbarui daftar.",
+        noDeviceForListOptions: 'Pilih perangkat dari sidebar untuk melihat opsinya.',
         updateAvailableTitle: 'Ada Update',
         updateAvailableMessage: 'Versi baru Scrcpy (v{latest}) tersedia. Versi yang terpasang adalah v{local}. Mau update sekarang?',
         updateBtn: 'Update Sekarang',
@@ -273,7 +274,6 @@ languages: {
     },
     logs: {
         noDeviceForDragDrop: '[PERINGATAN] Pilih perangkat dulu sebelum drag & drop file.',
-        noDeviceForListOptions: 'Pilih perangkat dari sidebar untuk melihat opsinya.',
         customScrcpyPathSet: '[SISTEM] Jalur scrcpy diatur manual ke: {path}',
         customScrcpyPathCleared: '[SISTEM] Jalur scrcpy manual dihapus. Menggunakan bawaan sistem.',
         newDeviceDiscovered: '[SISTEM] Perangkat baru ditemukan: {device}',

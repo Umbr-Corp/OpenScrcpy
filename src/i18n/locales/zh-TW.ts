@@ -162,9 +162,9 @@ export const zhTW: Translations = {
         preset4k: '4K 超高畫質',
         presetUltrawide: '21:9 超寬',
         initializeOtg: '初始化 OTG',
-        startMission: '開始',
+        startMission: '開始鏡像',
         engageCamera: '開始相機',
-        ejectToDesktop: '輸出至桌面',
+        ejectToDesktop: '開始虛擬顯示',
         stopSession: '停止',
         // v4 features
         flexDisplay: '彈性顯示',
@@ -266,6 +266,7 @@ export const zhTW: Translations = {
     alerts: {
         noDeviceSelectedTitle: '未選擇裝置',
         noDeviceSelectedMessage: "請從側邊栏選擇一個裝置以繼續。提示：如果您剛連接手機，請點擊側邊栏的「重新整理」以更新清單。",
+        noDeviceForListOptions: '請先在側邊欄選擇一個裝置以查看其選項。',
         updateAvailableTitle: '有可用更新',
         updateAvailableMessage: 'Scrcpy 新版本 (v{latest}) 已發布。您目前安裝的版本是 v{local}。是否現在更新？',
         updateBtn: '立即更新',
@@ -273,7 +274,6 @@ export const zhTW: Translations = {
     },
     logs: {
         noDeviceForDragDrop: '[警告] 未選擇裝置，無法進行拖放操作。',
-        noDeviceForListOptions: '請先在側邊欄選擇一個裝置以查看其選項。',
         customScrcpyPathSet: '[系統] 自訂 scrcpy 路徑設為：{path}',
         customScrcpyPathCleared: '[系統] 已清除自訂 scrcpy 路徑。正在使用系統預設路徑。',
         newDeviceDiscovered: '[系統] 發現新裝置：{device}',

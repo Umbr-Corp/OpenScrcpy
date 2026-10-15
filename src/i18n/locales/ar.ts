@@ -269,6 +269,7 @@ export const ar: Translations = {
     alerts: {
         noDeviceSelectedTitle: 'لم يتم تحديد جهاز',
         noDeviceSelectedMessage: 'يرجى اختيار جهاز من الشريط الجانبي للمتابعة. تلميح: إذا قمت بتوصيل هاتفك للتو، فانقر على "تحديث" في الشريط الجانبي لتحديث القائمة.',
+        noDeviceForListOptions: 'اختر جهازًا من القائمة الجانبية أولًا.',
         updateAvailableTitle: 'يتوفر تحديث',
         updateAvailableMessage: 'يتوفر إصدار جديد من Scrcpy (v{latest}). الإصدار المثبت لديك هو v{local}. هل ترغب في التحديث الآن؟',
         updateBtn: 'تحديث الآن',
@@ -276,7 +277,6 @@ export const ar: Translations = {
     },
     logs: {
         noDeviceForDragDrop: '[تحذير] لم يتم تحديد جهاز لعملية السحب والإفلات.',
-        noDeviceForListOptions: 'اختر جهازًا من القائمة الجانبية أولاً.',
         customScrcpyPathSet: '[النظام] تم تعيين مسار Scrcpy المخصص إلى: {path}',
         customScrcpyPathCleared: '[النظام] تمت إزالة مسار Scrcpy المخصص. سيتم استخدام المسار الافتراضي.',
         newDeviceDiscovered: '[النظام] تم اكتشاف جهاز جديد: {device}',

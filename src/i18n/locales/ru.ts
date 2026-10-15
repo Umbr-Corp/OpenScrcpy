@@ -277,6 +277,7 @@ export const ru: Translations = {
   alerts: {
     noDeviceSelectedTitle: 'Устройство не выбрано',
     noDeviceSelectedMessage: 'Выберите устройство на боковой панели, чтобы продолжить.\nПодсказка: если вы только что подключили телефон, нажмите «Обновить» на боковой панели, чтобы обновить список.',
+    noDeviceForListOptions: 'Выберите устройство на боковой панели, чтобы получить список параметров.',
     updateAvailableTitle: 'Доступно обновление',
     updateAvailableMessage: 'Доступна новая версия Scrcpy (v{latest}). Ваша установленная версия, v{local}. Хотите обновить сейчас?',
     updateBtn: 'Обновить сейчас',
@@ -285,7 +286,6 @@ export const ru: Translations = {
 
   logs: {
     noDeviceForDragDrop: '[WARN] Устройство не выбрано для операции drag-and-drop.',
-    noDeviceForListOptions: 'Выберите устройство на боковой панели, чтобы получить список параметров.',
     customScrcpyPathSet: '[SYSTEM] Пользовательский путь к scrcpy задан: {path}',
     customScrcpyPathCleared: '[SYSTEM] Пользовательский путь к scrcpy сброшен.\nИспользуется системное значение по умолчанию.',
     newDeviceDiscovered: '[SYSTEM] Обнаружено новое устройство: {device}',
