@@ -49,7 +49,12 @@ languages: {
         manualStep4Executable: 'scrcpy',
         manualStep4After: 'execute',
         manualNote: 'Catatan: OpenScrcpy akan mengingat jalur kustom ini untuk sesi mendatang.',
-        gotIt: 'Mengerti'
+        gotIt: 'Mengerti',
+        aboutTitle: 'Tentang OpenScrcpy',
+        aboutDescription: 'Kendalikan Android dari desktop — mirror, kamera, dan layar virtual dalam satu dasbor yang bersih.',
+        aboutRepository: 'Repositori',
+        aboutReleases: 'Rilis',
+        aboutLicense: 'Dilisensikan di bawah Lisensi MIT'
     },
     sidebar: {
         deviceHub: 'Pusat Perangkat',

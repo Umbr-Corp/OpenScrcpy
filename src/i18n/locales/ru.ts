@@ -53,6 +53,11 @@ export const ru: Translations = {
     manualStep4After: '.',
     manualNote: 'Примечание: OpenScrcpy запомнит этот пользовательский путь для следующих запусков.',
     gotIt: 'Понятно',
+    aboutTitle: 'Об OpenScrcpy',
+    aboutDescription: 'Управляйте Android с компьютера — зеркалирование, камера и виртуальный дисплей в одной чистой панели.',
+    aboutRepository: 'Репозиторий',
+    aboutReleases: 'Релизы',
+    aboutLicense: 'Лицензия MIT',
   },
 
   sidebar: {

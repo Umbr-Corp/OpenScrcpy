@@ -49,7 +49,12 @@ export const zhCN: Translations = {
         manualStep4Executable: 'scrcpy',
         manualStep4After: '可执行文件的文件夹。',
         manualNote: '注意：OpenScrcpy 会记住这个自定义路径，以便后续会话继续使用。',
-        gotIt: '知道了'
+        gotIt: '知道了',
+        aboutTitle: '关于 OpenScrcpy',
+        aboutDescription: '在桌面上控制您的安卓设备——镜像、相机和虚拟显示，尽在一个简洁的面板中。',
+        aboutRepository: '代码仓库',
+        aboutReleases: '发布版本',
+        aboutLicense: '基于 MIT 许可证授权'
     },
     sidebar: {
         deviceHub: '设备中心',

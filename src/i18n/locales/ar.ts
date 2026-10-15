@@ -52,7 +52,12 @@ export const ar: Translations = {
         manualStep4Executable: 'scrcpy',
         manualStep4After: '.',
         manualNote: 'ملاحظة: سيتذكر OpenScrcpy هذا المسار المخصص في الجلسات القادمة.',
-        gotIt: 'حسنًا'
+        gotIt: 'حسنًا',
+        aboutTitle: 'حول OpenScrcpy',
+        aboutDescription: 'تحكم في جهاز Android من سطح المكتب — النسخ، الكاميرا، والشاشة الافتراضية في لوحة نظيفة.',
+        aboutRepository: 'المستودع',
+        aboutReleases: 'الإصدارات',
+        aboutLicense: 'مرخص بموجب رخصة MIT'
     },
     sidebar: {
         deviceHub: 'إدارة الأجهزة',

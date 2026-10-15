@@ -50,7 +50,12 @@ export const en = {
         manualStep4Executable: 'scrcpy',
         manualStep4After: 'executable.',
         manualNote: 'Note: OpenScrcpy will remember this custom path for future sessions.',
-        gotIt: 'Got it'
+        gotIt: 'Got it',
+        aboutTitle: 'About OpenScrcpy',
+        aboutDescription: 'Control your Android from the desktop — mirror, camera, and virtual display in one clean dashboard.',
+        aboutRepository: 'Repository',
+        aboutReleases: 'Releases',
+        aboutLicense: 'Licensed under the MIT License'
     },
     sidebar: {
         deviceHub: 'Device Hub',

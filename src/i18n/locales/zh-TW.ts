@@ -49,7 +49,12 @@ export const zhTW: Translations = {
         manualStep4Executable: 'scrcpy',
         manualStep4After: '執行檔的資料夾。',
         manualNote: '注意：OpenScrcpy 會記住此自訂路徑。',
-        gotIt: '了解'
+        gotIt: '了解',
+        aboutTitle: '關於 OpenScrcpy',
+        aboutDescription: '在桌面上控制您的安卓裝置——鏡像、相機與虛擬顯示，盡在一個簡潔的面板中。',
+        aboutRepository: '程式碼倉庫',
+        aboutReleases: '發佈版本',
+        aboutLicense: '基於 MIT 授權條款授權'
     },
     sidebar: {
         deviceHub: '裝置中心',

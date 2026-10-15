@@ -49,7 +49,12 @@ export const ptBR: Translations = {
         manualStep4Executable: 'scrcpy',
         manualStep4After: '.',
         manualNote: 'Observação: o OpenScrcpy lembrará deste caminho personalizado em sessões futuras.',
-        gotIt: 'Entendi'
+        gotIt: 'Entendi',
+        aboutTitle: 'Sobre o OpenScrcpy',
+        aboutDescription: 'Controle seu Android pelo computador — espelhamento, câmera e tela virtual em um painel limpo.',
+        aboutRepository: 'Repositório',
+        aboutReleases: 'Lançamentos',
+        aboutLicense: 'Licenciado sob a Licença MIT'
     },
     sidebar: {
         deviceHub: 'Hub de Dispositivos',

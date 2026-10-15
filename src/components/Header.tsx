@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Download, FolderOpen, RefreshCcw, HelpCircle, X, ExternalLink, Languages, ChevronDown, Sun, Moon, Monitor, Cpu } from 'lucide-react';
+import { Download, FolderOpen, RefreshCcw, HelpCircle, Info, X, ExternalLink, Languages, ChevronDown, Sun, Moon, Monitor, Cpu } from 'lucide-react';
 import { SUPPORTED_LOCALES, useI18n, type Locale } from '../i18n';
 
 interface HeaderProps {
@@ -17,6 +17,7 @@ interface HeaderProps {
 export default function Header({ colorMode, onColorModeChange, binaryStatus, onDownload, onSetPath, onResetPath, isDownloading, downloadProgress, version }: HeaderProps) {
     const { t, locale, setLocale, translations } = useI18n();
     const [showHelp, setShowHelp] = useState(false);
+    const [showAbout, setShowAbout] = useState(false);
     const [showLangMenu, setShowLangMenu] = useState(false);
     const [showEngineMenu, setShowEngineMenu] = useState(false);
     const langMenuRef = useRef<HTMLDivElement>(null);
@@ -95,6 +96,68 @@ export default function Header({ colorMode, onColorModeChange, binaryStatus, onD
 
                         <button
                             onClick={() => setShowHelp(false)}
+                            className="ds-btn ds-btn-primary w-full mt-6"
+                        >
+                            {t('header.gotIt')}
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {showAbout && (
+                <div
+                    className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+                    style={{ backgroundColor: 'color-mix(in srgb, var(--text-base) 40%, transparent)' }}
+                >
+                    <div className="ds-card rounded-lg shadow-xl max-w-md w-full p-6 ds-fade-in" role="dialog" aria-modal="true">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="ds-label ds-strong flex items-center gap-2" style={{ color: 'var(--text-base)' }}>
+                                <Info size={16} /> {t('header.aboutTitle')}
+                            </h3>
+                            <button
+                                onClick={() => setShowAbout(false)}
+                                className="ds-btn ds-btn-tertiary"
+                                aria-label={t('header.gotIt')}
+                            >
+                                <X size={16} />
+                            </button>
+                        </div>
+
+                        <div className="flex flex-col items-center text-center gap-3">
+                            <div className="flex items-center gap-2">
+                                <span className="ds-body ds-strong" style={{ fontSize: 20, color: 'var(--text-base)' }}>
+                                    OpenScrcpy
+                                </span>
+                                <span className="ds-badge">V{version}</span>
+                            </div>
+                            <p className="ds-body" style={{ color: 'var(--text-secondary)' }}>
+                                {t('header.aboutDescription')}
+                            </p>
+                            <div className="flex gap-2 w-full">
+                                <a
+                                    href="https://github.com/yanhenrique-dev/OpenScrcpy"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="ds-btn ds-btn-secondary flex-1"
+                                >
+                                    {t('header.aboutRepository')} <ExternalLink size={12} />
+                                </a>
+                                <a
+                                    href="https://github.com/yanhenrique-dev/OpenScrcpy/releases"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="ds-btn ds-btn-secondary flex-1"
+                                >
+                                    {t('header.aboutReleases')} <ExternalLink size={12} />
+                                </a>
+                            </div>
+                            <p className="ds-caption" style={{ color: 'var(--text-muted)' }}>
+                                {t('header.aboutLicense')}
+                            </p>
+                        </div>
+
+                        <button
+                            onClick={() => setShowAbout(false)}
                             className="ds-btn ds-btn-primary w-full mt-6"
                         >
                             {t('header.gotIt')}
@@ -231,6 +294,9 @@ export default function Header({ colorMode, onColorModeChange, binaryStatus, onD
                             </button>
                             <button onClick={() => { setShowEngineMenu(false); setShowHelp(true); }} className="ds-btn ds-btn-tertiary flex-1" title={t('header.setupHelpTitle')} aria-label={t('header.setupHelpTitle')}>
                                 <HelpCircle size={14} />
+                            </button>
+                            <button onClick={() => { setShowEngineMenu(false); setShowAbout(true); }} className="ds-btn ds-btn-tertiary flex-1" title={t('header.aboutTitle')} aria-label={t('header.aboutTitle')}>
+                                <Info size={14} />
                             </button>
                         </div>
                     </div>
