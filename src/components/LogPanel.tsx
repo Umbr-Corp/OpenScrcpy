@@ -13,11 +13,20 @@ interface LogPanelProps {
 const LogPanel = memo(({ logs, onClear, onAddLog, onRunCommand }: LogPanelProps) => {
     const { t } = useI18n();
     const containerRef = useRef<HTMLDivElement>(null);
+    // Stick to the bottom only while the user is already there. If they
+    // scroll up to read older lines, new logs must not yank them back down.
+    const stickRef = useRef(true);
     const [isLive, setIsLive] = useState(false);
     const [command, setCommand] = useState("");
 
+    const handleScroll = () => {
+        const el = containerRef.current;
+        if (!el) return;
+        stickRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 48;
+    };
+
     useEffect(() => {
-        if (containerRef.current) {
+        if (stickRef.current && containerRef.current) {
             containerRef.current.scrollTop = containerRef.current.scrollHeight;
         }
         if (logs.length > 0) {
@@ -102,7 +111,7 @@ const LogPanel = memo(({ logs, onClear, onAddLog, onRunCommand }: LogPanelProps)
             </div>
 
             {/* Terminal Body */}
-            <div ref={containerRef} className="flex-1 overflow-y-auto p-4 pt-2">
+            <div ref={containerRef} onScroll={handleScroll} className="flex-1 overflow-y-auto p-4 pt-2">
                 {logs.length === 0 ? (
                     <div className="h-full flex items-center justify-center">
                         <span className="ds-caption" style={{ color: '#AEAEAE' }}>{t('logPanel.waitingForSequence')}</span>
