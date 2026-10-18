@@ -1,0 +1,48 @@
+# CodeRabbit — configuração no nível de repositório.
+# Prioridade 2: sobrepõe as settings da UI (prioridade 4) e só perde para
+# global overrides. Diagnóstico em qualquer PR: "@coderabbitai configuration".
+# Schema: https://coderabbit.ai/integrations/schema.v2.json
+language: "pt-BR"
+early_access: false
+
+reviews:
+  # "chill" comenta só o que importa; "assertive" fica para auditorias pontuais
+  # (ativar por PR em vez de global).
+  profile: "chill"
+  request_changes_workflow: false   # nunca bloquear merge com REQUEST CHANGES
+  high_level_summary: true
+  poem: false
+  review_status: true
+  review_details: false
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches: ["main"]
+  path_filters:
+    - "!**/node_modules/**"
+    - "!**/dist/**"
+    - "!**/src-tauri/target/**"
+    - "!**/src-tauri/gen/**"
+    - "!**/*.lock"
+  path_instructions:
+    - path: "src-tauri/**"
+      instructions: >-
+        Backend Rust/Tauri 2 (comandos em src-tauri/src/commands.rs). O app executa
+        adb/scrcpy e o plugin shell: revisar com foco em segurança — validação de
+        entrada, paths de arquivo, injeção em comandos, e trims de "v" em versões.
+        Padrão de erro local: Result<_, String>. Não sugerir dependências novas
+        sem justificativa forte.
+    - path: "src/**"
+      instructions: >-
+        Frontend React 19 + TS + Tailwind 4. Design system próprio: usar as classes
+        ds-* de src/index.css em vez de estilos ad-hoc. Toda string visível passa
+        pelo i18n (src/i18n) — chaves novas precisam existir nos 8 locales:
+        pt-BR, en, fr, ru, id, zh-CN, zh-TW, ar. Interpolação usa chaves simples
+        {var} (ver src/i18n/index.tsx), não {{var}}.
+    - path: "src/**/__tests__/**"
+      instructions: >-
+        Vitest + jsdom. Preferir testes de comportamento visível ao usuário
+        (acessibilidade, texto, papel) em vez de detalhes de implementação.
+
+chat:
+  auto_reply: true
