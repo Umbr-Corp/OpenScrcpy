@@ -31,6 +31,8 @@ export const zhTW: Translations = {
         loading: '載入中...'
     },
     header: {
+        updateBadge: '有新版本 v{v}',
+        checkAppUpdate: '檢查更新',
         colorModes: {
             light: '淺色',
             dark: '深色',
@@ -192,7 +194,7 @@ export const zhTW: Translations = {
     },
     sessionBehavior: {
         title: '行為設定',
-        stayAwake: '保持喚醒',
+        stayAwake: '保持裝置喚醒',
         stayAwakeTooltip: '鏡像時保持螢幕長亮。',
         screenOff: '關閉螢幕',
         screenOffTooltip: '鏡像時關閉手機螢幕。',
@@ -220,7 +222,7 @@ export const zhTW: Translations = {
         defaultVideosFolder: '預設（影片資料夾）',
         selectRecordingFolderTitle: '選擇錄影資料夾',
         // v4 features
-        keepActive: '保持活躍',
+        keepActive: '防休眠 (v4)',
         keepActiveTooltip: '模擬使用者操作以防止螢幕進入閒置狀態（scrcpy v4+）。'
     },
     shortcuts: {
@@ -272,6 +274,14 @@ export const zhTW: Translations = {
         diagnosticSavedAlert: '診斷報告已儲存至「下載」資料夾，檔案名稱為：{fileName}'
     },
     alerts: {
+        newAppVersionTitle: '有新版本：v{v}',
+        newAppVersionMsg: '查看更新內容並從 GitHub 發布頁下載新版本。',
+        updateOpenBtn: '前往 GitHub',
+        appCloseBtn: '關閉',
+        appUpToDateTitle: '已是最新版本',
+        appUpToDateMsg: 'OpenScrcpy v{v} 已是最新發布的版本。',
+        appCheckFailedTitle: '無法檢查更新',
+        appCheckFailedMsg: 'GitHub 目前無回應。請稍後再試。',
         noDeviceSelectedTitle: '未選擇裝置',
         noDeviceSelectedMessage: "請從側邊栏選擇一個裝置以繼續。提示：如果您剛連接手機，請點擊側邊栏的「重新整理」以更新清單。",
         noDeviceForListOptions: '請先在側邊欄選擇一個裝置以查看其選項。',

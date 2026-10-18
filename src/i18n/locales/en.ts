@@ -32,6 +32,8 @@ export const en = {
         loading: 'Loading...'
     },
     header: {
+        updateBadge: 'New version v{v} available',
+        checkAppUpdate: 'Check for Updates',
         colorModes: {
             light: 'Light',
             dark: 'Dark',
@@ -193,7 +195,7 @@ export const en = {
     },
     sessionBehavior: {
         title: 'Session behavior',
-        stayAwake: 'Stay awake',
+        stayAwake: 'Device awake',
         stayAwakeTooltip: 'Keep the device awake while mirroring is active.',
         screenOff: 'Screen off',
         screenOffTooltip: 'Turn off the device screen while mirroring to save battery.',
@@ -221,7 +223,7 @@ export const en = {
         defaultVideosFolder: 'Default (videos folder)',
         selectRecordingFolderTitle: 'Select recording folder',
         // v4 features
-        keepActive: 'Keep active',
+        keepActive: 'Anti-idle (v4)',
         keepActiveTooltip: 'Simulates user activity to prevent the screen from going idle (scrcpy v4+).'
     },
     shortcuts: {
@@ -273,6 +275,14 @@ export const en = {
         diagnosticSavedAlert: 'Diagnostic report saved to Downloads as: {fileName}'
     },
     alerts: {
+        newAppVersionTitle: 'New Version Available: v{v}',
+        newAppVersionMsg: 'Check out the changelog and download the new version from the GitHub releases page.',
+        updateOpenBtn: 'See on GitHub',
+        appCloseBtn: 'Close',
+        appUpToDateTitle: "You're Up to Date",
+        appUpToDateMsg: 'OpenScrcpy v{v} is already the latest published version.',
+        appCheckFailedTitle: 'Could Not Check',
+        appCheckFailedMsg: "GitHub didn't respond right now. Try again later.",
         noDeviceSelectedTitle: 'No Device Selected',
         noDeviceSelectedMessage: "Please select a device from the sidebar to continue. Hint: If you just connected your phone, click 'Refresh' in the sidebar to update the list.",
         noDeviceForListOptions: 'Select a device from the sidebar to list its options.',

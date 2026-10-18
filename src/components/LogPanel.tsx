@@ -11,6 +11,18 @@ interface LogPanelProps {
     onRunCommand?: (cmd: string) => void;
 }
 
+// Whole-line color by severity marker, so the terminal is scannable at a
+// glance: [SYSTEM] lines (device discovery etc.) read as system chatter,
+// warnings amber, failures red, confirmed progress green. Unknown lines
+// stay plain. Module scope so the regexes are built once.
+const logColor = (text: string): string => {
+    if (/\[SYSTEM\]|\[INFO\]/i.test(text)) return '#8FA6FF';
+    if (/\[ERR.+?\]|failed|falha|erro[ :]|error/i.test(text)) return '#F88686';
+    if (/\[WARN[ING]*\]|aviso/i.test(text)) return '#E0C559';
+    if (/\[OK\]|connected|descoberto|estabelecid|iniciad|concluíd|pronto|ready|success/i.test(text)) return '#57D06F';
+    return '#FAFAFA';
+};
+
 const LogPanel = memo(({ logs, onClear, onAddLog, onRunCommand }: LogPanelProps) => {
     const { t } = useI18n();
     const containerRef = useRef<HTMLDivElement>(null);
@@ -124,7 +136,7 @@ const LogPanel = memo(({ logs, onClear, onAddLog, onRunCommand }: LogPanelProps)
                                 <span className="shrink-0 tabular-nums" style={{ color: '#AEAEAE' }}>
                                     {entry.time}
                                 </span>
-                                <span className="break-all" style={{ color: '#FAFAFA' }}>{entry.text}</span>
+                                <span className="break-all" style={{ color: logColor(entry.text) }}>{entry.text}</span>
                             </div>
                         ))}
                     </div>

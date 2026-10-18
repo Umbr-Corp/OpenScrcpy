@@ -56,10 +56,14 @@ const ToggleRow = ({ checked, onChange, label, hint, icon: Icon }: ToggleRowProp
                     <Icon size={12} />
                 </span>
             )}
-            <span className="ds-label truncate">{label}</span>
+            <div className="min-w-0">
+                <span className="ds-label truncate block">{label}</span>
+                {hint && (
+                    <span className="block ds-caption truncate" style={{ color: 'var(--text-muted)', fontSize: 10.5, lineHeight: '13px' }}>{hint}</span>
+                )}
+            </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-            {hint && <span className="ds-badge">{hint}</span>}
             <span className="ds-toggle" data-on={checked ? 'true' : 'false'} aria-hidden="true">
                 <span />
             </span>
@@ -330,11 +334,11 @@ export default function ControlPanel({
                     {config.sessionMode === 'camera' && (
                         <div className="space-y-3">
                             {/* Webcam Pro Tip */}
-                            <div className="ds-panel p-3 flex gap-3">
-                                <div className="ds-inset flex items-center justify-center shrink-0" style={{ padding: 6, alignSelf: 'flex-start', color: 'var(--primary)' }}>
-                                    <Video size={14} />
+                            <div className="ds-panel p-3.5 flex items-center gap-3.5">
+                                <div className="ds-inset flex items-center justify-center shrink-0" style={{ width: 34, height: 34, color: 'var(--primary)' }}>
+                                    <Video size={15} />
                                 </div>
-                                <div className="space-y-1 min-w-0">
+                                <div className="min-w-0">
                                     <div className="flex items-center justify-between gap-2">
                                         <h4 className="ds-label ds-strong">{t('controlPanel.webcamProTip')}</h4>
                                         <a
@@ -346,7 +350,7 @@ export default function ControlPanel({
                                             {t('controlPanel.getObs')} <ExternalLink size={10} />
                                         </a>
                                     </div>
-                                    <p className="ds-caption" style={{ color: 'var(--text-secondary)' }}>
+                                    <p className="ds-caption mt-[3px]" style={{ color: 'var(--text-secondary)' }}>
                                         {t('controlPanel.webcamProTipTextBefore')} <span className="ds-strong">{t('controlPanel.webcamProTipObs')}</span> {t('controlPanel.webcamProTipAndStart')} <span className="ds-strong">{t('controlPanel.webcamProTipVirtualCamera')}</span>{t('controlPanel.webcamProTipTextAfter')}
                                     </p>
                                 </div>

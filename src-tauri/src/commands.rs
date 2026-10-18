@@ -2466,5 +2466,68 @@ pub async fn check_scrcpy_update(custom_path: Option<String>) -> serde_json::Val
     })
 }
 
+// Self-update notice (Route 1): ask this repo's GitHub for the latest
+// release and compare against the app's own package version. Deliberately
+// dumb and signed-off: the frontend decides what happens with the answer
+// (badge + modal), and the actual download happens in the user's browser.
+#[tauri::command]
+pub async fn check_app_update(app: tauri::AppHandle) -> serde_json::Value {
+    let current_version = app.package_info().version.to_string();
+
+    let no_update = |msg: String| json!({
+        "update_available": false,
+        "current": current_version.clone(),
+        "message": msg
+    });
+
+    let client = match reqwest::Client::builder()
+        .user_agent("OpenScrcpy-Updater")
+        .timeout(std::time::Duration::from_secs(10))
+        .build() {
+        Ok(c) => c,
+        Err(e) => return no_update(e.to_string()),
+    };
+
+    let release = match client
+        .get("https://api.github.com/repos/Umbr-Corp/OpenScrcpy/releases/latest")
+        .header("Accept", "application/vnd.github+json")
+        .send()
+        .await
+    {
+        Ok(r) => r,
+        Err(e) => return no_update(e.to_string()),
+    };
+    if !release.status().is_success() {
+        return no_update(format!("GitHub responded with status {}", release.status()));
+    }
+    let body = match release.json::<serde_json::Value>().await {
+        Ok(b) => b,
+        Err(e) => return no_update(e.to_string()),
+    };
+    let Some(tag) = body["tag_name"].as_str() else {
+        return no_update("Release without tag_name".into());
+    };
+    let latest = tag.trim_start_matches(['v', 'V']).to_string();
+    let notes = body["body"].as_str().unwrap_or_default().to_string();
+
+    json!({
+        "update_available": compare_versions(&current_version, &latest),
+        "current": current_version,
+        "latest": latest,
+        "notes": notes
+    })
+}
+
+// "Ver no GitHub" from the update modal: open the releases page in the
+// user's browser. Rust-side open keeps it outside the webview popup rules;
+// the HTTPS check keeps the shell handler from being abused with anything
+// else even if a future caller passes this command a value.
+#[tauri::command]
+pub async fn open_app_release(app: tauri::AppHandle) -> Result<(), String> {
+    tauri_plugin_shell::ShellExt::shell(&app)
+        .open("https://github.com/Umbr-Corp/OpenScrcpy/releases/latest", None)
+        .map_err(|e| e.to_string())
+}
+
 
 

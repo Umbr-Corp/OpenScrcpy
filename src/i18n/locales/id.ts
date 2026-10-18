@@ -31,6 +31,8 @@ languages: {
         loading: 'Memuat...'
     },
     header: {
+        updateBadge: 'Versi baru v{v} tersedia',
+        checkAppUpdate: 'Periksa Pembaruan',
         colorModes: {
             light: 'Terang',
             dark: 'Gelap',
@@ -192,7 +194,7 @@ languages: {
     },
     sessionBehavior: {
         title: 'Pengaturan Sesi',
-        stayAwake: 'Layar Selalu Menyala',
+        stayAwake: 'Perangkat Terjaga',
         stayAwakeTooltip: 'Jaga perangkat tetap terjaga selama pencerminan aktif.',
         screenOff: 'Layar Mati',
         screenOffTooltip: 'Matikan layar HP saat mirror aktif untuk menghemat baterai.',
@@ -220,7 +222,7 @@ languages: {
         defaultVideosFolder: 'Bawaan (Folder Video)',
         selectRecordingFolderTitle: 'Pilih Folder Rekaman',
         // v4 features
-        keepActive: 'Tetap Aktif',
+        keepActive: 'Anti-Istirahat (v4)',
         keepActiveTooltip: 'Mirorring dan HP tidak otomatis mati (scrcpy v4+)'
     },
     shortcuts: {
@@ -272,6 +274,14 @@ languages: {
         diagnosticSavedAlert: 'Laporan diagnostik disimpan ke Unduhan sebagai: {fileName}'
     },
     alerts: {
+        newAppVersionTitle: 'Versi Baru Tersedia: v{v}',
+        newAppVersionMsg: 'Lihat perubahan dan unduh versi baru dari halaman rilis GitHub.',
+        updateOpenBtn: 'Buka di GitHub',
+        appCloseBtn: 'Tutup',
+        appUpToDateTitle: 'Anda Sudah Terbaru',
+        appUpToDateMsg: 'OpenScrcpy v{v} sudah merupakan versi terbaru yang dirilis.',
+        appCheckFailedTitle: 'Tidak Dapat Memeriksa',
+        appCheckFailedMsg: 'GitHub tidak merespons saat ini. Coba lagi nanti.',
         noDeviceSelectedTitle: 'Belum Ada HP yang Dipilih',
         noDeviceSelectedMessage: "Pilih HP di menu samping untuk lanjut. Tips: Jika HP baru dicolok/disambung, klik 'Segarkan' untuk memperbarui daftar.",
         noDeviceForListOptions: 'Pilih perangkat dari sidebar untuk melihat opsinya.',

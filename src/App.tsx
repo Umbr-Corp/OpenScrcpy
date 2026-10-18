@@ -80,6 +80,13 @@ function App() {
   const [appVersion, setAppVersion] = useState("1.0.0");
   const [lastCheckedPath, setLastCheckedPath] = useState<string | undefined>(undefined);
   const [hasCheckedUpdate, setHasCheckedUpdate] = useState(false);
+  // Self-update notice: filled when the app's own GitHub release is newer
+  // than the running build (checked once, silently, on startup).
+  const [appUpdateInfo, setAppUpdateInfo] = useState<{
+    latest: string;
+    current: string;
+    notes: string;
+  } | null>(null);
 
   const showAlert = (
     title: string,
@@ -165,6 +172,57 @@ function App() {
       setHasCheckedUpdate(false);
     }
   }, [scrcpyStatus.found, config.scrcpyPath, isDownloading, hasCheckedUpdate, lastCheckedPath, t]);
+
+  // ── App self-update (GitHub releases) ────────────────────────────────
+  // Opens "releases/latest" in the user's browser; the download itself
+  // stays out of the app on purpose (Route 1, no updater plugin yet).
+  const openAppUpdateModal = (info: { latest: string; notes: string }) => {
+    // Release bodies are markdown; strip the obvious markup so the plain
+    // modal text stays readable.
+    const notes = (info.notes || '')
+      .replace(/^#{1,4}\s?/gm, '')
+      .replace(/^>\s?/gm, '')
+      .replace(/[*`]/g, '')
+      .trim();
+    showAlert(
+      t('alerts.newAppVersionTitle', { v: info.latest }),
+      notes || t('alerts.newAppVersionMsg'),
+      'info',
+      t('alerts.updateOpenBtn'),
+      async () => {
+        try {
+          const { invoke } = await import('@tauri-apps/api/core');
+          await invoke('open_app_release');
+        } catch {
+          window.open('https://github.com/Umbr-Corp/OpenScrcpy/releases/latest', '_blank');
+        }
+      },
+      true,
+      t('alerts.appCloseBtn')
+    );
+  };
+
+  const checkAppUpdate = async (silent: boolean) => {
+    if (!isTauri()) return null;
+    try {
+      const { invoke } = await import('@tauri-apps/api/core');
+      const res = await invoke<{ update_available: boolean; current: string; latest: string; notes: string }>('check_app_update');
+      if (res.update_available) setAppUpdateInfo(res);
+      if (!silent) {
+        if (res.update_available) openAppUpdateModal(res);
+        else showAlert(t('alerts.appUpToDateTitle'), t('alerts.appUpToDateMsg', { v: res.current }), 'info');
+      }
+      return res;
+    } catch {
+      if (!silent) showAlert(t('alerts.appCheckFailedTitle'), t('alerts.appCheckFailedMsg'), 'warning');
+      return null;
+    }
+  };
+
+  useEffect(() => {
+    checkAppUpdate(true).catch(() => { });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     // No-op outside the Tauri WebView (plain browser preview): there is
@@ -318,11 +376,14 @@ function App() {
             isDownloading={isDownloading}
             downloadProgress={downloadProgress}
             version={appVersion}
+            appUpdateLatest={appUpdateInfo?.latest ?? null}
+            onOpenAppUpdate={() => appUpdateInfo && openAppUpdateModal(appUpdateInfo)}
+            onCheckAppUpdate={() => void checkAppUpdate(false)}
           />
           <WindowResizeEdges />
 
-          <div className="flex-1 overflow-y-auto flex flex-col pt-6">
-            <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 px-6 pb-6">
+          <div className="flex-1 overflow-y-auto flex flex-col pt-3">
+            <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 px-6 pb-3">
               <div className="lg:col-span-3 flex flex-col">
                 <Sidebar
                   devices={devices}

@@ -31,6 +31,8 @@ export const zhCN: Translations = {
         loading: '加载中...'
     },
     header: {
+        updateBadge: '有新版本 v{v}',
+        checkAppUpdate: '检查更新',
         colorModes: {
             light: '浅色',
             dark: '深色',
@@ -192,7 +194,7 @@ export const zhCN: Translations = {
     },
     sessionBehavior: {
         title: '行为设置',
-        stayAwake: '保持唤醒',
+        stayAwake: '保持设备唤醒',
         stayAwakeTooltip: '镜像时保持设备常亮。',
         screenOff: '关闭屏幕',
         screenOffTooltip: '镜像时关闭手机屏幕以节省电量。',
@@ -220,7 +222,7 @@ export const zhCN: Translations = {
         defaultVideosFolder: '默认（视频文件夹）',
         selectRecordingFolderTitle: '选择录制文件夹',
         // v4 features
-        keepActive: '保持活跃',
+        keepActive: '防息屏 (v4)',
         keepActiveTooltip: '模拟用户操作以防止屏幕进入空闲状态（scrcpy v4+）。'
     },
     shortcuts: {
@@ -272,6 +274,14 @@ export const zhCN: Translations = {
         diagnosticSavedAlert: '诊断报告已保存到“下载”文件夹：{fileName}'
     },
     alerts: {
+        newAppVersionTitle: '有新版本：v{v}',
+        newAppVersionMsg: '查看更新内容并从 GitHub 发布页下载新版本。',
+        updateOpenBtn: '前往 GitHub',
+        appCloseBtn: '关闭',
+        appUpToDateTitle: '已是最新版本',
+        appUpToDateMsg: 'OpenScrcpy v{v} 已是最新发布的版本。',
+        appCheckFailedTitle: '无法检查更新',
+        appCheckFailedMsg: 'GitHub 当前无响应。请稍后再试。',
         noDeviceSelectedTitle: '未选择设备',
         noDeviceSelectedMessage: '请先从侧边栏选择一个设备再继续。提示：如果你刚接入手机，请点击侧边栏中的“刷新”以更新列表。',
         noDeviceForListOptions: '请先在侧边栏选择一个设备以查看其选项。',

@@ -100,6 +100,22 @@ export default function Sidebar({
         return Array.from(byName.values());
     }, [mdnsDevices]);
 
+    // One card per physical device: adb lists the USB and Wi-Fi transports
+    // separately, so a phone that went wireless while plugged in appears
+    // twice (same SM-A055M, two entries). Group every transport id under its
+    // friendly/model name; the chips carry the individual transports and the
+    // card click falls back to the first available id.
+    const deviceGroups = React.useMemo(() => {
+        const groups = new Map<string, { name: string; ids: string[] }>();
+        for (const d of devices) {
+            const name = deviceFriendlyNames[d] || deviceModels[d] || formatDeviceLabel(d);
+            const g = groups.get(name);
+            if (g) g.ids.push(d);
+            else groups.set(name, { name, ids: [d] });
+        }
+        return Array.from(groups.values());
+    }, [devices, deviceModels, deviceFriendlyNames]);
+
     // Shared by the manual pairing form and the discovered-device modal.
     // `onPair` already refreshes the device list on success, and a paired
     // device reconnects on its own from there (adb reconnects it natively from
@@ -177,13 +193,15 @@ export default function Sidebar({
                                 <span className="ds-caption" style={{ color: 'var(--text-muted)' }}>{t('sidebar.noDevicesDetected')}</span>
                             </div>
                         ) : (
-                            devices.map(d => {
-                                const isRunning = runningDevices.includes(d);
-                                const isSelected = selectedDevice === d;
+                            deviceGroups.map(g => {
+                                const ids = g.ids;
+                                const primary = ids[0];
+                                const isRunning = runningDevices.some(r => ids.includes(r));
+                                const isSelected = selectedDevice != null && ids.includes(selectedDevice);
                                 return (
                                     <button
-                                        key={d}
-                                        onClick={() => onSelectDevice(d)}
+                                        key={primary}
+                                        onClick={() => onSelectDevice(primary)}
                                         aria-pressed={isSelected}
                                         className="ds-panel flex items-center gap-2 p-2 text-left w-full"
                                         style={isSelected ? { borderColor: 'var(--primary)' } : undefined}
@@ -192,25 +210,39 @@ export default function Sidebar({
                                             <Smartphone size={14} style={{ color: isSelected ? 'var(--primary)' : 'var(--text-muted)' }} />
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <p className="ds-label truncate">{deviceFriendlyNames[d] || deviceModels[d] || formatDeviceLabel(d)}</p>
-                                            <div className="flex items-center gap-2 mt-0.5">
+                                            <p className="ds-label truncate">{g.name}</p>
+                                            <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                                                 <span className="flex items-center gap-1">
                                                     <span className="ds-dot" data-live={isRunning} />
                                                     <span className="ds-badge" data-live={isRunning}>
                                                         {isRunning ? t('sidebar.live') : t('sidebar.ready')}
                                                     </span>
                                                 </span>
-                                                {d.includes('.') ? (
-                                                    <span className="ds-badge">
+                                                {ids.map(id => id.includes('.') ? (
+                                                    <span
+                                                        key={id}
+                                                        role="button"
+                                                        aria-label={`${t('sidebar.wifi')}: ${id}`}
+                                                        className="ds-badge cursor-pointer"
+                                                        style={selectedDevice === id ? { borderColor: 'var(--primary)', color: 'var(--primary)' } : undefined}
+                                                        onClick={(e) => { e.stopPropagation(); onSelectDevice(id); }}
+                                                    >
                                                         <Wifi size={8} />
                                                         {t('sidebar.wifi')}
                                                     </span>
                                                 ) : (
-                                                    <span className="ds-badge">
+                                                    <span
+                                                        key={id}
+                                                        role="button"
+                                                        aria-label={`${t('sidebar.usb')}: ${id}`}
+                                                        className="ds-badge cursor-pointer"
+                                                        style={selectedDevice === id ? { borderColor: 'var(--primary)', color: 'var(--primary)' } : undefined}
+                                                        onClick={(e) => { e.stopPropagation(); onSelectDevice(id); }}
+                                                    >
                                                         <Usb size={8} />
                                                         {t('sidebar.usb')}
                                                     </span>
-                                                )}
+                                                ))}
                                             </div>
                                         </div>
                                     </button>

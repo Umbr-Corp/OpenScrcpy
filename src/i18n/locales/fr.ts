@@ -31,6 +31,8 @@ export const fr: Translations = {
         loading: 'Chargement...'
     },
     header: {
+        updateBadge: 'Nouvelle version v{v} disponible',
+        checkAppUpdate: 'Rechercher des mises à jour',
         colorModes: {
             light: 'Clair',
             dark: 'Sombre',
@@ -192,7 +194,7 @@ export const fr: Translations = {
     },
     sessionBehavior: {
         title: 'Comportement de la Session',
-        stayAwake: 'Garder Éveillé',
+        stayAwake: 'Appareil éveillé',
         stayAwakeTooltip: 'Empêche l\'appareil de se mettre en veille pendant la duplication.',
         screenOff: 'Écran Éteint',
         screenOffTooltip: 'Éteint l\'écran de l\'appareil pendant la duplication pour économiser la batterie.',
@@ -220,7 +222,7 @@ export const fr: Translations = {
         defaultVideosFolder: 'Par défaut (Dossier Vidéos)',
         selectRecordingFolderTitle: 'Sélectionner le Dossier d\'Enregistrement',
         // v4 features
-        keepActive: 'Garder Actif',
+        keepActive: 'Anti-inactif (v4)',
         keepActiveTooltip: 'Simule une activité utilisateur pour empêcher l\'écran de se mettre en veille (scrcpy v4+).'
     },
     shortcuts: {
@@ -272,6 +274,14 @@ export const fr: Translations = {
         diagnosticSavedAlert: 'Rapport de diagnostic enregistré dans Téléchargements sous : {fileName}'
     },
     alerts: {
+        newAppVersionTitle: 'Nouvelle version disponible : v{v}',
+        newAppVersionMsg: 'Consultez les nouveautés et téléchargez la nouvelle version sur la page des releases GitHub.',
+        updateOpenBtn: 'Voir sur GitHub',
+        appCloseBtn: 'Fermer',
+        appUpToDateTitle: 'Vous êtes à jour',
+        appUpToDateMsg: "OpenScrcpy v{v} est déjà la dernière version publiée.",
+        appCheckFailedTitle: 'Vérification impossible',
+        appCheckFailedMsg: "GitHub ne répond pas pour le moment. Réessayez plus tard.",
         noDeviceSelectedTitle: 'Aucun Appareil Sélectionné',
         noDeviceSelectedMessage: "Veuillez sélectionner un appareil dans la barre latérale pour continuer. Astuce : si vous venez de connecter votre téléphone, cliquez sur « Actualiser » dans la barre latérale pour mettre à jour la liste.",
         noDeviceForListOptions: 'Sélectionnez un appareil dans la barre latérale pour voir ses options.',

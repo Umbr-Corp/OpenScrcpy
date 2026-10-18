@@ -31,6 +31,8 @@ export const ptBR: Translations = {
         loading: 'Carregando...'
     },
     header: {
+        updateBadge: 'Nova versão v{v} disponível',
+        checkAppUpdate: 'Verificar Atualização',
         colorModes: {
             light: 'Claro',
             dark: 'Escuro',
@@ -192,7 +194,7 @@ export const ptBR: Translations = {
     },
     sessionBehavior: {
         title: 'Comportamento da Sessão',
-        stayAwake: 'Manter Ativo',
+        stayAwake: 'Dispositivo Desperto',
         stayAwakeTooltip: 'Mantém o dispositivo desperto enquanto o espelhamento estiver ativo.',
         screenOff: 'Tela Desligada',
         screenOffTooltip: 'Desliga a tela do dispositivo durante o espelhamento para economizar bateria.',
@@ -220,7 +222,7 @@ export const ptBR: Translations = {
         defaultVideosFolder: 'Padrão (Pasta Vídeos)',
         selectRecordingFolderTitle: 'Selecionar Pasta de Gravação',
         // v4 features
-        keepActive: 'Manter Ativo',
+        keepActive: 'Anti-Ocioso (v4)',
         keepActiveTooltip: 'Simula atividade do usuário para evitar que a tela entre em modo ocioso (scrcpy v4+).'
     },
     shortcuts: {
@@ -272,6 +274,14 @@ export const ptBR: Translations = {
         diagnosticSavedAlert: 'Relatório de diagnóstico salvo em Downloads como: {fileName}'
     },
     alerts: {
+        newAppVersionTitle: 'Nova Versão Disponível: v{v}',
+        newAppVersionMsg: 'Confira as novidades e baixe a nova versão na página de releases no GitHub.',
+        updateOpenBtn: 'Ver no GitHub',
+        appCloseBtn: 'Fechar',
+        appUpToDateTitle: 'Você Está Atualizado',
+        appUpToDateMsg: 'OpenScrcpy v{v} já é a versão mais recente publicada.',
+        appCheckFailedTitle: 'Não Foi Possível Verificar',
+        appCheckFailedMsg: 'O GitHub não respondeu agora. Tente de novo mais tarde.',
         noDeviceSelectedTitle: 'Nenhum Dispositivo Selecionado',
         noDeviceSelectedMessage: 'Selecione um dispositivo na barra lateral para continuar. Dica: se você acabou de conectar seu telefone, clique em "Atualizar" na barra lateral para atualizar a lista.',
         noDeviceForListOptions: 'Selecione um dispositivo na barra lateral para ver as opções dele.',

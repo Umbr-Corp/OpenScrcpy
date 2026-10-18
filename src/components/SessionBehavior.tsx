@@ -52,7 +52,7 @@ const Toggle = ({ checked, onChange, icon: Icon, label, tooltip }: { checked: bo
             <span className="ds-inset flex items-center justify-center shrink-0" style={{ padding: 4, color: checked ? 'var(--primary)' : 'var(--text-muted)' }}>
                 <Icon size={12} />
             </span>
-            <span className="ds-label truncate">
+            <span className="ds-label">
                 {label}
             </span>
             <span className="shrink-0">
