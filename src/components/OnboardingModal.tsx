@@ -1,4 +1,5 @@
 import { CheckCircle2, Download, Cpu, ArrowRight, X, ExternalLink, HelpCircle } from 'lucide-react';
+import Modal from './Modal';
 import { useI18n } from '../i18n';
 
 interface OnboardingModalProps {
@@ -26,19 +27,22 @@ export default function OnboardingModal({
     const isReady = binaryStatus.found;
 
     return (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 overflow-hidden">
-            {/* Backdrop */}
-            <div className="absolute inset-0" style={{ background: 'rgba(0, 0, 0, 0.4)' }}></div>
+        <Modal
+            isOpen={isOpen}
+            onClose={onClose}
+            label={t('onboarding.setupCoreComponents')}
+            zIndex={200}
+            closeOnBackdrop={false}
+            overlayClassName="p-4"
+            panelClassName="w-full max-w-2xl overflow-hidden"
+        >
+            <div className="absolute top-0 right-0 p-6 z-30">
+                <button onClick={onClose} aria-label={t('common.cancel')} className="ds-btn ds-btn-tertiary">
+                    <X size={24} />
+                </button>
+            </div>
 
-            {/* Modal Content */}
-            <div className="ds-card relative w-full max-w-2xl overflow-hidden shadow-xl ds-fade-in">
-                <div className="absolute top-0 right-0 p-6 z-30">
-                    <button onClick={onClose} aria-label={t('common.cancel')} className="ds-btn ds-btn-tertiary">
-                        <X size={24} />
-                    </button>
-                </div>
-
-                <div className="flex flex-col md:flex-row h-full">
+            <div className="flex flex-col md:flex-row h-full">
                     {/* Left Side: Branding/Logo */}
                     <div className="hidden md:flex md:w-1/3 p-8 flex-col justify-between relative overflow-hidden" style={{ background: 'var(--bg-input)', borderRight: '1px solid var(--border-base)' }}>
                         <div className="relative z-10">
@@ -146,8 +150,7 @@ export default function OnboardingModal({
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
+        </Modal>
     );
 }
 

@@ -1,12 +1,20 @@
-import { useEffect, useRef, useState } from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { ScrcpyConfig } from '../hooks/useScrcpy';
 import Tooltip from './Tooltip';
-import { Coffee, MonitorOff, Volume2, Layers, Maximize, Square, Circle, Folder, Settings2, ChevronDown, ActivitySquare, Move } from 'lucide-react';
+import Select from './Select';
+import { Coffee, MonitorOff, Volume2, Layers, Maximize, Square, Circle, Folder, Settings2, ActivitySquare, Move } from 'lucide-react';
 import { useI18n } from '../i18n';
 
 const AUDIO_CODEC_VALUES = ['auto', 'opus', 'aac', 'flac', 'raw'] as const;
 type AudioCodec = typeof AUDIO_CODEC_VALUES[number];
+
+const AUDIO_CODEC_LABEL_KEY: Record<AudioCodec, string> = {
+    auto: 'sessionBehavior.audioCodecAuto',
+    opus: 'sessionBehavior.audioCodecOpus',
+    aac: 'sessionBehavior.audioCodecAac',
+    flac: 'sessionBehavior.audioCodecFlac',
+    raw: 'sessionBehavior.audioCodecRaw',
+};
 
 interface SessionBehaviorProps {
     config: ScrcpyConfig;
@@ -22,15 +30,76 @@ const dsHoverStyles = `
 .sb-opt:hover { border-color: var(--primary); }
 `;
 
+// Module scope on purpose: a component declared inside SessionBehavior's body
+// gets a new type on every config change (a toggle click re-renders the
+// parent), remounting the subtree -- killing the picker's open state and the
+// keyboard focus on the very switch the user just pressed.
+const Toggle = ({ checked, onChange, icon: Icon, label, tooltip }: { checked: boolean, onChange: (v: boolean) => void, icon: any, label: string, tooltip: string }) => (
+    <div
+        role="switch"
+        aria-checked={checked}
+        tabIndex={0}
+        onClick={() => onChange(!checked)}
+        onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onChange(!checked);
+            }
+        }}
+        className="sb-row flex items-center justify-between gap-3 cursor-pointer py-1 px-2"
+    >
+        <div className="flex items-center gap-2 min-w-0">
+            <span className="ds-inset flex items-center justify-center shrink-0" style={{ padding: 4, color: checked ? 'var(--primary)' : 'var(--text-muted)' }}>
+                <Icon size={12} />
+            </span>
+            <span className="ds-label truncate">
+                {label}
+            </span>
+            <span className="shrink-0">
+                <Tooltip text={tooltip} />
+            </span>
+        </div>
+        <span className="ds-toggle shrink-0" data-on={checked ? 'true' : 'false'} aria-hidden="true">
+            <span />
+        </span>
+    </div>
+);
+
+const AudioCodecSelect = ({ value, onChange, disabled }: { value: AudioCodec, onChange: (v: AudioCodec) => void, disabled: boolean }) => {
+    const { t } = useI18n();
+    return (
+        <div
+            aria-disabled={disabled}
+            className="pr-2 pb-1"
+            style={{ marginTop: 2, paddingLeft: 28, opacity: disabled ? 0.45 : 1 }}
+        >
+            <div className="flex items-center gap-1.5">
+                <span className="ds-caption" style={{ color: 'var(--text-muted)' }}>{t('sessionBehavior.audioCodec')}</span>
+                <Tooltip text={t('sessionBehavior.audioCodecTooltip')} />
+                <div className="relative ml-auto">
+                    <Select
+                        value={value}
+                        onChange={(v) => onChange(v as AudioCodec)}
+                        options={AUDIO_CODEC_VALUES.map((opt) => ({ value: opt, label: t(AUDIO_CODEC_LABEL_KEY[opt]) }))}
+                        ariaLabel={t('sessionBehavior.audioCodec')}
+                        disabled={disabled}
+                        triggerClassName="sb-select"
+                        optionClassName="sb-opt"
+                    />
+                </div>
+            </div>
+        </div>
+    );
+};
+
 export default function SessionBehavior({ config, setConfig }: SessionBehaviorProps) {
     const { t } = useI18n();
 
     const handleChange = (field: keyof ScrcpyConfig, value: any) => {
-        const newConfig = { ...config, [field]: value };
-        setConfig(newConfig);
-        if (field === 'recordPath') {
-            localStorage.setItem('scrcpy_record_path', value);
-        }
+        // The full config (including recordPath) is persisted by useScrcpy's
+        // config effect; this used to also duplicate one field into its own
+        // localStorage key that nothing ever read back.
+        setConfig({ ...config, [field]: value });
     };
 
     const handlePickFolder = async () => {
@@ -47,109 +116,6 @@ export default function SessionBehavior({ config, setConfig }: SessionBehaviorPr
             console.error(e);
         }
     };
-
-    const AudioCodecPicker = ({ value, onChange, disabled }: { value: AudioCodec, onChange: (v: AudioCodec) => void, disabled: boolean }) => {
-        const [isOpen, setIsOpen] = useState(false);
-        const ref = useRef<HTMLDivElement>(null);
-
-        useEffect(() => {
-            const onDoc = (e: MouseEvent) => {
-                if (ref.current && !ref.current.contains(e.target as Node)) setIsOpen(false);
-            };
-            if (isOpen) document.addEventListener('mousedown', onDoc);
-            return () => document.removeEventListener('mousedown', onDoc);
-        }, [isOpen]);
-
-        useEffect(() => {
-            if (disabled) setIsOpen(false);
-        }, [disabled]);
-
-        const labelFor = (v: AudioCodec) =>
-            v === 'auto' ? t('sessionBehavior.audioCodecAuto') :
-                v === 'opus' ? t('sessionBehavior.audioCodecOpus') :
-                    v === 'aac' ? t('sessionBehavior.audioCodecAac') :
-                        v === 'flac' ? t('sessionBehavior.audioCodecFlac') :
-                            t('sessionBehavior.audioCodecRaw');
-
-        return (
-            <div
-                ref={ref}
-                onClick={(e) => e.stopPropagation()}
-                aria-disabled={disabled}
-                className="pr-2 pb-1"
-                style={{ marginTop: 2, paddingLeft: 28, opacity: disabled ? 0.45 : 1 }}
-            >
-                <div className="flex items-center gap-1.5">
-                    <span className="ds-caption" style={{ color: 'var(--text-muted)' }}>{t('sessionBehavior.audioCodec')}</span>
-                    <Tooltip text={t('sessionBehavior.audioCodecTooltip')} />
-                    <div className="relative ml-auto">
-                        <button
-                            type="button"
-                            aria-haspopup="listbox"
-                            aria-expanded={isOpen}
-                            onClick={() => !disabled && setIsOpen(o => !o)}
-                            disabled={disabled}
-                            className="ds-input sb-select flex items-center gap-1"
-                        >
-                            <span>{labelFor(value)}</span>
-                            <ChevronDown size={10} style={{ transition: 'transform 0.09s ease-out', transform: isOpen ? 'rotate(180deg)' : 'none' }} />
-                        </button>
-                        {isOpen && (
-                            <div role="listbox" className="ds-panel ds-fade-in absolute right-0 z-50" style={{ marginTop: 4, padding: 4, minWidth: 88 }}>
-                                {AUDIO_CODEC_VALUES.map((opt) => (
-                                    <button
-                                        key={opt}
-                                        type="button"
-                                        role="option"
-                                        aria-selected={value === opt}
-                                        onClick={() => { onChange(opt); setIsOpen(false); }}
-                                        className="ds-btn-tertiary sb-opt w-full"
-                                        style={{
-                                            justifyContent: 'flex-start',
-                                            ...(value === opt ? { color: 'var(--primary)' } : {})
-                                        }}
-                                    >
-                                        {labelFor(opt)}
-                                    </button>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                </div>
-            </div>
-        );
-    };
-
-    const Toggle = ({ checked, onChange, icon: Icon, label, tooltip }: { checked: boolean, onChange: (v: boolean) => void, icon: any, label: string, tooltip: string }) => (
-        <div
-            role="switch"
-            aria-checked={checked}
-            tabIndex={0}
-            onClick={() => onChange(!checked)}
-            onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    onChange(!checked);
-                }
-            }}
-            className="sb-row flex items-center justify-between gap-3 cursor-pointer py-1 px-2"
-        >
-            <div className="flex items-center gap-2 min-w-0">
-                <span className="ds-inset flex items-center justify-center shrink-0" style={{ padding: 4, color: checked ? 'var(--primary)' : 'var(--text-muted)' }}>
-                    <Icon size={12} />
-                </span>
-                <span className="ds-label truncate">
-                    {label}
-                </span>
-                <span className="shrink-0">
-                    <Tooltip text={tooltip} />
-                </span>
-            </div>
-            <span className="ds-toggle shrink-0" data-on={checked ? 'true' : 'false'} aria-hidden="true">
-                <span />
-            </span>
-        </div>
-    );
 
     return (
         <div className="space-y-4">
@@ -192,7 +158,7 @@ export default function SessionBehavior({ config, setConfig }: SessionBehaviorPr
                             tooltip={t('sessionBehavior.forwardAudioTooltip')}
                         />
                         {config.audioEnabled && (
-                            <AudioCodecPicker
+                            <AudioCodecSelect
                                 value={(AUDIO_CODEC_VALUES.includes((config.audioCodec as AudioCodec)) ? config.audioCodec : 'auto') as AudioCodec}
                                 onChange={(v) => handleChange('audioCodec', v)}
                                 disabled={!config.audioEnabled}

@@ -2,9 +2,10 @@ import { useRef, useEffect, useState, memo } from 'react';
 import { Terminal, Trash2, Download } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/core';
 import { useI18n } from '../i18n';
+import { LogEntry } from '../logs';
 
 interface LogPanelProps {
-    logs: string[];
+    logs: LogEntry[];
     onClear: () => void;
     onAddLog?: (msg: string) => void;
     onRunCommand?: (cmd: string) => void;
@@ -34,7 +35,7 @@ const LogPanel = memo(({ logs, onClear, onAddLog, onRunCommand }: LogPanelProps)
             const timer = setTimeout(() => setIsLive(false), 2000);
             return () => clearTimeout(timer);
         }
-    }, [logs.length]); // Only trigger scroll on length change
+    }, [logs]); // Fire on every append -- the cap keeps length constant once full.
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter' && command.trim()) {
@@ -118,12 +119,12 @@ const LogPanel = memo(({ logs, onClear, onAddLog, onRunCommand }: LogPanelProps)
                     </div>
                 ) : (
                     <div className="space-y-1">
-                        {logs.map((log, i) => (
-                            <div key={i} className="flex gap-3 leading-relaxed py-0.5 pl-3" style={{ borderLeft: '1px solid #5C5C5C', fontSize: '11px' }}>
+                        {logs.map((entry) => (
+                            <div key={entry.id} className="flex gap-3 leading-relaxed py-0.5 pl-3" style={{ borderLeft: '1px solid #5C5C5C', fontSize: '11px' }}>
                                 <span className="shrink-0 tabular-nums" style={{ color: '#AEAEAE' }}>
-                                    {new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                                    {entry.time}
                                 </span>
-                                <span className="break-all" style={{ color: '#FAFAFA' }}>{log}</span>
+                                <span className="break-all" style={{ color: '#FAFAFA' }}>{entry.text}</span>
                             </div>
                         ))}
                     </div>

@@ -5,6 +5,7 @@ import Sidebar from "./components/Sidebar";
 import ControlPanel from "./components/ControlPanel";
 import LogPanel from "./components/LogPanel";
 import Header from "./components/Header";
+import { WindowResizeEdges } from "./components/WindowChrome";
 import SessionBehavior from "./components/SessionBehavior";
 import ShortcutsPanel from "./components/ShortcutsPanel";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -12,6 +13,7 @@ import OnboardingModal from "./components/OnboardingModal";
 import ThemedModal from "./components/ThemedModal";
 import { useScrcpy } from "./hooks/useScrcpy";
 import { isTauri } from "./tauri";
+import { appendLogs } from './logs';
 import { getVersion } from '@tauri-apps/api/app';
 import { useI18n } from "./i18n";
 
@@ -83,10 +85,10 @@ function App() {
     title: string,
     message: string,
     kind: 'warning' | 'error' | 'info' | 'success' = 'info',
-    actionLabel = 'OK',
+    actionLabel = t('common.ok'),
     onAction?: () => void,
     showCancel = false,
-    cancelLabel = 'Cancel',
+    cancelLabel = t('common.cancel'),
     onCancel?: () => void
   ) => {
     setAlertState({
@@ -103,7 +105,8 @@ function App() {
   };
 
   useEffect(() => {
-    // Initial setup: fetch version
+    // Initial setup: fetch version (no artificial delay -- getVersion works
+    // immediately in the Tauri WebView, and silently no-ops in preview mode).
     const initApp = async () => {
       try {
         const v = await getVersion();
@@ -113,8 +116,7 @@ function App() {
       }
     };
 
-    const timer = setTimeout(initApp, 500);
-    return () => clearTimeout(timer);
+    initApp();
   }, []);
 
   useEffect(() => {
@@ -171,7 +173,7 @@ function App() {
     // Global Drag and Drop Listener (re-bind only if activeDevice changes)
     const unlisten = getCurrentWindow().listen<{ paths: string[] }>("tauri://drag-drop", (event) => {
       if (!activeDevice) {
-        setLogs(prev => [...prev.slice(-100), t('logs.noDeviceForDragDrop')]);
+        setLogs(prev => appendLogs(prev, t('logs.noDeviceForDragDrop')));
         return;
       }
 
@@ -286,7 +288,7 @@ function App() {
       });
       if (selected && typeof selected === 'string') {
         setConfig(prev => ({ ...prev, scrcpyPath: selected }));
-        setLogs(prev => [...prev.slice(-100), t('logs.customScrcpyPathSet', { path: selected })]);
+        setLogs(prev => appendLogs(prev, t('logs.customScrcpyPathSet', { path: selected })));
         // Trigger a check with the new path
         setTimeout(() => checkScrcpy(selected), 100);
       }
@@ -297,7 +299,7 @@ function App() {
 
   const handleResetPath = async () => {
     setConfig(prev => ({ ...prev, scrcpyPath: undefined }));
-    setLogs(prev => [...prev.slice(-100), t('logs.customScrcpyPathCleared')]);
+    setLogs(prev => appendLogs(prev, t('logs.customScrcpyPathCleared')));
     // Trigger a check with no custom path
     setTimeout(() => checkScrcpy(undefined), 100);
   };
@@ -317,6 +319,7 @@ function App() {
             downloadProgress={downloadProgress}
             version={appVersion}
           />
+          <WindowResizeEdges />
 
           <div className="flex-1 overflow-y-auto flex flex-col pt-6">
             <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 px-6 pb-6">
@@ -364,7 +367,7 @@ function App() {
                 <LogPanel
                   logs={logs}
                   onClear={clearLogs}
-                  onAddLog={(msg) => setLogs((prev: string[]) => [...prev.slice(-100), msg])}
+                  onAddLog={(msg) => setLogs(prev => appendLogs(prev, msg))}
                   onRunCommand={runTerminalCommand}
                 />
               </div>

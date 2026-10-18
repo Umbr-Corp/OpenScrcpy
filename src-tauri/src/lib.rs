@@ -93,6 +93,16 @@ pub fn run() {
                 eprintln!("[shortcuts] failed to register global shortcuts: {e}");
             }
 
+            // Linux: drop GTK's client-side decorations and let the webview
+            // draw the titlebar (Header.tsx renders the minimize/maximize/
+            // close buttons itself). Inside the AppImage the GTK CSD cannot
+            // resolve the host icon theme and showed broken glyphs; native
+            // decorations stay enabled on Windows/macOS.
+            #[cfg(target_os = "linux")]
+            if let Some(win) = app.get_webview_window("main") {
+                let _ = win.set_decorations(false);
+            }
+
             // Windows-only: start the drag-follow thread backing Ctrl+Alt+Shift+W.
             #[cfg(target_os = "windows")]
             grab::register(app.handle());

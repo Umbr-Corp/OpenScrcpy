@@ -226,3 +226,10 @@ header .ds-select-btn, header .ds-btn { height: 32px; }
 
 /* Focus must always be visible (3:1 against surface) */
 :focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+/* ── Window chrome (Linux custom titlebar) ──────────────
+   WindowButtons trio; hover lives in CSS because inline styles cannot
+   express :hover. Close uses the conventional red. */
+.win-chrome-btn:hover { background: color-mix(in srgb, var(--text-base) 12%, transparent); color: var(--text-base); }
+.win-chrome-btn.win-chrome-close:hover { background: #E81123; color: #FFFFFF; }
+.win-chrome-btn svg { pointer-events: none; }

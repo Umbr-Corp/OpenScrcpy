@@ -2,6 +2,7 @@ import React from 'react';
 import { Smartphone, RefreshCw, Usb, Wifi, UploadCloud, Zap, X } from 'lucide-react';
 import { useI18n } from '../i18n';
 import { MdnsDevice, isMdnsDeviceConnected } from '../hooks/useScrcpy';
+import Modal from './Modal';
 
 // mDNS wireless-debugging serials look like
 // "adb-<serial>-<random>._adb-tls-connect._tcp" (optionally with an mDNS
@@ -66,6 +67,8 @@ export default function Sidebar({
     const [pairIp, setPairIp] = React.useState('');
     const [pairCode, setPairCode] = React.useState('');
     const pairCodeRef = React.useRef<HTMLInputElement>(null);
+    // Code input inside the pairing modal; focused when the dialog opens.
+    const modalCodeRef = React.useRef<HTMLInputElement>(null);
 
     // Tapping a discovered device opens this instead of attempting a doomed
     // `adb connect`: a device that shows up here but isn't in the hub above
@@ -300,9 +303,9 @@ export default function Sidebar({
                                     <div className="space-y-2">
                                         {uniqueMdnsDevices
                                             .filter(dev => !isMdnsDeviceConnected(dev, devices))
-                                            .map((dev, idx) => (
+                                            .map(dev => (
                                                 <button
-                                                    key={idx}
+                                                    key={dev.name}
                                                     disabled={isRefreshing}
                                                     onClick={() => {
                                                         setPairingTarget(dev);
@@ -339,9 +342,9 @@ export default function Sidebar({
                                         </button>
                                     </div>
                                     <div className="space-y-2">
-                                        {historyDevices.map((ip, idx) => (
+                                        {historyDevices.map(ip => (
                                             <button
-                                                key={idx}
+                                                key={ip}
                                                 disabled={isRefreshing}
                                                 onClick={() => {
                                                     setConnectIp(ip);
@@ -435,14 +438,14 @@ export default function Sidebar({
         </aside>
 
         {pairingTarget && (
-            <div
-                className="fixed inset-0 z-[300] flex items-center justify-center p-6"
-                role="dialog"
-                aria-modal="true"
-                onClick={(e) => { if (e.target === e.currentTarget) setPairingTarget(null); }}
+            <Modal
+                isOpen
+                onClose={() => setPairingTarget(null)}
+                label={pairingTarget.service.includes('_adb-tls-pairing') ? t('sidebar.pairModalTitle') : t('sidebar.pairModalNotReadyTitle')}
+                overlayClassName="p-6"
+                panelClassName="w-full max-w-sm p-6"
+                initialFocusRef={modalCodeRef}
             >
-                <div className="absolute inset-0" style={{ background: 'rgba(0, 0, 0, 0.4)' }} />
-                <div className="ds-card relative w-full max-w-sm p-6 shadow-xl ds-fade-in">
                     <button
                         onClick={() => setPairingTarget(null)}
                         aria-label={t('common.cancel')}
@@ -459,7 +462,7 @@ export default function Sidebar({
                             </label>
                             <input
                                 id="sidebar-modal-code"
-                                autoFocus
+                                ref={modalCodeRef}
                                 type="text"
                                 placeholder={t('sidebar.pairingCodePlaceholder')}
                                 value={modalCode}
@@ -495,8 +498,7 @@ export default function Sidebar({
                             </button>
                         </>
                     )}
-                </div>
-            </div>
+            </Modal>
         )}
         </>
     );
