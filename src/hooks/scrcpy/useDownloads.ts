@@ -64,7 +64,9 @@ export function useDownloads({ scrcpyPath, addLogs, onDownloadComplete }: UseDow
         return () => {
             unlistenStatus.then(f => f());
         };
-    }, []);
+        // [t] matches the original single-listener behavior: resubscribing on
+        // locale change keeps the status strings fresh after a language swap.
+    }, [t]);
 
     const downloadScrcpy = async () => {
         try {
@@ -120,7 +122,9 @@ export function useDownloads({ scrcpyPath, addLogs, onDownloadComplete }: UseDow
     };
 
     // Keep the ref pointing at the latest checkScrcpy closure.
-    checkScrcpyRef.current = checkScrcpy;
+    useEffect(() => {
+        checkScrcpyRef.current = checkScrcpy;
+    });
 
     const completeOnboarding = () => {
         localStorage.setItem('scrcpy_onboarding_done', 'true');
