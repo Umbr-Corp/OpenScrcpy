@@ -244,7 +244,7 @@ export default function Sidebar({
                                                         style={selectedDevice === id ? { borderColor: 'var(--primary)', color: 'var(--primary)' } : undefined}
                                                         onClick={(e) => { e.stopPropagation(); onSelectDevice(id); }}
                                                     >
-                                                        <Wifi size={8} />
+                                                        <Wifi size={9.5} />
                                                         {t('sidebar.wifi')}
                                                     </span>
                                                 ) : (
@@ -256,7 +256,7 @@ export default function Sidebar({
                                                         style={selectedDevice === id ? { borderColor: 'var(--primary)', color: 'var(--primary)' } : undefined}
                                                         onClick={(e) => { e.stopPropagation(); onSelectDevice(id); }}
                                                     >
-                                                        <Usb size={8} />
+                                                        <Usb size={9.5} />
                                                         {t('sidebar.usb')}
                                                     </span>
                                                 ))}
@@ -266,7 +266,7 @@ export default function Sidebar({
                                                         disabled={wirelessSwitching != null}
                                                         onClick={(e) => { e.stopPropagation(); onGotoWireless(usbId); }}
                                                         className="ds-btn ds-btn-tertiary w-full mt-1"
-                                                        style={{ padding: '4px 8px', fontSize: 11.5, gap: 6 }}
+                                                        style={{ padding: '5px 8px', fontSize: 11.5, lineHeight: '14px', gap: 6 }}
                                                     >
                                                         <Wifi size={11} />
                                                         {switching ? t('sidebar.switching') : t('sidebar.gotoWireless')}
