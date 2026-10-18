@@ -70,6 +70,8 @@ export const ptBR: Translations = {
     sidebar: {
         gotoWireless: 'Ir para Wi-Fi',
         switching: 'Trocando…',
+        transport: 'Transporte',
+
         deviceHub: 'Hub de Dispositivos',
         killAdb: 'Matar ADB',
         killAdbTitle: 'Forçar encerramento de todas as operações adb',

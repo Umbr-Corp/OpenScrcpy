@@ -70,6 +70,8 @@ export const fr: Translations = {
     sidebar: {
         gotoWireless: 'Passer au Wi-Fi',
         switching: 'Bascule…',
+        transport: 'Transport',
+
         deviceHub: 'Hub d\'Appareils',
         killAdb: 'Tuer ADB',
         killAdbTitle: 'Forcer l\'arrêt de toutes les opérations adb',

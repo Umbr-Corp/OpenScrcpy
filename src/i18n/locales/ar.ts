@@ -73,6 +73,8 @@ export const ar: Translations = {
     sidebar: {
         gotoWireless: 'التبديل إلى واي فاي',
         switching: 'جارٍ التبديل…',
+        transport: 'الوسيلة',
+
         deviceHub: 'إدارة الأجهزة',
         killAdb: 'إنهاء ADB',
         killAdbTitle: 'إنهاء جميع عمليات ADB بالقوة',

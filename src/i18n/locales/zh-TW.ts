@@ -70,6 +70,8 @@ export const zhTW: Translations = {
     sidebar: {
         gotoWireless: '切換到 Wi-Fi',
         switching: '切換中…',
+        transport: '連接方式',
+
         deviceHub: '裝置中心',
         killAdb: '終止 ADB',
         killAdbTitle: '強制終止所有 ADB 操作',

@@ -71,6 +71,8 @@ export const en = {
     sidebar: {
         gotoWireless: 'Go Wireless',
         switching: 'Switching…',
+        transport: 'Transport',
+
         deviceHub: 'Device Hub',
         killAdb: 'Kill ADB',
         killAdbTitle: 'Force kill all adb operations',

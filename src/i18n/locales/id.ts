@@ -70,6 +70,8 @@ languages: {
     sidebar: {
         gotoWireless: 'Beralih ke Wi-Fi',
         switching: 'Beralih…',
+        transport: 'Transportasi',
+
         deviceHub: 'Pusat Perangkat',
         killAdb: 'Matikan ADB',
         killAdbTitle: 'Paksa hentikan semua operasi adb',

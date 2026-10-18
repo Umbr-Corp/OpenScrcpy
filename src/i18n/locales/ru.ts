@@ -74,6 +74,8 @@ export const ru: Translations = {
   sidebar: {
     gotoWireless: 'Перейти на Wi-Fi',
     switching: 'Переключение…',
+    transport: 'Транспорт',
+
     deviceHub: 'Центр устройств',
     killAdb: 'Остановить ADB',
     killAdbTitle: 'Принудительно завершить все операции adb',

@@ -212,6 +212,15 @@ input[type="range"].ds-range { accent-color: var(--primary); height: 4px; cursor
 .ds-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; line-height: 13px; font-weight: 530; border: 1px solid var(--border-base); border-radius: var(--radius-full); padding: 2px 8px; color: var(--text-secondary); background: var(--bg-input); }
 .ds-badge[data-live="true"] { border-color: var(--primary); color: var(--primary); }
 
+/* Transport switch on the hub card: two transports render as a segmented
+   control (same language as the Capture source tabs); a single transport
+   keeps the plain badge, because there is nothing to switch. */
+.tpx-group { display: inline-flex; align-items: center; gap: 2px; padding: 2px; background: var(--bg-input); border: 1px solid var(--border-base); border-radius: 999px; }
+.tpx-seg { display: inline-flex; align-items: center; gap: 4px; padding: 1px 8px; border-radius: 999px; font-size: 10px; line-height: 12px; font-weight: 530; color: var(--text-muted); cursor: pointer; border: none; background: transparent; transition: background 0.09s ease-out, color 0.15s cubic-bezier(0.4, 0, 0.2, 1); }
+.tpx-seg:hover { color: var(--text-base); background: color-mix(in srgb, var(--primary) 14%, transparent); }
+.tpx-seg[data-active="true"] { background: var(--primary); color: var(--text-on-primary); }
+.tpx-seg:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
+
 /* ── Terminal stays darkest in both modes (data surface) ─── */
 .force-dark, .force-dark.glass {
   background-color: color-mix(in srgb, #2E2E2E 55%, black) !important;

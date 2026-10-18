@@ -235,7 +235,41 @@ export default function Sidebar({
                                                         {isRunning ? t('sidebar.live') : t('sidebar.ready')}
                                                     </span>
                                                 </span>
-                                                {ids.map(id => id.includes('.') ? (
+                                                {ids.length > 1 ? (
+                                                    // Two transports: a real switch, visually
+                                                    // distinct from the status badge.
+                                                    <div className="tpx-group" role="group" aria-label={t('sidebar.transport')}>
+                                                        {ids.map(id => id.includes('.') ? (
+                                                            <span
+                                                                key={id}
+                                                                role="button"
+                                                                aria-pressed={selectedDevice === id}
+                                                                aria-label={`${t('sidebar.wifi')}: ${id}`}
+                                                                className="tpx-seg"
+                                                                data-active={selectedDevice === id ? 'true' : 'false'}
+                                                                onClick={(e) => { e.stopPropagation(); onSelectDevice(id); }}
+                                                            >
+                                                                <Wifi size={9.5} />
+                                                                {t('sidebar.wifi')}
+                                                            </span>
+                                                        ) : (
+                                                            <span
+                                                                key={id}
+                                                                role="button"
+                                                                aria-pressed={selectedDevice === id}
+                                                                aria-label={`${t('sidebar.usb')}: ${id}`}
+                                                                className="tpx-seg"
+                                                                data-active={selectedDevice === id ? 'true' : 'false'}
+                                                                onClick={(e) => { e.stopPropagation(); onSelectDevice(id); }}
+                                                            >
+                                                                <Usb size={9.5} />
+                                                                {t('sidebar.usb')}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                ) : ids.map(id => id.includes('.') ? (
+                                                    // One transport: informational badge; the
+                                                    // card click handles selection.
                                                     <span
                                                         key={id}
                                                         role="button"
