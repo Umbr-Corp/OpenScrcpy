@@ -294,23 +294,29 @@ export function useDevices({ scrcpyPath, historyDevices, addToHistory, addLogs }
     const connectDevice = async (ip: string, customPath?: string) => {
         setIsRefreshing(true);
         try {
+            // Normalize a bare IP ("192.168.0.12"): adb falls back to port 5555
+            // on its own, so the connect succeeds either way -- but the history
+            // entry and the disconnect-retry below both key on "ip:port", and a
+            // bare IP would connect silently yet never land in Recent Devices.
+            const target = ip.includes(':') ? ip : `${ip}:5555`;
+
             // Attempt 1: Connect
-            let res: any = await invoke('adb_connect', { ip, customPath: customPath || scrcpyPath });
+            let res: any = await invoke('adb_connect', { ip: target, customPath: customPath || scrcpyPath });
 
             // Retry Logic: If failed, try to disconnect first then reconnect
             if (!res.success && typeof res.message === 'string' && (res.message.includes('failed to connect') || res.message.includes('cannot connect'))) {
                 addLogs(t('logs.connectionFailedRetrying'));
                 // Force disconnect to clear ghost state
-                await invoke('run_terminal_command', { cmd: `adb disconnect ${ip}`, customPath: customPath || scrcpyPath });
+                await invoke('run_terminal_command', { cmd: `adb disconnect ${target}`, customPath: customPath || scrcpyPath });
                 // Small delay
                 await new Promise(r => setTimeout(r, 500));
                 // Attempt 2
-                res = await invoke('adb_connect', { ip, customPath: customPath || scrcpyPath });
+                res = await invoke('adb_connect', { ip: target, customPath: customPath || scrcpyPath });
             }
 
             if (res.success) {
-                addLogs(t('logs.connectedSuccessfully', { ip }));
-                addToHistory(ip);
+                addLogs(t('logs.connectedSuccessfully', { ip: target }));
+                addToHistory(target);
 
                 // Allow ADB to settle and state to update
                 await new Promise(r => setTimeout(r, 1000));
