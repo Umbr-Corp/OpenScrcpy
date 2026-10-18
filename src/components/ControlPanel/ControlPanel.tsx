@@ -17,6 +17,9 @@ interface ControlPanelProps {
     renderDriverSupport?: RenderDriverSupport;
     /** Live mic bridge level (dB, -60..0) while the bridge runs. */
     micLevel?: number | null;
+    /** Destination of the bridge audio stream: sink description + "in
+     *  our virtual microphone" flag. */
+    micRoute?: { sink: string; ok: boolean } | null;
 }
 
 // Hover states for custom rows use Settings tokens only (no extra hues).
@@ -197,6 +200,7 @@ export default function ControlPanel({
     isRunning,
     onListOptions,
     micLevel = null,
+    micRoute = null,
     detectedCameras = [],
     renderDriverSupport = { hostOs: 'unknown', supportsRenderDriver: false, supportedDrivers: [] }
 }: ControlPanelProps) {
@@ -614,6 +618,23 @@ export default function ControlPanel({
                                     {isRunning && (
                                         <span className="ds-caption" style={{ marginLeft: 'auto', color: 'var(--success, var(--primary))' }}>
                                             {t('controlPanel.micActive')}
+                                        </span>
+                                    )}
+                                </div>
+
+                                <div className="flex items-center justify-between">
+                                    <span className="ds-label">{t('controlPanel.micDestLabel')}</span>
+                                    {!isRunning ? (
+                                        <span className="ds-caption" style={{ color: 'var(--text-muted)' }}>{t('controlPanel.micDestIdle')}</span>
+                                    ) : !micRoute?.sink ? (
+                                        <span className="ds-caption" style={{ color: 'var(--text-muted)' }}>{t('controlPanel.micDestSearching')}</span>
+                                    ) : (
+                                        <span
+                                            className="ds-caption ds-strong"
+                                            style={{ color: micRoute.ok ? 'var(--success, var(--primary))' : 'var(--warning, var(--secondary))' }}
+                                            title={micRoute.sink}
+                                        >
+                                            {micRoute.sink}{micRoute.ok ? '' : ' *'}
                                         </span>
                                     )}
                                 </div>

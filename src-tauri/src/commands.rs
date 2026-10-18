@@ -1830,44 +1830,74 @@ async fn unload_mic_sink(window: &Window) {
     }
 }
 
-// Second-chance routing: the PULSE_SINK env does not reach SDL3 clients, and
-// the scrcpy stream only shows up after its server handshake (seconds later).
-// Poll every 2s for up to 20s: find the client stream, land it in the virtual
-// sink, confirm on the console.
+// Watcher that keeps the scrcpy stream inside the virtual sink for the
+// whole session and reports the current destination to the GUI. PULSE_SINK
+// does not reach SDL3 clients and the stream shows up only after scrcpy's
+// server handshake (seconds later), so a one-shot check is not enough.
 #[cfg(unix)]
-async fn verify_mic_route(window: Window, sink_present: bool) {
-    if !sink_present {
-        return;
-    }
-    for _attempt in 0..10 {
-        tokio::time::sleep(Duration::from_millis(2000)).await;
-        if route_mic_stream_once(&window).await {
-            return;
+async fn spawn_mic_route_watcher(window: Window, device: String, app_handle: tauri::AppHandle) {
+    tokio::spawn(async move {
+        let mut last: Option<(String, bool)> = None;
+        loop {
+            let session_alive = app_handle
+                .state::<ScrcpyState>()
+                .processes
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .contains_key(&device);
+            if !session_alive {
+                break;
+            }
+            if let Some((display, routed)) = poll_mic_route(&window).await {
+                if last.as_ref() != Some(&(display.clone(), routed)) {
+                    let _ = window.emit("mic-route", (display.clone(), routed));
+                    last = Some((display, routed));
+                }
+            }
+            tokio::time::sleep(Duration::from_millis(2000)).await;
         }
-    }
-    let _ = window.emit(
-        "scrcpy-log",
-        "[MIC] No scrcpy stream was found in 20s; routing left untouched.".to_string(),
-    );
+    });
 }
 
-// Finds the scrcpy client stream and lands it in the virtual sink.
-// Returns true once the stream exists (freshly routed or already in place).
+// One routing pass. Returns the destination for the GUI: (text, in_virtual)
+// where empty text means "no scrcpy stream yet". Maintains the route when the
+// stream landed on some other output.
 #[cfg(unix)]
-async fn route_mic_stream_once(window: &Window) -> bool {
-    let Some(sinks) = pactl_run(&["list", "short", "sinks"]).await else {
-        return false;
-    };
-    let Some(target) = sinks
-        .stdout
-        .lines()
-        .find(|l| l.split('\t').nth(1) == Some(MIC_SINK_NAME))
-        .and_then(|l| l.split('\t').next().map(str::to_string))
+async fn poll_mic_route(window: &Window) -> Option<(String, bool)> {
+    // Verbose sinks: entries start at "Sink #N" and carry Name/Description.
+    let mut sink_map: std::collections::HashMap<String, (String, String)> =
+        std::collections::HashMap::new();
+    let sinks = pactl_run(&["list", "sinks"]).await?;
+    for block in sinks.stdout.split("Sink #").skip(1) {
+        let idx = block.lines().next().unwrap_or("").trim().to_string();
+        if idx.is_empty() {
+            continue;
+        }
+        let name = block
+            .lines()
+            .find(|l| l.trim().starts_with("Name: "))
+            .and_then(|l| l.split_once("Name: ").map(|(_, v)| v.trim().to_string()));
+        let desc = block
+            .lines()
+            .find(|l| l.trim().starts_with("Description: "))
+            .and_then(|l| {
+                l.split_once("Description: ")
+                    .map(|(_, v)| v.trim().to_string())
+            });
+        if let Some(name) = name {
+            sink_map.insert(idx, (name, desc.unwrap_or_default()));
+        }
+    }
+    let Some((target_idx, _)) = sink_map
+        .iter()
+        .find(|(_, (name, _))| name == MIC_SINK_NAME)
+        .map(|(k, v)| (k.clone(), v.1.clone()))
     else {
-        return false;
+        return None;
     };
+
     let Some(inputs) = pactl_run(&["list", "sink-inputs"]).await else {
-        return false;
+        return None;
     };
     for block in inputs.stdout.split("\n\n") {
         let is_scrcpy = block
@@ -1883,38 +1913,49 @@ async fn route_mic_stream_once(window: &Window) -> bool {
             .next()
             .and_then(|l| l.trim().strip_prefix("Sink Input #"))
             .map(|v| v.trim().to_string());
-        let current = block
+        let current_idx = block
             .lines()
             .find(|l| l.trim().starts_with("Sink: "))
             .and_then(|l| l.split(':').nth(1).map(|v| v.trim().to_string()));
-        match (stream_idx, current) {
-            (Some(stream), Some(cur)) if cur != target => {
-                let moved = pactl_run(&["move-sink-input", &stream, &target]).await;
-                let ok = moved.as_ref().map(|m| m.ok).unwrap_or(false);
-                let _ = window.emit(
-                    "scrcpy-log",
-                    if ok {
-                        "[MIC] Audio stream moved into the virtual sink.".to_string()
-                    } else {
-                        format!(
-                            "[MIC] move-sink-input failed: {}.",
-                            moved.map(|m| m.stderr).unwrap_or_default()
-                        )
-                    },
-                );
-                return true;
-            }
-            (Some(_), Some(_)) => {
-                let _ = window.emit(
-                    "scrcpy-log",
-                    "[MIC] Audio stream confirmed in the virtual sink.".to_string(),
-                );
-                return true;
-            }
-            _ => return false,
+        let Some(stream_idx) = stream_idx else {
+            return Some((String::new(), false));
+        };
+        let Some(current_idx) = current_idx else {
+            return Some((String::new(), false));
+        };
+        let (cur_name, cur_desc) = sink_map
+            .get(&current_idx)
+            .cloned()
+            .unwrap_or_else(|| (String::new(), String::new()));
+
+        if cur_name == MIC_SINK_NAME {
+            return Some((MIC_SINK_LABEL.to_string(), true));
         }
+        // The stream went somewhere else: bring it into the virtual sink.
+        let moved = pactl_run(&["move-sink-input", &stream_idx, &target_idx]).await;
+        let ok = moved.as_ref().map(|m| m.ok).unwrap_or(false);
+        let _ = window.emit(
+            "scrcpy-log",
+            if ok {
+                "[MIC] Audio stream moved into the virtual sink.".to_string()
+            } else {
+                format!(
+                    "[MIC] move-sink-input failed: {}.",
+                    moved.map(|m| m.stderr).unwrap_or_default()
+                )
+            },
+        );
+        return Some((
+            if ok {
+                MIC_SINK_LABEL.to_string()
+            } else {
+                cur_desc
+            },
+            ok,
+        ));
     }
-    false
+    // scrcpy stream not there yet (server handshake in progress).
+    Some((String::new(), false))
 }
 
 // Live level feedback: parec taps the virtual sink's monitor and the RMS of
@@ -2107,20 +2148,6 @@ pub async fn run_scrcpy(
     )
     .await?;
 
-    if config.session_mode == "mic" {
-        #[cfg(unix)]
-        {
-            tokio::spawn(verify_mic_route(window.clone(), pulse_sink.is_some()));
-            tokio::spawn(spawn_mic_level_meter(
-                window.clone(),
-                config.device.clone(),
-                app_handle.clone(),
-            ));
-        }
-        #[cfg(not(unix))]
-        drop(pulse_sink.as_deref());
-    }
-
     // Decide whether automatic audio codec fallback should kick in on errors.
     let audio_enabled = config.audio_enabled.unwrap_or(true);
     let audio_codec_mode = config.audio_codec.as_deref().unwrap_or("auto").trim();
@@ -2137,6 +2164,27 @@ pub async fn run_scrcpy(
         "scrcpy-status",
         json!({ "device": config.device, "running": true }),
     );
+
+    // Mic bridge sidecars. Started only after the registry insert above, so
+    // their contains_key liveness checks see this session on the first poll
+    // (spawning them earlier raced the insert and the loops died instantly).
+    if config.session_mode == "mic" {
+        #[cfg(unix)]
+        if pulse_sink.is_some() {
+            tokio::spawn(spawn_mic_route_watcher(
+                window.clone(),
+                config.device.clone(),
+                app_handle.clone(),
+            ));
+            tokio::spawn(spawn_mic_level_meter(
+                window.clone(),
+                config.device.clone(),
+                app_handle.clone(),
+            ));
+        }
+        #[cfg(not(unix))]
+        drop(pulse_sink.as_deref());
+    }
 
     // Monitor for exit (and orchestrate the audio codec fallback chain)
     let device_mon = config.device.clone();

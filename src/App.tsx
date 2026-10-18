@@ -93,6 +93,9 @@ function App() {
   const [wirelessSwitching, setWirelessSwitching] = useState<string | null>(null);
   /** Live mic bridge level (dB) from the backend meter; null when idle. */
   const [micLevel, setMicLevel] = useState<number | null>(null);
+  /** Current mic bridge destination: sink description + whether it is our
+   *  virtual microphone. */
+  const [micRoute, setMicRoute] = useState<{ sink: string; ok: boolean } | null>(null);
 
   const showAlert = (
     title: string,
@@ -360,19 +363,28 @@ function App() {
   }, [activeDevice]);
 
   useEffect(() => {
-    // Live mic-bridge level (dB) emitted by the Rust meter (Linux only).
+    // Live mic-bridge level (dB) and current destination emitted by the
+    // Rust sidecar (Linux only).
     if (!isTauri()) return;
-    const unlisten = getCurrentWindow().listen<number>("mic-level", (event) => {
+    const unlistenLevel = getCurrentWindow().listen<number>("mic-level", (event) => {
       const db = event.payload;
       setMicLevel(typeof db === 'number' && Number.isFinite(db) ? Math.round(db) : null);
     });
+    const unlistenRoute = getCurrentWindow().listen<[string, boolean]>("mic-route", (event) => {
+      const [sink, ok] = event.payload;
+      setMicRoute({ sink, ok });
+    });
     return () => {
-      unlisten.then(f => f());
+      unlistenLevel.then(f => f());
+      unlistenRoute.then(f => f());
     };
   }, []);
 
   useEffect(() => {
-    if (!sessionRunning) setMicLevel(null);
+    if (!sessionRunning) {
+      setMicLevel(null);
+      setMicRoute(null);
+    }
   }, [sessionRunning]);
 
   const handleStart = async () => {
@@ -524,6 +536,7 @@ function App() {
                   onStop={handleStop}
                   isRunning={sessionRunning}
                   micLevel={micLevel}
+                  micRoute={micRoute}
                   detectedCameras={detectedCameras}
                   renderDriverSupport={renderDriverSupport}
                   onListOptions={(arg) => {
