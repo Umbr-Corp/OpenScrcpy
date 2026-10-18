@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
-import { Play, Square, Monitor, Camera, LayoutGrid, ChevronDown, Lock, Unlock, Settings2, Video, ExternalLink, Keyboard, Mouse } from 'lucide-react';
+import { Play, Square, Monitor, Camera, LayoutGrid, Lock, Unlock, Settings2, Video, ExternalLink, Keyboard, Mouse } from 'lucide-react';
 import { RenderDriverSupport, ScrcpyConfig } from '../../hooks/useScrcpy';
 import Tooltip from '../Tooltip';
+import Select from '../Select';
+import SliderRow from '../SliderRow';
 import { buildRendererOptions, mapRendererSelection } from './rendererOptions';
 import { useI18n } from '../../i18n';
 
@@ -24,67 +25,6 @@ const dsHoverStyles = `
 .cp-opt { border: 1px solid transparent; }
 .cp-opt:hover { border-color: var(--primary); }
 `;
-
-const BitrateControl = ({ label, value, onChange }: { label: string, value: number, onChange: (val: number) => void }) => {
-    const [localValue, setLocalValue] = useState(value);
-
-    // Sync from parent if parent changes externally (e.g. preset load)
-    useEffect(() => {
-        setLocalValue(value);
-    }, [value]);
-
-    // Commit on release (mouse/touch) or key-up, so keyboard nudges also apply.
-    const commit = () => onChange(localValue);
-
-    return (
-        <div className="space-y-1">
-            <div className="flex justify-between items-center">
-                <span className="ds-label">{label}</span>
-                <span className="ds-caption tabular-nums" style={{ color: 'var(--primary)' }}>{localValue}M</span>
-            </div>
-            <input
-                type="range"
-                min="1"
-                max="50"
-                value={localValue}
-                aria-label={label}
-                onChange={(e) => setLocalValue(parseInt(e.target.value))}
-                onMouseUp={commit}
-                onTouchEnd={commit}
-                onKeyUp={commit}
-                className="ds-range w-full"
-            />
-        </div>
-    );
-};
-
-const VDSlider = ({ label, value, min, max, unit = "", onChange }: { label: string, value: number, min: number, max: number, unit?: string, onChange: (val: number) => void }) => {
-    const [localValue, setLocalValue] = useState(value);
-    useEffect(() => setLocalValue(value), [value]);
-
-    const commit = () => onChange(localValue);
-
-    return (
-        <div className="space-y-1">
-            <div className="flex justify-between items-center">
-                <span className="ds-label">{label}</span>
-                <span className="ds-caption tabular-nums" style={{ color: 'var(--primary)' }}>{localValue}{unit}</span>
-            </div>
-            <input
-                type="range"
-                min={min}
-                max={max}
-                value={localValue}
-                aria-label={label}
-                onChange={(e) => setLocalValue(parseInt(e.target.value))}
-                onMouseUp={commit}
-                onTouchEnd={commit}
-                onKeyUp={commit}
-                className="ds-range w-full"
-            />
-        </div>
-    );
-};
 
 interface ToggleRowProps {
     checked: boolean;
@@ -127,6 +67,122 @@ const ToggleRow = ({ checked, onChange, label, hint, icon: Icon }: ToggleRowProp
     </div>
 );
 
+// Resolution / codec / fps / rotation / renderer grid, shared by the three
+// session modes with selective hiding. Module scope: a dropdown declared
+// inside the parent's body would remount (and close) on every parent render,
+// e.g. the 5s background device poll in App.
+const PerformanceGrid = ({
+    config,
+    handleChange,
+    rendererOptions,
+    showResolution = true,
+    showCodec = true
+}: {
+    config: ScrcpyConfig;
+    handleChange: (field: keyof ScrcpyConfig, value: any) => void;
+    rendererOptions: { value: string; label: string }[];
+    showResolution?: boolean;
+    showCodec?: boolean;
+}) => {
+    const { t } = useI18n();
+    const selectClassNames = {
+        triggerClassName: 'cp-select',
+        optionClassName: 'cp-opt',
+        customLabel: t('controlPanel.custom')
+    };
+
+    return (
+        <div className="space-y-2">
+            <div className={`grid ${showResolution ? 'grid-cols-3' : 'grid-cols-2'} gap-2`}>
+                {showResolution && (
+                    <Select
+                        label={t('controlPanel.resolution')}
+                        value={config.res || "0"}
+                        onChange={(val) => handleChange('res', val)}
+                        options={[
+                            { value: "0", label: t('controlPanel.resolutionOriginal') },
+                            { value: "3840", label: "4K" },
+                            { value: "2560", label: "2K" },
+                            { value: "1920", label: "1080p" },
+                            { value: "1600", label: "900p" },
+                            { value: "1280", label: "720p" },
+                            { value: "1024", label: "576p" },
+                            { value: "800", label: "480p" },
+                        ]}
+                        {...selectClassNames}
+                    />
+                )}
+                {showCodec && (
+                    <Select
+                        label={t('controlPanel.codec')}
+                        value={config.codec || "h264"}
+                        onChange={(val) => handleChange('codec', val)}
+                        options={[
+                            { value: "h264", label: "H.264" },
+                            { value: "h265", label: "H.265" },
+                            { value: "av1", label: "AV1" },
+                            { value: "vp8", label: "VP8" },
+                            { value: "vp9", label: "VP9" },
+                        ]}
+                        {...selectClassNames}
+                    />
+                )}
+                <Select
+                    label={t('controlPanel.fps')}
+                    value={config.fps === undefined || config.fps === null ? 0 : config.fps}
+                    onChange={(val) => handleChange('fps', parseInt(val) === 0 ? undefined : parseInt(val))}
+                    options={[
+                        { value: 0, label: t('controlPanel.rendererAuto') || "Automatic" },
+                        { value: 30, label: "30" },
+                        { value: 60, label: "60" },
+                        { value: 90, label: "90" },
+                        { value: 120, label: "120" },
+                    ]}
+                    {...selectClassNames}
+                />
+                <Select
+                    label={t('controlPanel.rotation')}
+                    value={config.rotation || "0"}
+                    onChange={(val) => handleChange('rotation', val)}
+                    options={[
+                        { value: "0", label: "0°" },
+                        { value: "270", label: "-90°" },
+                        { value: "90", label: "+90°" },
+                        { value: "180", label: "180°" },
+                    ]}
+                    {...selectClassNames}
+                />
+                <Select
+                    label={t('controlPanel.graphicsRenderer')}
+                    value={config.renderDriver || 'auto'}
+                    onChange={(val) => handleChange('renderDriver', mapRendererSelection(val))}
+                    options={rendererOptions}
+                    {...selectClassNames}
+                />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+                <Tooltip text={t('controlPanel.vsyncTooltip')} block>
+                    <ToggleRow
+                        checked={config.vsync !== false}
+                        onChange={(v) => handleChange('vsync', v)}
+                        label={t('controlPanel.vsync')}
+                        hint={t('controlPanel.vsyncHint')}
+                    />
+                </Tooltip>
+                {/* v4.1: ignore encoder constraints */}
+                <Tooltip text={t('controlPanel.ignoreEncoderConstraintsTooltip')} block>
+                    <ToggleRow
+                        checked={!!config.ignoreVideoEncoderConstraints}
+                        onChange={(v) => handleChange('ignoreVideoEncoderConstraints', v)}
+                        label={t('controlPanel.ignoreEncoderConstraints')}
+                        hint="v4.1"
+                    />
+                </Tooltip>
+            </div>
+        </div>
+    );
+};
+
 export default function ControlPanel({
     config,
     setConfig,
@@ -144,149 +200,11 @@ export default function ControlPanel({
     };
 
     const rendererOptions = buildRendererOptions(renderDriverSupport, t('controlPanel.rendererAuto'));
-
-    const CustomSelect = ({ value, onChange, options, label, className = "" }: { value: any, onChange: (val: any) => void, options: { value: any, label: string }[], label?: string, className?: string }) => {
-        const [isOpen, setIsOpen] = useState(false);
-        const containerRef = useRef<HTMLDivElement>(null);
-
-        useEffect(() => {
-            const handleClickOutside = (event: MouseEvent) => {
-                if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-                    setIsOpen(false);
-                }
-            };
-            if (isOpen) document.addEventListener('mousedown', handleClickOutside);
-            return () => document.removeEventListener('mousedown', handleClickOutside);
-        }, [isOpen]);
-
-        const selectedOption = options.find(opt => opt.value === value) || { value, label: t('controlPanel.custom') };
-
-        return (
-            <div className={`relative ${className}`} ref={containerRef}>
-                {label && <span className="ds-label block" style={{ marginBottom: 4 }}>{label}</span>}
-                <button
-                    type="button"
-                    aria-haspopup="listbox"
-                    aria-expanded={isOpen}
-                    onClick={() => setIsOpen(!isOpen)}
-                    className="ds-select-btn cp-select w-full flex items-center justify-between gap-2"
-                >
-                    <span className="truncate">{selectedOption?.label}</span>
-                    <ChevronDown size={14} style={{ color: 'var(--text-muted)', transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.09s ease-out' }} />
-                </button>
-
-                {isOpen && (
-                    <div role="listbox" className="ds-panel ds-fade-in absolute left-0 right-0 z-[100] py-1" style={{ marginTop: 4, padding: 4 }}>
-                        {options.map((opt) => (
-                            <button
-                                key={opt.value}
-                                type="button"
-                                role="option"
-                                aria-selected={opt.value === value}
-                                onClick={() => {
-                                    onChange(opt.value);
-                                    setIsOpen(false);
-                                }}
-                                className="ds-btn-tertiary cp-opt w-full"
-                                style={{
-                                    justifyContent: 'flex-start',
-                                    ...(opt.value === value ? { color: 'var(--primary)' } : {})
-                                }}
-                            >
-                                {opt.label}
-                            </button>
-                        ))}
-                    </div>
-                )}
-            </div>
-        );
+    const selectClassNames = {
+        triggerClassName: 'cp-select',
+        optionClassName: 'cp-opt',
+        customLabel: t('controlPanel.custom')
     };
-
-    const PerformanceGrid = ({ showResolution = true, showCodec = true }: { showResolution?: boolean, showCodec?: boolean }) => (
-        <div className="space-y-2">
-        <div className={`grid ${showResolution ? 'grid-cols-3' : 'grid-cols-2'} gap-2`}>
-            {showResolution && (
-                <CustomSelect
-                    label={t('controlPanel.resolution')}
-                    value={config.res || "0"}
-                    onChange={(val) => handleChange('res', val)}
-                    options={[
-                        { value: "0", label: t('controlPanel.resolutionOriginal') },
-                        { value: "3840", label: "4K" },
-                        { value: "2560", label: "2K" },
-                        { value: "1920", label: "1080p" },
-                        { value: "1600", label: "900p" },
-                        { value: "1280", label: "720p" },
-                        { value: "1024", label: "576p" },
-                        { value: "800", label: "480p" },
-                    ]}
-                />
-            )}
-            {showCodec && (
-                <CustomSelect
-                    label={t('controlPanel.codec')}
-                    value={config.codec || "h264"}
-                    onChange={(val) => handleChange('codec', val)}
-                    options={[
-                        { value: "h264", label: "H.264" },
-                        { value: "h265", label: "H.265" },
-                        { value: "av1", label: "AV1" },
-                        { value: "vp8", label: "VP8" },
-                        { value: "vp9", label: "VP9" },
-                    ]}
-                />
-            )}
-            <CustomSelect
-                label={t('controlPanel.fps')}
-                value={config.fps === undefined || config.fps === null ? 0 : config.fps}
-                onChange={(val) => handleChange('fps', parseInt(val) === 0 ? undefined : parseInt(val))}
-                options={[
-                    { value: 0, label: t('controlPanel.rendererAuto') || "Automatic" },
-                    { value: 30, label: "30" },
-                    { value: 60, label: "60" },
-                    { value: 90, label: "90" },
-                    { value: 120, label: "120" },
-                ]}
-            />
-            <CustomSelect
-                label={t('controlPanel.rotation')}
-                value={config.rotation || "0"}
-                onChange={(val) => handleChange('rotation', val)}
-                options={[
-                    { value: "0", label: "0°" },
-                    { value: "270", label: "-90°" },
-                    { value: "90", label: "+90°" },
-                    { value: "180", label: "180°" },
-                ]}
-            />
-            <CustomSelect
-                label={t('controlPanel.graphicsRenderer')}
-                value={config.renderDriver || 'auto'}
-                onChange={(val) => handleChange('renderDriver', mapRendererSelection(val))}
-                options={rendererOptions}
-            />
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-        <Tooltip text={t('controlPanel.vsyncTooltip')} block>
-            <ToggleRow
-                checked={config.vsync !== false}
-                onChange={(v) => handleChange('vsync', v)}
-                label={t('controlPanel.vsync')}
-                hint={t('controlPanel.vsyncHint')}
-            />
-        </Tooltip>
-        {/* v4.1: ignore encoder constraints */}
-        <Tooltip text={t('controlPanel.ignoreEncoderConstraintsTooltip')} block>
-            <ToggleRow
-                checked={!!config.ignoreVideoEncoderConstraints}
-                onChange={(v) => handleChange('ignoreVideoEncoderConstraints', v)}
-                label={t('controlPanel.ignoreEncoderConstraints')}
-                hint="v4.1"
-            />
-        </Tooltip>
-        </div>
-        </div>
-    );
 
     return (
         <main className="lg:col-span-6 space-y-4">
@@ -395,10 +313,15 @@ export default function ControlPanel({
                             <div
                                 className="space-y-2.5"
                                 aria-disabled={!!config.otgPure}
-                                style={config.otgPure ? { opacity: 0.45, pointerEvents: 'none' } : { opacity: 1 }}
+                                inert={config.otgPure ? true : undefined}
+                                style={config.otgPure ? { opacity: 0.45 } : { opacity: 1 }}
                             >
-                                <PerformanceGrid />
-                                <BitrateControl label={t('controlPanel.bitrate')} value={config.bitrate || 8} onChange={(v) => handleChange('bitrate', v)} />
+                                <PerformanceGrid
+                                    config={config}
+                                    handleChange={handleChange}
+                                    rendererOptions={rendererOptions}
+                                />
+                                <SliderRow label={t('controlPanel.bitrate')} value={config.bitrate || 8} min={1} max={50} format={(v) => `${v}M`} onChange={(v) => handleChange('bitrate', v)} />
                             </div>
                         </>
                     )}
@@ -446,18 +369,19 @@ export default function ControlPanel({
                                         </button>
                                     </div>
                                 </div>
-                                <CustomSelect
+                                <Select
                                     value={config.cameraId || ""}
                                     onChange={(val) => handleChange('cameraId', val)}
                                     options={[
                                         { value: "", label: t('controlPanel.autoSelect') },
                                         ...detectedCameras.map(cam => ({ value: cam.id, label: cam.name }))
                                     ]}
+                                    {...selectClassNames}
                                 />
                             </div>
 
                             <div className="grid grid-cols-2 gap-2">
-                                <CustomSelect
+                                <Select
                                     label={t('controlPanel.codec')}
                                     value={config.codec || "h264"}
                                     onChange={(val) => handleChange('codec', val)}
@@ -468,8 +392,9 @@ export default function ControlPanel({
                                         { value: "vp8", label: "VP8" },
                                         { value: "vp9", label: "VP9" },
                                     ]}
+                                    {...selectClassNames}
                                 />
-                                <CustomSelect
+                                <Select
                                     label={t('controlPanel.aspect')}
                                     value={config.cameraAr || "0"}
                                     onChange={(val) => handleChange('cameraAr', val)}
@@ -478,6 +403,7 @@ export default function ControlPanel({
                                         { value: "16:9", label: "16:9" },
                                         { value: "4:3", label: "4:3" },
                                     ]}
+                                    {...selectClassNames}
                                 />
                             </div>
 
@@ -494,28 +420,27 @@ export default function ControlPanel({
                                         label={t('controlPanel.cameraTorch')}
                                     />
                                 </Tooltip>
-                                <div className="space-y-1">
-                                    <div className="flex justify-between items-center">
-                                        <div className="flex items-center gap-1.5">
-                                            <span className="ds-label">{t('controlPanel.cameraZoom')}</span>
-                                            <Tooltip text={t('controlPanel.cameraZoomTooltip')} placement="top" />
-                                        </div>
-                                        <span className="ds-caption tabular-nums" style={{ color: 'var(--primary)' }}>{(config.cameraZoom || 1.0).toFixed(1)}x</span>
-                                    </div>
-                                    <input
-                                        type="range"
-                                        min={10}
-                                        max={50}
-                                        value={Math.round((config.cameraZoom || 1.0) * 10)}
-                                        onChange={(e) => handleChange('cameraZoom', parseInt(e.target.value) / 10)}
-                                        className="ds-range w-full"
-                                    />
-                                </div>
+                                <SliderRow
+                                    label={t('controlPanel.cameraZoom')}
+                                    tooltip={t('controlPanel.cameraZoomTooltip')}
+                                    value={config.cameraZoom || 1.0}
+                                    min={1}
+                                    max={5}
+                                    step={0.1}
+                                    format={(v) => `${v.toFixed(1)}x`}
+                                    onChange={(v) => handleChange('cameraZoom', v)}
+                                />
                             </div>
 
                             <div className="space-y-2.5">
-                                <PerformanceGrid showCodec={false} showResolution={false} />
-                                <BitrateControl label={t('controlPanel.bitrate')} value={config.bitrate || 8} onChange={(v) => handleChange('bitrate', v)} />
+                                <PerformanceGrid
+                                    config={config}
+                                    handleChange={handleChange}
+                                    rendererOptions={rendererOptions}
+                                    showCodec={false}
+                                    showResolution={false}
+                                />
+                                <SliderRow label={t('controlPanel.bitrate')} value={config.bitrate || 8} min={1} max={50} format={(v) => `${v}M`} onChange={(v) => handleChange('bitrate', v)} />
                             </div>
                         </div>
                     )}
@@ -560,12 +485,12 @@ export default function ControlPanel({
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-x-4 gap-y-3">
-                                    <VDSlider
+                                    <SliderRow
                                         label={t('controlPanel.width')}
                                         value={config.vdWidth || 1920}
                                         min={480} max={3840}
-                                        unit="px"
-                                        onChange={(val: number) => {
+                                        format={(v) => `${v}px`}
+                                        onChange={(val) => {
                                             if (config.aspectRatioLock && config.vdWidth && config.vdHeight) {
                                                 const ratio = config.vdHeight / config.vdWidth;
                                                 setConfig({ ...config, vdWidth: val, vdHeight: Math.round(val * ratio) });
@@ -574,12 +499,12 @@ export default function ControlPanel({
                                             }
                                         }}
                                     />
-                                    <VDSlider
+                                    <SliderRow
                                         label={t('controlPanel.height')}
                                         value={config.vdHeight || 1080}
                                         min={360} max={2160}
-                                        unit="px"
-                                        onChange={(val: number) => {
+                                        format={(v) => `${v}px`}
+                                        onChange={(val) => {
                                             if (config.aspectRatioLock && config.vdWidth && config.vdHeight) {
                                                 const ratio = config.vdWidth / config.vdHeight;
                                                 setConfig({ ...config, vdHeight: val, vdWidth: Math.round(val * ratio) });
@@ -588,24 +513,16 @@ export default function ControlPanel({
                                             }
                                         }}
                                     />
-                                    <div className="space-y-1">
-                                        <div className="flex justify-between items-center">
-                                            <div className="flex items-center gap-1.5">
-                                                <span className="ds-label">{t('controlPanel.uiScaling')}</span>
-                                                <Tooltip text={t('controlPanel.uiScalingTooltip')} placement="top" />
-                                            </div>
-                                            <span className="ds-caption tabular-nums" style={{ color: 'var(--primary)' }}>{config.vdDpi || 420} DPI</span>
-                                        </div>
-                                        <input
-                                            type="range"
-                                            min={120}
-                                            max={640}
-                                            value={config.vdDpi || 420}
-                                            onChange={(e) => handleChange('vdDpi', parseInt(e.target.value))}
-                                            className="ds-range w-full"
-                                        />
-                                    </div>
-                                    <CustomSelect
+                                    <SliderRow
+                                        label={t('controlPanel.uiScaling')}
+                                        tooltip={t('controlPanel.uiScalingTooltip')}
+                                        value={config.vdDpi || 420}
+                                        min={120}
+                                        max={640}
+                                        format={(v) => `${v} DPI`}
+                                        onChange={(val) => handleChange('vdDpi', val)}
+                                    />
+                                    <Select
                                         label={t('controlPanel.quickPresets')}
                                         value={(() => {
                                             const w = config.vdWidth;
@@ -628,13 +545,19 @@ export default function ControlPanel({
                                             { value: "4k", label: t('controlPanel.preset4k') },
                                             { value: "ultrawide", label: t('controlPanel.presetUltrawide') },
                                         ]}
+                                        {...selectClassNames}
                                     />
                                 </div>
                             </div>
 
                             <div className="space-y-2.5">
-                                <PerformanceGrid showResolution={false} />
-                                <BitrateControl label={t('controlPanel.bitrate')} value={config.bitrate || 8} onChange={(v) => handleChange('bitrate', v)} />
+                                <PerformanceGrid
+                                    config={config}
+                                    handleChange={handleChange}
+                                    rendererOptions={rendererOptions}
+                                    showResolution={false}
+                                />
+                                <SliderRow label={t('controlPanel.bitrate')} value={config.bitrate || 8} min={1} max={50} format={(v) => `${v}M`} onChange={(v) => handleChange('bitrate', v)} />
                                 {/* v4: Background Color for Desktop mode */}
                                 <div className="space-y-1">
                                     <div className="flex items-center gap-1.5">

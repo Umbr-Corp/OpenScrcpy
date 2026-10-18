@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Download, FolderOpen, RefreshCcw, HelpCircle, Info, Heart, X, ExternalLink, Languages, ChevronDown, Sun, Moon, Monitor, Cpu } from 'lucide-react';
 import { SUPPORTED_LOCALES, useI18n, type Locale } from '../i18n';
+import Modal from './Modal';
 
 interface HeaderProps {
     colorMode: 'light' | 'dark' | 'system';
@@ -50,11 +51,16 @@ export default function Header({ colorMode, onColorModeChange, binaryStatus, onD
             style={{ backgroundColor: 'var(--bg-surface)', borderBottom: '1px solid var(--border-base)' }}
         >
             {showHelp && (
-                <div
-                    className="fixed inset-0 z-[100] flex items-center justify-center p-4"
-                    style={{ backgroundColor: 'color-mix(in srgb, var(--text-base) 40%, transparent)' }}
+                <Modal
+                    isOpen
+                    onClose={() => setShowHelp(false)}
+                    closeOnBackdrop={false}
+                    zIndex={100}
+                    label={t('header.manualSetupGuide')}
+                    backdropStyle={{ backgroundColor: 'color-mix(in srgb, var(--text-base) 40%, transparent)' }}
+                    overlayClassName="p-4"
+                    panelClassName="rounded-lg max-w-md w-full p-6"
                 >
-                    <div className="ds-card rounded-lg shadow-xl max-w-md w-full p-6 ds-fade-in" role="dialog" aria-modal="true">
                         <div className="flex justify-between items-center mb-4">
                             <h3 className="ds-label ds-strong flex items-center gap-2" style={{ color: 'var(--text-base)' }}>
                                 <HelpCircle size={16} /> {t('header.manualSetupGuide')}
@@ -100,16 +106,20 @@ export default function Header({ colorMode, onColorModeChange, binaryStatus, onD
                         >
                             {t('header.gotIt')}
                         </button>
-                    </div>
-                </div>
+                </Modal>
             )}
 
             {showAbout && (
-                <div
-                    className="fixed inset-0 z-[100] flex items-center justify-center p-4"
-                    style={{ backgroundColor: 'color-mix(in srgb, var(--text-base) 40%, transparent)' }}
+                <Modal
+                    isOpen
+                    onClose={() => setShowAbout(false)}
+                    closeOnBackdrop={false}
+                    zIndex={100}
+                    label={t('header.aboutTitle')}
+                    backdropStyle={{ backgroundColor: 'color-mix(in srgb, var(--text-base) 40%, transparent)' }}
+                    overlayClassName="p-4"
+                    panelClassName="rounded-lg max-w-md w-full p-6"
                 >
-                    <div className="ds-card rounded-lg shadow-xl max-w-md w-full p-6 ds-fade-in" role="dialog" aria-modal="true">
                         <div className="flex justify-between items-center mb-4">
                             <h3 className="ds-label ds-strong flex items-center gap-2" style={{ color: 'var(--text-base)' }}>
                                 <Info size={16} /> {t('header.aboutTitle')}
@@ -170,8 +180,7 @@ export default function Header({ colorMode, onColorModeChange, binaryStatus, onD
                         >
                             {t('header.gotIt')}
                         </button>
-                    </div>
-                </div>
+                </Modal>
             )}
 
             {/* Brand — left */}
