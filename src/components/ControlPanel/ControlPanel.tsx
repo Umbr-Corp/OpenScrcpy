@@ -1,4 +1,4 @@
-import { Play, Square, Monitor, Camera, LayoutGrid, Lock, Unlock, Settings2, Video, ExternalLink, Keyboard, Mouse } from 'lucide-react';
+import { Play, Square, Monitor, Camera, LayoutGrid, Mic, Lock, Unlock, Settings2, Video, ExternalLink, Keyboard, Mouse } from 'lucide-react';
 import { RenderDriverSupport, ScrcpyConfig } from '../../hooks/useScrcpy';
 import Tooltip from '../Tooltip';
 import Select from '../Select';
@@ -248,6 +248,17 @@ export default function ControlPanel({
                     >
                         <LayoutGrid size={16} />
                         <span>{t('controlPanel.desktop')}</span>
+                    </button>
+                    <button
+                        type="button"
+                        role="tab"
+                        aria-selected={config.sessionMode === 'mic'}
+                        data-active={config.sessionMode === 'mic' ? 'true' : 'false'}
+                        onClick={() => handleChange('sessionMode', 'mic')}
+                        className="ds-tab"
+                    >
+                        <Mic size={16} />
+                        <span>{t('controlPanel.microphone')}</span>
                     </button>
                 </div>
             </section>
@@ -590,6 +601,33 @@ export default function ControlPanel({
                             </div>
                         </div>
                     )}
+
+                    {config.sessionMode === 'mic' && (
+                        <div className="space-y-3">
+                            <div className="ds-panel p-3 space-y-3">
+                                <div className="flex items-center gap-2" style={{ borderBottom: '1px solid var(--border-base)', paddingBottom: 8 }}>
+                                    <Mic size={12} style={{ color: 'var(--primary)' }} />
+                                    <h3 className="ds-label ds-strong">{t('controlPanel.micBridgeTitle')}</h3>
+                                    {isRunning && (
+                                        <span className="ds-caption" style={{ marginLeft: 'auto', color: 'var(--success, var(--primary))' }}>
+                                            {t('controlPanel.micActive')}
+                                        </span>
+                                    )}
+                                </div>
+                                <p className="ds-caption" style={{ color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                                    {t('controlPanel.micBridgeDesc')}
+                                </p>
+                                <div className="ds-caption" style={{ color: 'var(--text-muted)', lineHeight: 1.5, display: 'grid', gap: 6 }}>
+                                    <span>{t('controlPanel.micAndroidReq')}</span>
+                                    <span>{t('controlPanel.micDestLinux')}</span>
+                                    <span>{t('controlPanel.micDestOther')}</span>
+                                </div>
+                            </div>
+                            <p className="ds-caption" style={{ color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                                {isRunning ? t('controlPanel.micStopHint') : t('controlPanel.micStartHint')}
+                            </p>
+                        </div>
+                    )}
                 </div>
             </section>
 
@@ -605,7 +643,9 @@ export default function ControlPanel({
                             <Play size={18} />
                             {config.sessionMode === 'mirror'
                                 ? ((config.hidKeyboard || config.hidMouse) && config.otgPure ? t('controlPanel.initializeOtg') : t('controlPanel.startMission'))
-                                : config.sessionMode === 'camera' ? t('controlPanel.engageCamera') : t('controlPanel.ejectToDesktop')}
+                                : config.sessionMode === 'camera' ? t('controlPanel.engageCamera')
+                                : config.sessionMode === 'mic' ? t('controlPanel.startMicBridge')
+                                : t('controlPanel.ejectToDesktop')}
                         </span>
                     </button>
                 ) : (

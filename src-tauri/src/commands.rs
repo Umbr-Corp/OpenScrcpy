@@ -1276,6 +1276,19 @@ fn build_scrcpy_args(
             args.push("--otg".to_string());
         }
     } else {
+        if config.session_mode == "mic" {
+            // Audio-only bridge: the phone's mic reaches the PC as a
+            // recording device, with no video pipeline and no window. Every
+            // video-specific knob below is irrelevant here, so this branch
+            // builds a minimal set and returns early.
+            args.push("--no-window".to_string());
+            args.push("--no-video".to_string());
+            args.push("--audio-source=mic".to_string());
+            if let Some(codec) = resolve_audio_codec_flag(config, audio_codec_override) {
+                args.push(format!("--audio-codec={}", codec));
+            }
+            return args;
+        }
         if hid_keyboard {
             args.push("--keyboard=uhid".to_string());
         }
@@ -1498,6 +1511,7 @@ async fn spawn_scrcpy_streams(
     server_path: Option<&str>,
     args: &[String],
     vsync: bool,
+    pulse_sink: Option<&str>,
 ) -> Result<(tokio::process::Child, Arc<AtomicBool>), String> {
     let command_str = format!("> scrcpy {}", args.join(" "));
     let _ = window.emit("scrcpy-log", command_str);
@@ -1505,6 +1519,11 @@ async fn spawn_scrcpy_streams(
     let mut command = create_command(exe_path);
     command.args(args);
     command.env("ADB", adb_exe_path);
+    // Mic bridge on Linux: libpulse honours PULSE_SINK as the client's
+    // default output, which lands scrcpy's stream inside our virtual sink.
+    if let Some(sink) = pulse_sink {
+        command.env("PULSE_SINK", sink);
+    }
     if let Some(sp) = server_path {
         if Path::new(sp).exists() {
             command.env("SCRCPY_SERVER_PATH", sp);
@@ -1601,6 +1620,157 @@ enum AttemptOutcome {
     UserStopped,
 }
 
+// ── Microphone bridge helpers (Linux / PipeWire-PulseAudio) ─────────
+// For the phone mic to become a *recording device* on the PC, we create a
+// dedicated null sink ("OpenScrcpy Mic"): scrcpy's stream plays into it and
+// the sink's monitor shows up to every app as a microphone input. The sink
+// is service-owned: created at bridge start, unloaded when nothing uses it.
+#[cfg(unix)]
+const MIC_SINK_NAME: &str = "openscrcpy_mic";
+#[cfg(unix)]
+const MIC_SINK_LABEL: &str = "OpenScrcpy Mic";
+
+#[cfg(unix)]
+async fn pactl_run(args: &[&str]) -> Option<String> {
+    let child = create_command("pactl")
+        .args(args)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn();
+    match child {
+        Ok(c) => timeout(Duration::from_secs(4), c.wait_with_output())
+            .await
+            .ok()?
+            .ok()
+            .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string()),
+        Err(_) => None,
+    }
+}
+
+// Returns true when the virtual sink exists (created now, if absent).
+#[cfg(unix)]
+async fn ensure_mic_sink(window: &Window) -> bool {
+    let Some(sinks) = pactl_run(&["list", "short", "sinks"]).await else {
+        let _ = window.emit(
+            "scrcpy-log",
+            "[MIC] pactl not found; routing skipped (audio goes to the default output)."
+                .to_string(),
+        );
+        return false;
+    };
+    if sinks
+        .lines()
+        .any(|l| l.split('\t').next() == Some(MIC_SINK_NAME))
+    {
+        let _ = window.emit(
+            "scrcpy-log",
+            "[MIC] Virtual sink OpenScrcpy Mic already loaded.".to_string(),
+        );
+        return true;
+    }
+    let created = pactl_run(&[
+        "load-module",
+        "module-null-sink",
+        &format!("sink_name={}", MIC_SINK_NAME),
+        &format!("sink_properties=device.description=\"{}\"", MIC_SINK_LABEL),
+    ])
+    .await
+    .is_some();
+    if created {
+        let _ = window.emit(
+            "scrcpy-log",
+            format!(
+                "[MIC] Virtual sink \"{}\" created — pick it as the microphone in Discord/OBS/Recorder.",
+                MIC_SINK_LABEL
+            ),
+        );
+    } else {
+        let _ = window.emit(
+            "scrcpy-log",
+            "[MIC] Could not create the virtual sink; audio goes to the default output."
+                .to_string(),
+        );
+    }
+    created
+}
+
+#[cfg(unix)]
+async fn unload_mic_sink(window: &Window) {
+    let Some(sinks) = pactl_run(&["list", "short", "sinks"]).await else {
+        return;
+    };
+    if !sinks
+        .lines()
+        .any(|l| l.split('\t').next() == Some(MIC_SINK_NAME))
+    {
+        return;
+    }
+    let Some(modules) = pactl_run(&["list", "short", "modules"]).await else {
+        return;
+    };
+    let module_idx = modules
+        .lines()
+        .find(|l| l.contains(&format!("sink_name={}", MIC_SINK_NAME)))
+        .and_then(|l| l.split('\t').next().map(str::to_string));
+    if let Some(idx) = module_idx {
+        let _ = pactl_run(&["unload-module", &idx]).await;
+        let _ = window.emit(
+            "scrcpy-log",
+            "[MIC] Virtual sink unloaded (bridge stopped).".to_string(),
+        );
+    }
+}
+
+// Second-chance routing: libpulse's PULSE_SINK covers SDL/pipewire on most
+// setups, but a client that landed on the default output gets moved over.
+#[cfg(unix)]
+async fn verify_mic_route(window: Window, sink_present: bool) {
+    if !sink_present {
+        return;
+    }
+    tokio::time::sleep(Duration::from_millis(1800)).await;
+    let Some(sinks) = pactl_run(&["list", "short", "sinks"]).await else {
+        return;
+    };
+    let target = sinks
+        .lines()
+        .find(|l| l.split('\t').nth(1) == Some(MIC_SINK_NAME))
+        .and_then(|l| l.split('\t').next().map(str::to_string));
+    let Some(target) = target else { return };
+    let Some(inputs) = pactl_run(&["list", "sink-inputs"]).await else {
+        return;
+    };
+    for block in inputs.split("\n\n") {
+        let is_scrcpy = block
+            .lines()
+            .any(|l| l.trim().starts_with("application.name = \"scrcpy\""));
+        if !is_scrcpy {
+            continue;
+        }
+        let current = block
+            .lines()
+            .find(|l| l.trim().starts_with("Sink: "))
+            .and_then(|l| l.split(':').nth(1).map(|v| v.trim().to_string()));
+        match current {
+            Some(cur) if cur != target => {
+                let _ = pactl_run(&["move-sink-input", &cur, &target]).await;
+                let _ = window.emit(
+                    "scrcpy-log",
+                    "[MIC] Audio stream moved into the virtual sink.".to_string(),
+                );
+            }
+            Some(_) => {
+                let _ = window.emit(
+                    "scrcpy-log",
+                    "[MIC] Audio stream confirmed in the virtual sink.".to_string(),
+                );
+            }
+            None => {}
+        }
+        break;
+    }
+}
+
 #[tauri::command]
 pub async fn run_scrcpy(
     window: Window,
@@ -1620,28 +1790,36 @@ pub async fn run_scrcpy(
     let mode_label = match config.session_mode.as_str() {
         "camera" => "Camera Mode",
         "desktop" => "Desktop Mode",
+        "mic" => "Microphone Bridge",
         _ => "Screen Mirroring",
     };
-
-    let res_label = config
-        .res
-        .as_ref()
-        .map(|r| if r == "0" { "Original" } else { r })
-        .unwrap_or("Original");
-    let bitrate_label = format!("{}Mbps", config.bitrate.unwrap_or(8));
-    let fps_label = format!("{}fps", config.fps.unwrap_or(60));
 
     let _ = window.emit(
         "scrcpy-log",
         format!("[SYSTEM] Starting {} session...", mode_label),
     );
-    let _ = window.emit(
-        "scrcpy-log",
-        format!(
-            "[SYSTEM] Target: {} | Config: {} @ {}, {}",
-            config.device, res_label, bitrate_label, fps_label
-        ),
-    );
+    if config.session_mode == "mic" {
+        let _ = window.emit("scrcpy-log", format!("[SYSTEM] Target: {}", config.device));
+        let _ = window.emit(
+            "scrcpy-log",
+            "[SYSTEM] Audio-only bridge (--no-window --no-video --audio-source=mic).".to_string(),
+        );
+    } else {
+        let res_label = config
+            .res
+            .as_ref()
+            .map(|r| if r == "0" { "Original" } else { r })
+            .unwrap_or("Original");
+        let bitrate_label = format!("{}Mbps", config.bitrate.unwrap_or(8));
+        let fps_label = format!("{}fps", config.fps.unwrap_or(60));
+        let _ = window.emit(
+            "scrcpy-log",
+            format!(
+                "[SYSTEM] Target: {} | Config: {} @ {}, {}",
+                config.device, res_label, bitrate_label, fps_label
+            ),
+        );
+    }
 
     if config.record.unwrap_or(false) {
         let path = config
@@ -1670,11 +1848,32 @@ pub async fn run_scrcpy(
         format!("[SYSTEM] Using adb: {}", adb_exe_path),
     );
 
-    // Decide whether automatic audio codec fallback should kick in on errors.
-    let audio_enabled = config.audio_enabled.unwrap_or(true);
-    let audio_codec_mode = config.audio_codec.as_deref().unwrap_or("auto").trim();
-    let should_auto_fallback = audio_enabled
-        && (audio_codec_mode.is_empty() || audio_codec_mode.eq_ignore_ascii_case("auto"));
+    // Mic bridge on Linux: create/refresh the virtual sink and hand the
+    // scrcpy client to it through the libpulse default-sink env. Other
+    // platforms get an honest console note for now.
+    let pulse_sink: Option<String> = if config.session_mode == "mic" {
+        #[allow(unused_mut, unused_assignments)]
+        let mut routed = false;
+        #[cfg(unix)]
+        {
+            routed = ensure_mic_sink(&window).await;
+        }
+        #[cfg(not(unix))]
+        {
+            let _ = &routed;
+            let _ = window.emit(
+                "scrcpy-log",
+                "[MIC] Virtual-microphone routing ships for Linux in this build; audio goes to the default output.".to_string(),
+            );
+        }
+        if routed {
+            Some(MIC_SINK_NAME.to_string())
+        } else {
+            None
+        }
+    } else {
+        None
+    };
 
     // First attempt: honour the user's audio codec choice. In "auto" mode this
     // launches without --audio-codec, matching the previous default behaviour.
@@ -1687,8 +1886,22 @@ pub async fn run_scrcpy(
         server_path.as_deref(),
         &initial_args,
         config.vsync.unwrap_or(true),
+        pulse_sink.as_deref(),
     )
     .await?;
+
+    if config.session_mode == "mic" {
+        #[cfg(unix)]
+        tokio::spawn(verify_mic_route(window.clone(), pulse_sink.is_some()));
+        #[cfg(not(unix))]
+        drop(pulse_sink.as_deref());
+    }
+
+    // Decide whether automatic audio codec fallback should kick in on errors.
+    let audio_enabled = config.audio_enabled.unwrap_or(true);
+    let audio_codec_mode = config.audio_codec.as_deref().unwrap_or("auto").trim();
+    let should_auto_fallback = audio_enabled
+        && (audio_codec_mode.is_empty() || audio_codec_mode.eq_ignore_ascii_case("auto"));
 
     let initial_scrcpy_pid = child.id();
     state
@@ -1710,6 +1923,7 @@ pub async fn run_scrcpy(
     let adb_exe_path_mon = adb_exe_path;
     let server_path_mon = server_path;
     let config_mon = config.clone();
+    let pulse_sink_mon = pulse_sink;
 
     // Position we asked scrcpy to open at this launch (if any). Used to learn
     // the decoration offset so the saved position round-trips exactly. See
@@ -1823,6 +2037,22 @@ pub async fn run_scrcpy(
                         format!("[SYSTEM] Scrcpy process exited with status: {}", status),
                     );
 
+                    // Mic bridge exited on its own: if no session remains, drop
+                    // the shared virtual sink behind it.
+                    if config_mon.session_mode == "mic"
+                        && app_handle_mon
+                            .state::<ScrcpyState>()
+                            .processes
+                            .lock()
+                            .unwrap_or_else(|e| e.into_inner())
+                            .is_empty()
+                    {
+                        #[cfg(unix)]
+                        unload_mic_sink(&window_mon).await;
+                        #[cfg(not(unix))]
+                        drop(&window_mon);
+                    }
+
                     // Give stream reader tasks a moment to flush remaining stderr
                     // lines (the audio error pattern may still be in flight).
                     tokio::time::sleep(Duration::from_millis(250)).await;
@@ -1852,6 +2082,7 @@ pub async fn run_scrcpy(
                             server_path_mon.as_deref(),
                             &new_args,
                             config_mon.vsync.unwrap_or(true),
+                            pulse_sink_mon.as_deref(),
                         )
                         .await
                         {
@@ -2342,7 +2573,11 @@ mod tests {
 }
 
 #[tauri::command]
-pub async fn stop_scrcpy(state: State<'_, ScrcpyState>, device: String) -> Result<(), String> {
+pub async fn stop_scrcpy(
+    window: Window,
+    state: State<'_, ScrcpyState>,
+    device: String,
+) -> Result<(), String> {
     let child = {
         let mut processes = state.processes.lock().unwrap_or_else(|e| e.into_inner());
         processes.remove(&device)
@@ -2382,6 +2617,20 @@ pub async fn stop_scrcpy(state: State<'_, ScrcpyState>, device: String) -> Resul
         } else {
             let _ = c.kill().await;
         }
+    }
+
+    // Mic bridge cleanup: when the last session is gone, drop the shared
+    // virtual sink (other running sessions must keep it alive).
+    if state
+        .processes
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .is_empty()
+    {
+        #[cfg(unix)]
+        unload_mic_sink(&window).await;
+        #[cfg(not(unix))]
+        drop(&window);
     }
     Ok(())
 }

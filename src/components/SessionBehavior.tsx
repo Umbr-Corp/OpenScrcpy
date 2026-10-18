@@ -193,6 +193,7 @@ export default function SessionBehavior({ config, setConfig }: SessionBehaviorPr
                         label={t('sessionBehavior.rememberWindowPosition')}
                         tooltip={t('sessionBehavior.rememberWindowPositionTooltip')}
                     />
+                    {config.sessionMode !== 'mic' && (
                     <Toggle
                         checked={config.record || false}
                         onChange={(v) => handleChange('record', v)}
@@ -200,8 +201,10 @@ export default function SessionBehavior({ config, setConfig }: SessionBehaviorPr
                         label={t('sessionBehavior.recordFeed')}
                         tooltip={t('sessionBehavior.recordFeedTooltip')}
                     />
+                    )}
                 </div>
 
+                {config.sessionMode !== 'mic' && (
                 <div className="pt-2 space-y-2" style={{ borderTop: '1px solid var(--border-base)' }}>
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-1.5">
@@ -223,6 +226,7 @@ export default function SessionBehavior({ config, setConfig }: SessionBehaviorPr
                         </p>
                     </div>
                 </div>
+                )}
             </div>
         </div>
     );
