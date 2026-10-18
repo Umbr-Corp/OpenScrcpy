@@ -1660,7 +1660,7 @@ async fn ensure_mic_sink(window: &Window) -> bool {
     };
     if sinks
         .lines()
-        .any(|l| l.split('\t').next() == Some(MIC_SINK_NAME))
+        .any(|l| l.split('\t').nth(1) == Some(MIC_SINK_NAME))
     {
         let _ = window.emit(
             "scrcpy-log",
@@ -1701,7 +1701,7 @@ async fn unload_mic_sink(window: &Window) {
     };
     if !sinks
         .lines()
-        .any(|l| l.split('\t').next() == Some(MIC_SINK_NAME))
+        .any(|l| l.split('\t').nth(1) == Some(MIC_SINK_NAME))
     {
         return;
     }
@@ -1747,25 +1747,32 @@ async fn verify_mic_route(window: Window, sink_present: bool) {
         if !is_scrcpy {
             continue;
         }
+        // move-sink-input takes the CLIENT (stream) index first, then the
+        // sink. Stream index lives in the block header: "Sink Input #1340".
+        let stream_idx = block
+            .lines()
+            .next()
+            .and_then(|l| l.trim().strip_prefix("Sink Input #"))
+            .map(|v| v.trim().to_string());
         let current = block
             .lines()
             .find(|l| l.trim().starts_with("Sink: "))
             .and_then(|l| l.split(':').nth(1).map(|v| v.trim().to_string()));
-        match current {
-            Some(cur) if cur != target => {
-                let _ = pactl_run(&["move-sink-input", &cur, &target]).await;
+        match (stream_idx, current) {
+            (Some(stream), Some(cur)) if cur != target => {
+                let _ = pactl_run(&["move-sink-input", &stream, &target]).await;
                 let _ = window.emit(
                     "scrcpy-log",
                     "[MIC] Audio stream moved into the virtual sink.".to_string(),
                 );
             }
-            Some(_) => {
+            (Some(_), Some(_)) => {
                 let _ = window.emit(
                     "scrcpy-log",
                     "[MIC] Audio stream confirmed in the virtual sink.".to_string(),
                 );
             }
-            None => {}
+            _ => {}
         }
         break;
     }
