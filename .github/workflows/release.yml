@@ -65,7 +65,6 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           includeUpdaterJson: true
-        with:
           tagName: v__VERSION__ # tauri-action replaces this with the app version
           releaseName: 'OpenScrcpy v__VERSION__'
           releaseBody: 'See the assets below for the release.'
