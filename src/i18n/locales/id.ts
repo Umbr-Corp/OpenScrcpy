@@ -281,7 +281,6 @@ languages: {
         wirelessOkTitle: 'Terhubung via Wi-Fi',
         wirelessOkMsg: 'Siap di {ip}:5555 — kabel dilepas.',
         wirelessFailTitle: 'Gagal Beralih ke Wi-Fi',
-        wirelessFailMsg: 'Lihat konsol untuk detail. Ponsel harus di jaringan Wi-Fi.',
         wirelessHintAuth: 'Buka kunci ponsel: dialog "Allow USB debugging?" menunggu konfirmasi — muncul lagi setiap kali mode TCP dimulai.',
         wirelessHintConn: "Cek IP di konsol: jika angkanya bukan milik ponsel, perangkat pindah jaringan atau dibalas perangkat lain lebih dulu.",
         wirelessHintGeneric: 'Lihat langkah yang gagal di Konsol Sistem.',

@@ -281,7 +281,6 @@ export const ptBR: Translations = {
         wirelessOkTitle: 'Wi-Fi Conectado',
         wirelessOkMsg: 'Pronto em {ip}:5555 — já pode desconectar o cabo.',
         wirelessFailTitle: 'Não Foi Possível Trocar',
-        wirelessFailMsg: 'Veja o console para detalhes. O telefone precisa estar numa rede Wi-Fi.',
         wirelessHintAuth: 'Desbloqueie o telefone: ele está esperando o toque em "Permitir depuração USB?" — o diálogo reaparece quando o modo TCP começa.',
         wirelessHintConn: 'Confira no Console o IP usado. Se não for o número do telefone, ele trocou de rede ou outro aparelho da casa respondeu primeiro.',
         wirelessHintGeneric: 'Veja qual passo falhou no Console do Sistema.',

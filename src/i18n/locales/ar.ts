@@ -284,7 +284,6 @@ export const ar: Translations = {
         wirelessOkTitle: 'تم الاتصال لاسلكيًا',
         wirelessOkMsg: 'جاهز على {ip}:5555 — يمكنك فصل الكابل.',
         wirelessFailTitle: 'فشل التبديل إلى واي فاي',
-        wirelessFailMsg: 'التفاصيل في شريط الطرفية. يجب أن يكون الهاتف على شبكة واي فاي.',
         wirelessHintAuth: 'افتح قفل الهاتف: ينتظر موافقة «السماح بتصحيح USB؟» — يظهر الطلب كل مرة يدخل وضع TCP.',
         wirelessHintConn: 'تحقق من عنوان IP في الطرفية: إن لم يكن رقم الهاتف، فقد غيّر الشبكة أو استجاب جهاز آخر أولاً.',
         wirelessHintGeneric: 'انظر الخطوة التي فشلت في طرفية النظام.',

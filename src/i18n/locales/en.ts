@@ -282,7 +282,6 @@ export const en = {
         wirelessOkTitle: 'Wireless Connected',
         wirelessOkMsg: 'Ready at {ip}:5555 — you can unplug the cable now.',
         wirelessFailTitle: 'Wireless Switch Failed',
-        wirelessFailMsg: 'See the console for details. The phone must be on a Wi-Fi network.',
         wirelessHintAuth: "The phone is waiting for the 'Allow USB debugging?' tap — the prompt re-appears whenever TCP mode starts.",
         wirelessHintConn: "Check the IP in the console. If it is not the phone's number, the device moved networks or another gadget answered first.",
         wirelessHintGeneric: 'See which step failed in the System Console.',

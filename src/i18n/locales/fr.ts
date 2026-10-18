@@ -281,7 +281,6 @@ export const fr: Translations = {
         wirelessOkTitle: 'Connecté au Wi-Fi',
         wirelessOkMsg: 'Prêt sur {ip}:5555 — vous pouvez débrancher le câble.',
         wirelessFailTitle: 'Échec de la bascule',
-        wirelessFailMsg: 'Voir la console pour les détails. Le téléphone doit être sur un réseau Wi-Fi.',
         wirelessHintAuth: "Déverrouillez le téléphone : la demande « Autoriser le débogage USB ? » attend votre accord — elle réapparaît dès que le mode TCP démarre.",
         wirelessHintConn: "Vérifiez l'IP dans la console ; si le numéro n'est pas celui du téléphone, l'appareil a changé de réseau ou un autre a répondu d'abord.",
         wirelessHintGeneric: "Voyez l'étape en échec dans la console système.",

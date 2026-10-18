@@ -281,7 +281,6 @@ export const zhCN: Translations = {
         wirelessOkTitle: '已连接无线',
         wirelessOkMsg: '已在 {ip}:5555 就绪 — 可以拔掉数据线。',
         wirelessFailTitle: '切换到无线失败',
-        wirelessFailMsg: '详情见控制台。手机必须处于 Wi-Fi 网络。',
         wirelessHintAuth: '解锁手机：屏幕上正在等「允许 USB 调试？」的确认——每次进入 TCP 模式都会重新弹出。',
         wirelessHintConn: '在控制台核对 IP：如果不是手机的号码，说明设备换了网络或别的设备先应答了。',
         wirelessHintGeneric: '在系统控制台查看具体失败的步骤。',

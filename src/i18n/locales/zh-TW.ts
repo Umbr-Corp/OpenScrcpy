@@ -281,7 +281,6 @@ export const zhTW: Translations = {
         wirelessOkTitle: '已連接無線',
         wirelessOkMsg: '已在 {ip}:5555 就緒 — 可以拔掉傳輸線。',
         wirelessFailTitle: '切換到無線失敗',
-        wirelessFailMsg: '詳情見控制台。手機必須處於 Wi-Fi 網路。',
         wirelessHintAuth: '解鎖手機：螢幕上正在等「允許 USB 偵錯？」的確認——每次進入 TCP 模式都會重新彈出。',
         wirelessHintConn: '在控制台核對 IP：如果不是手機的號碼，代表裝置換了網路或別的裝置先回應。',
         wirelessHintGeneric: '在系統控制台查看失敗的步驟。',

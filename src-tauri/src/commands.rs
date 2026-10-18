@@ -2542,11 +2542,12 @@ pub async fn goto_wireless(
     let adb_path = get_binary_path("adb", custom_path);
     let _ = window.emit("scrcpy-log", "[SYSTEM] Switching to wireless...".to_string());
 
-    // 1) The phone's Wi-Fi IPv4. `ip route get` answers with the active
-    //    route's source address; `addr show wlan0` as fallback (a few OEMs
-    //    rename the interface).
+    // 1) The phone's Wi-Fi IPv4. `addr show wlan0` reads the Wi-Fi interface
+    //    directly, so a VPN tunnel on the phone cannot steal the answer the
+    //    way it does with the default-route source address; `ip route get`
+    //    stays as fallback (a few OEMs rename the interface).
     let mut ip = String::new();
-    for probe in ["ip route get 1.1.1.1", "ip -f inet addr show wlan0"] {
+    for probe in ["ip -f inet addr show wlan0", "ip route get 1.1.1.1"] {
         let child = create_command(&adb_path)
             .args(["-s", &device, "shell", probe])
             .stdout(Stdio::piped())
