@@ -1,7 +1,7 @@
 import React from 'react';
 import { Smartphone, RefreshCw, Usb, Wifi, UploadCloud, Zap, X } from 'lucide-react';
 import { useI18n } from '../i18n';
-import { MdnsDevice, isMdnsDeviceConnected } from '../hooks/useScrcpy';
+import { MdnsDevice, isMdnsDeviceConnected, mdnsHostIp } from '../hooks/useScrcpy';
 import Modal from './Modal';
 
 // mDNS wireless-debugging serials look like
@@ -84,20 +84,24 @@ export default function Sidebar({
         await onConnect(ip);
     };
 
-    // The same physical device can broadcast both "_adb-tls-connect" (wireless
-    // debugging is on) and "_adb-tls-pairing" (it's also sitting on the pairing
-    // screen right now) at once -- two separate mDNS records for one phone.
-    // Collapse them to one entry per name, keeping the pairing one when both
-    // are present since that's the one actually actionable right now.
+    // The same physical phone broadcasts "_adb-tls-connect" (wireless
+    // debugging is on) and, while it sits on the pairing screen,
+    // "_adb-tls-pairing" at once -- two separate mDNS records for one device,
+    // with instance names that differ in their random per-record suffix.
+    // Collapse them by host IP, keeping the pairing record when both are
+    // present since that's the one actually actionable right now.
     const uniqueMdnsDevices = React.useMemo(() => {
-        const byName = new Map<string, MdnsDevice>();
+        const byHost = new Map<string, MdnsDevice>();
         for (const dev of mdnsDevices) {
-            const existing = byName.get(dev.name);
-            if (!existing || dev.service.includes('_adb-tls-pairing')) {
-                byName.set(dev.name, dev);
+            const key = mdnsHostIp(dev.address);
+            const existing = byHost.get(key);
+            const devIsPairing = dev.service.includes('_adb-tls-pairing');
+            const existingIsPairing = existing?.service.includes('_adb-tls-pairing') ?? false;
+            if (!existing || (devIsPairing && !existingIsPairing)) {
+                byHost.set(key, dev);
             }
         }
-        return Array.from(byName.values());
+        return Array.from(byHost.values());
     }, [mdnsDevices]);
 
     // Shared by the manual pairing form and the discovered-device modal.
@@ -134,10 +138,14 @@ export default function Sidebar({
     }, [pairingTarget, onRefresh]);
 
     // The instant a matching pairing broadcast shows up, swap the modal
-    // straight to the code field -- same modal, no reopening needed.
+    // straight to the code field -- same modal, no reopening needed. Match by
+    // host IP: the record names differ per suffix (see uniqueMdnsDevices).
     React.useEffect(() => {
         if (!pairingTarget || pairingTarget.service.includes('_adb-tls-pairing')) return;
-        const ready = uniqueMdnsDevices.find(d => d.name === pairingTarget.name && d.service.includes('_adb-tls-pairing'));
+        const targetIp = mdnsHostIp(pairingTarget.address);
+        const ready = uniqueMdnsDevices.find(d =>
+            d.service.includes('_adb-tls-pairing') && mdnsHostIp(d.address) === targetIp
+        );
         if (ready) setPairingTarget(ready);
     }, [uniqueMdnsDevices, pairingTarget]);
 

@@ -27,6 +27,16 @@ export function isMdnsDeviceConnected(dev: MdnsDevice, devices: string[]): boole
     return devices.includes(dev.address) || devices.some(d => d.includes(dev.name));
 }
 
+/** The "adb-<serial>-<suffix>" mDNS instance name has a random suffix that is
+ *  regenerated for every service record, so `_adb-tls-connect` and
+ *  `_adb-tls-pairing` broadcasts of the same phone never share a full name.
+ *  The host IP is the stable identity across both records. */
+export function mdnsHostIp(address: string): string {
+    // Handles "192.168.0.104:42657" and "[fe80::1%en0]:42657" alike.
+    const lastColon = address.lastIndexOf(':');
+    return lastColon > 0 ? address.slice(0, lastColon) : address;
+}
+
 export interface ScrcpyConfig {
     device: string;
     sessionMode: string;

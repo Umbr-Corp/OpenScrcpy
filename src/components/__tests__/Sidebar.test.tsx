@@ -156,6 +156,23 @@ describe('Sidebar Component', () => {
         expect(screen.getAllByPlaceholderText('Pairing Code')).toHaveLength(2);
     });
 
+    it('matches the pairing record even when the random mDNS instance suffix differs', () => {
+        // Real ADB shape: the "adb-<serial>-<suffix>" name is regenerated per
+        // service record, so the two records of one phone never share a full
+        // instance name. (More: the modal used to hang on "not ready" with
+        // these records because it also matched by full name.)
+        const notReady = { name: 'adb-R9XX6058NJM-0pO6HG', service: '_adb-tls-connect._tcp', address: '192.168.1.3:42657' };
+        const ready = { name: 'adb-R9XX6058NJM-hKzRuy', service: '_adb-tls-pairing._tcp', address: '192.168.1.3:38451' };
+        const { rerender } = render(<Sidebar {...mockProps} mdnsDevices={[notReady]} />);
+
+        fireEvent.click(screen.getByText('Wireless'));
+        fireEvent.click(screen.getByText(/R9XX6058NJM/));
+        expect(screen.getAllByPlaceholderText('Pairing Code')).toHaveLength(1);
+
+        rerender(<Sidebar {...mockProps} mdnsDevices={[ready]} />);
+        expect(screen.getAllByPlaceholderText('Pairing Code')).toHaveLength(2);
+    });
+
     it('disables the Recent Devices connect button while a refresh is already in flight', () => {
         render(<Sidebar {...mockProps} historyDevices={['192.168.1.128:5555']} isRefreshing={true} />);
 
