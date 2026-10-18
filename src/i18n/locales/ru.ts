@@ -68,6 +68,12 @@ export const ru: Translations = {
     aboutRepository: 'Репозиторий',
     aboutReleases: 'Релизы',
     aboutLicense: 'Лицензия MIT',
+    autoUpdateBtn: 'Обновить и перезапустить',
+    autoDownloading: 'Загрузка…',
+    autoProgress: 'Загрузка обновления… {p}%',
+    autoInstalled: 'Установлено — приложение перезапускается…',
+    autoFailTitle: 'Сбой обновления',
+    autoFailMsg: 'Сейчас не удалось установить. Скачайте вручную со страницы релиза.',
     aboutDonate: 'Поддержать',
   },
 

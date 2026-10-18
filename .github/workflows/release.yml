@@ -58,6 +58,13 @@ jobs:
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # The updater plugin refuses unsigned bundles: sign the artifacts
+          # so latest.json + .sig files land on the release (in-app updates).
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          # Key generated with an empty password; the env still must exist.
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          includeUpdaterJson: true
         with:
           tagName: v__VERSION__ # tauri-action replaces this with the app version
           releaseName: 'OpenScrcpy v__VERSION__'

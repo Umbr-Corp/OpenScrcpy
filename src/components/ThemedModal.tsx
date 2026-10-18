@@ -12,6 +12,10 @@ interface ThemedModalProps {
     kind?: ModalKind;
     actionLabel?: string;
     onAction?: () => void;
+    // Optional second command shown between the cancel and the primary
+    // button (e.g. the quieter path in an update dialog).
+    secondaryLabel?: string;
+    onSecondary?: () => void;
     showCancel?: boolean;
     cancelLabel?: string;
     onCancel?: () => void;
@@ -36,6 +40,8 @@ export default function ThemedModal({
     kind = 'info',
     actionLabel,
     onAction,
+    secondaryLabel,
+    onSecondary,
     showCancel = false,
     cancelLabel,
     onCancel
@@ -101,6 +107,17 @@ export default function ThemedModal({
                         className="ds-btn ds-btn-secondary flex-1"
                     >
                         {resolvedCancelLabel}
+                    </button>
+                )}
+                {secondaryLabel && (
+                    <button
+                        onClick={() => {
+                            if (onSecondary) onSecondary();
+                            onClose();
+                        }}
+                        className="ds-btn ds-btn-tertiary"
+                    >
+                        {secondaryLabel}
                     </button>
                 )}
                 <button

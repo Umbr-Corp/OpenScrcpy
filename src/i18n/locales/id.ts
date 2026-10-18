@@ -65,6 +65,12 @@ languages: {
         aboutRepository: 'Repositori',
         aboutReleases: 'Rilis',
         aboutLicense: 'Dilisensikan di bawah Lisensi MIT',
+        autoUpdateBtn: 'Perbarui & Mulai Ulang',
+        autoDownloading: 'Mengunduh…',
+        autoProgress: 'Mengunduh pembaruan… {p}%',
+        autoInstalled: 'Terpasang — aplikasi dimulai ulang…',
+        autoFailTitle: 'Pembaruan Gagal',
+        autoFailMsg: 'Tidak bisa memasang sekarang. Unduh manual dari halaman rilis.',
         aboutDonate: 'Donasi'
     },
     sidebar: {

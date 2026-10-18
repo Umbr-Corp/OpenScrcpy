@@ -65,6 +65,12 @@ export const zhTW: Translations = {
         aboutRepository: '程式碼倉庫',
         aboutReleases: '發佈版本',
         aboutLicense: '基於 MIT 授權條款授權',
+        autoUpdateBtn: '更新並重新啟動',
+        autoDownloading: '下載中…',
+        autoProgress: '正在下載更新… {p}%',
+        autoInstalled: '已安裝——正在重新啟動應用…',
+        autoFailTitle: '更新失敗',
+        autoFailMsg: '暫時無法安裝。請到發布頁手動下載。',
         aboutDonate: '贊助'
     },
     sidebar: {

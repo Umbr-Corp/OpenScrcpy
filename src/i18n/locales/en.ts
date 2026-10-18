@@ -66,6 +66,12 @@ export const en = {
         aboutRepository: 'Repository',
         aboutReleases: 'Releases',
         aboutLicense: 'Licensed under the MIT License',
+        autoUpdateBtn: 'Update & Restart',
+        autoDownloading: 'Downloading…',
+        autoProgress: 'Downloading update… {p}%',
+        autoInstalled: 'Installed — restarting the app…',
+        autoFailTitle: 'Update Failed',
+        autoFailMsg: 'Could not install right now. Download manually from the release page.',
         aboutDonate: 'Donate'
     },
     sidebar: {

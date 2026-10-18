@@ -1,18 +1,18 @@
-use tauri::{State, Window, Emitter, Manager};
-use std::process::{Command as StdCommand, Stdio};
+use crate::ScrcpyState;
+use flate2::read::GzDecoder;
+use serde::Deserialize;
+use serde_json::json;
 #[cfg(target_os = "windows")]
 use std::os::windows::process::CommandExt;
 use std::path::Path;
-use std::sync::Arc;
+use std::process::{Command as StdCommand, Stdio};
 use std::sync::atomic::{AtomicBool, Ordering};
-use serde_json::json;
-use crate::ScrcpyState;
-use tokio::process::Command as TokioCommand;
-use tokio::io::{BufReader, AsyncBufReadExt};
-use tokio::time::{timeout, Duration};
-use serde::Deserialize;
-use flate2::read::GzDecoder;
+use std::sync::Arc;
 use tar::Archive;
+use tauri::{Emitter, Manager, State, Window};
+use tokio::io::{AsyncBufReadExt, BufReader};
+use tokio::process::Command as TokioCommand;
+use tokio::time::{timeout, Duration};
 
 const AUDIO_FALLBACK_CHAIN: &[&str] = &["aac", "flac", "raw"];
 
@@ -54,14 +54,14 @@ fn get_binary_path(binary_name: &str, custom_folder: Option<String>) -> String {
             }
         }
     }
-    
+
     // 2. Check local scrcpy-bin folder (relative to executable for portable/production)
     if let Ok(exe_path) = std::env::current_exe() {
         if let Some(exe_dir) = exe_path.parent() {
-             let local_bin = exe_dir.join("scrcpy-bin").join(&binary_filename);
-             if local_bin.exists() && local_bin.is_file() {
-                 return local_bin.to_string_lossy().to_string();
-             }
+            let local_bin = exe_dir.join("scrcpy-bin").join(&binary_filename);
+            if local_bin.exists() && local_bin.is_file() {
+                return local_bin.to_string_lossy().to_string();
+            }
         }
     }
 
@@ -80,7 +80,7 @@ fn get_binary_path(binary_name: &str, custom_folder: Option<String>) -> String {
 fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> std::io::Result<()> {
     let src_ref = src.as_ref();
     let dst_ref = dst.as_ref();
-    
+
     // Canonicalize dst path if it exists to get absolute base path
     let canonical_dst = if dst_ref.exists() {
         dst_ref.canonicalize()?
@@ -88,28 +88,33 @@ fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> std::io::Result
         std::fs::create_dir_all(dst_ref)?;
         dst_ref.canonicalize()?
     };
-    
+
     for entry in std::fs::read_dir(src_ref)? {
         let entry = entry?;
         let entry_path = entry.path();
         let file_name = entry.file_name();
-        
+
         // Prevent directory traversal elements in entry name
         let file_name_str = file_name.to_string_lossy();
-        if file_name_str.contains("..") || file_name_str.contains('/') || file_name_str.contains('\\') {
+        if file_name_str.contains("..")
+            || file_name_str.contains('/')
+            || file_name_str.contains('\\')
+        {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::InvalidInput,
                 "Directory entry contains directory traversal components",
             ));
         }
-        
+
         let target_path = dst_ref.join(&file_name);
-        
+
         // Ensure destination path is strictly within the target base directory
         if let Some(parent_dir) = target_path.parent() {
             if parent_dir.exists() {
                 let canonical_parent = parent_dir.canonicalize()?;
-                if !canonical_parent.starts_with(&canonical_dst) && canonical_parent != canonical_dst {
+                if !canonical_parent.starts_with(&canonical_dst)
+                    && canonical_parent != canonical_dst
+                {
                     return Err(std::io::Error::new(
                         std::io::ErrorKind::PermissionDenied,
                         "Path traversal attempt detected during directory copy",
@@ -117,7 +122,7 @@ fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> std::io::Result
                 }
             }
         }
-        
+
         let ty = entry.file_type()?;
         if ty.is_dir() {
             copy_dir_all(&entry_path, &target_path)?;
@@ -127,8 +132,6 @@ fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> std::io::Result
     }
     Ok(())
 }
-
-
 
 #[cfg(target_os = "windows")]
 const CREATE_NO_WINDOW: u32 = 0x08000000;
@@ -148,22 +151,19 @@ fn create_command<S: AsRef<std::ffi::OsStr>>(program: S) -> TokioCommand {
 #[tauri::command]
 pub async fn check_scrcpy(custom_path: Option<String>) -> serde_json::Value {
     let exe_path = get_binary_path("scrcpy", custom_path);
-    
+
     // Check version to verify it exists and is runnable
-    let output = create_command(&exe_path)
-        .arg("--version")
-        .output()
-        .await;
+    let output = create_command(&exe_path).arg("--version").output().await;
 
     match output {
         Ok(o) if o.status.success() => {
-             json!({ "found": true, "message": "Scrcpy Ready" })
-        },
+            json!({ "found": true, "message": "Scrcpy Ready" })
+        }
         Ok(_) => {
-             json!({ "found": false, "message": "Failed to start scrcpy (Exit Code != 0)" })
-        },
+            json!({ "found": false, "message": "Failed to start scrcpy (Exit Code != 0)" })
+        }
         Err(_) => {
-             json!({ "found": false, "message": "Scrcpy not found" })
+            json!({ "found": false, "message": "Scrcpy not found" })
         }
     }
 }
@@ -233,37 +233,39 @@ pub async fn get_devices(custom_path: Option<String>) -> serde_json::Value {
 
     match output {
         Ok(o) => {
-             if o.status.success() {
-                 let out_str = String::from_utf8_lossy(&o.stdout);
-                 let mut devices: Vec<String> = Vec::new();
-                 let mut device_models = serde_json::Map::new();
-                 for line in out_str.lines().skip(1) {
-                     // Skip "List of devices attached"
-                     let Some((serial, state)) = parse_adb_device_line(line) else { continue };
-                     if state != "device" {
-                         continue;
-                     }
-                     if let Some(model) = extract_device_model(line) {
-                         device_models.insert(serial.clone(), json!(model));
-                     }
-                     devices.push(serial);
-                 }
+            if o.status.success() {
+                let out_str = String::from_utf8_lossy(&o.stdout);
+                let mut devices: Vec<String> = Vec::new();
+                let mut device_models = serde_json::Map::new();
+                for line in out_str.lines().skip(1) {
+                    // Skip "List of devices attached"
+                    let Some((serial, state)) = parse_adb_device_line(line) else {
+                        continue;
+                    };
+                    if state != "device" {
+                        continue;
+                    }
+                    if let Some(model) = extract_device_model(line) {
+                        device_models.insert(serial.clone(), json!(model));
+                    }
+                    devices.push(serial);
+                }
 
-                 json!({ "error": false, "devices": devices, "deviceModels": device_models })
-             } else {
-                 json!({ "error": true, "message": "ADB returned error" })
-             }
-        },
+                json!({ "error": false, "devices": devices, "deviceModels": device_models })
+            } else {
+                json!({ "error": true, "message": "ADB returned error" })
+            }
+        }
         Err(e) => {
-             json!({ "error": true, "message": e.to_string() })
-         }
+            json!({ "error": true, "message": e.to_string() })
+        }
     }
 }
 
 #[tauri::command]
 pub async fn get_mdns_devices(custom_path: Option<String>) -> serde_json::Value {
     let adb_path = get_binary_path("adb", custom_path);
-    
+
     let output = create_command(&adb_path)
         .arg("mdns")
         .arg("services")
@@ -297,7 +299,7 @@ pub async fn get_mdns_devices(custom_path: Option<String>) -> serde_json::Value 
             } else {
                 json!({ "error": true, "message": "ADB mdns returned error" })
             }
-        },
+        }
         Err(e) => {
             json!({ "error": true, "message": e.to_string() })
         }
@@ -305,11 +307,19 @@ pub async fn get_mdns_devices(custom_path: Option<String>) -> serde_json::Value 
 }
 
 #[tauri::command]
-pub async fn adb_connect(window: Window, ip: String, custom_path: Option<String>, silent: Option<bool>) -> Result<serde_json::Value, String> {
+pub async fn adb_connect(
+    window: Window,
+    ip: String,
+    custom_path: Option<String>,
+    silent: Option<bool>,
+) -> Result<serde_json::Value, String> {
     let silent = silent.unwrap_or(false);
     let adb_path = get_binary_path("adb", custom_path);
     if !silent {
-        let _ = window.emit("scrcpy-log", format!("[SYSTEM] Attempting wireless connection to {}...", ip));
+        let _ = window.emit(
+            "scrcpy-log",
+            format!("[SYSTEM] Attempting wireless connection to {}...", ip),
+        );
     }
 
     let child = create_command(&adb_path)
@@ -330,17 +340,28 @@ pub async fn adb_connect(window: Window, ip: String, custom_path: Option<String>
 
             if !silent {
                 // Log everything to terminal for visibility
-                if !out_text.is_empty() { let _ = window.emit("scrcpy-log", format!("[ADB] {}", out_text)); }
-                if !err_text.is_empty() { let _ = window.emit("scrcpy-log", format!("[ADB ERROR] {}", err_text)); }
+                if !out_text.is_empty() {
+                    let _ = window.emit("scrcpy-log", format!("[ADB] {}", out_text));
+                }
+                if !err_text.is_empty() {
+                    let _ = window.emit("scrcpy-log", format!("[ADB ERROR] {}", err_text));
+                }
             }
 
-            let success = output.status.success() && !out_text.contains("cannot connect") && !out_text.contains("failed");
-            Ok(json!({ "success": success, "message": if out_text.is_empty() { err_text } else { out_text } }))
+            let success = output.status.success()
+                && !out_text.contains("cannot connect")
+                && !out_text.contains("failed");
+            Ok(
+                json!({ "success": success, "message": if out_text.is_empty() { err_text } else { out_text } }),
+            )
         }
         Ok(Err(e)) => Err(e.to_string()),
         Err(_) => {
             if !silent {
-                let _ = window.emit("scrcpy-log", format!("[SYSTEM] Connection to {} timed out after 5s.", ip));
+                let _ = window.emit(
+                    "scrcpy-log",
+                    format!("[SYSTEM] Connection to {} timed out after 5s.", ip),
+                );
             }
             Ok(json!({ "success": false, "message": "connection timed out" }))
         }
@@ -348,7 +369,12 @@ pub async fn adb_connect(window: Window, ip: String, custom_path: Option<String>
 }
 
 #[tauri::command]
-pub async fn adb_pair(window: Window, ip: String, code: String, custom_path: Option<String>) -> Result<serde_json::Value, String> {
+pub async fn adb_pair(
+    window: Window,
+    ip: String,
+    code: String,
+    custom_path: Option<String>,
+) -> Result<serde_json::Value, String> {
     let adb_path = get_binary_path("adb", custom_path);
     let _ = window.emit("scrcpy-log", format!("[SYSTEM] Pairing with {}...", ip));
 
@@ -363,18 +389,29 @@ pub async fn adb_pair(window: Window, ip: String, code: String, custom_path: Opt
     let out_text = String::from_utf8_lossy(&output.stdout).trim().to_string();
     let err_text = String::from_utf8_lossy(&output.stderr).trim().to_string();
 
-    if !out_text.is_empty() { let _ = window.emit("scrcpy-log", format!("[ADB] {}", out_text)); }
-    if !err_text.is_empty() { let _ = window.emit("scrcpy-log", format!("[ADB ERROR] {}", err_text)); }
+    if !out_text.is_empty() {
+        let _ = window.emit("scrcpy-log", format!("[ADB] {}", out_text));
+    }
+    if !err_text.is_empty() {
+        let _ = window.emit("scrcpy-log", format!("[ADB ERROR] {}", err_text));
+    }
 
-    let success = output.status.success() && (out_text.contains("Successfully paired") || err_text.contains("Successfully paired"));
+    let success = output.status.success()
+        && (out_text.contains("Successfully paired") || err_text.contains("Successfully paired"));
 
-    Ok(json!({ "success": success, "message": if out_text.is_empty() { err_text } else { out_text } }))
+    Ok(
+        json!({ "success": success, "message": if out_text.is_empty() { err_text } else { out_text } }),
+    )
 }
 
 #[tauri::command]
-pub async fn adb_shell(device: String, command: String, custom_path: Option<String>) -> serde_json::Value {
+pub async fn adb_shell(
+    device: String,
+    command: String,
+    custom_path: Option<String>,
+) -> serde_json::Value {
     let adb_path = get_binary_path("adb", custom_path);
-    
+
     let output = create_command(&adb_path)
         .arg("-s")
         .arg(&device)
@@ -385,16 +422,23 @@ pub async fn adb_shell(device: String, command: String, custom_path: Option<Stri
 
     match output {
         Ok(o) => {
-             json!({ "success": o.status.success(), "output": String::from_utf8_lossy(&o.stdout).to_string() })
-        },
-        Err(e) => json!({ "success": false, "message": e.to_string() })
+            json!({ "success": o.status.success(), "output": String::from_utf8_lossy(&o.stdout).to_string() })
+        }
+        Err(e) => json!({ "success": false, "message": e.to_string() }),
     }
 }
 
 #[tauri::command]
-pub async fn run_terminal_command(device: Option<String>, cmd: String, custom_path: Option<String>) -> serde_json::Value {
-    let mut parts = split_args(&cmd).unwrap_or_else(|_| cmd.split_whitespace().map(|s| s.to_string()).collect());
-    if parts.is_empty() { return json!({ "success": false, "message": "No command provided" }); }
+pub async fn run_terminal_command(
+    device: Option<String>,
+    cmd: String,
+    custom_path: Option<String>,
+) -> serde_json::Value {
+    let mut parts = split_args(&cmd)
+        .unwrap_or_else(|_| cmd.split_whitespace().map(|s| s.to_string()).collect());
+    if parts.is_empty() {
+        return json!({ "success": false, "message": "No command provided" });
+    }
 
     let first_part = parts[0].to_lowercase();
     let is_scrcpy = first_part == "scrcpy";
@@ -409,16 +453,19 @@ pub async fn run_terminal_command(device: Option<String>, cmd: String, custom_pa
     }
 
     let mut args = Vec::new();
-    
+
     // Auto-inject device ID for ADB/Scrcpy commands if a device is active and not already specified
-    let has_serial_flag = parts.contains(&"-s".to_string()) || parts.contains(&"--serial".to_string());
-    
+    let has_serial_flag =
+        parts.contains(&"-s".to_string()) || parts.contains(&"--serial".to_string());
+
     if !has_serial_flag {
         if let Some(ref d) = device {
             if !d.is_empty() {
                 // For ADB, don't inject for certain global commands
-                let is_global_adb = binary_name == "adb" && !parts.is_empty() && (parts[0] == "devices" || parts[0] == "connect" || parts[0] == "pair");
-                
+                let is_global_adb = binary_name == "adb"
+                    && !parts.is_empty()
+                    && (parts[0] == "devices" || parts[0] == "connect" || parts[0] == "pair");
+
                 if !is_global_adb {
                     args.push("-s".to_string());
                     args.push(d.clone());
@@ -431,21 +478,18 @@ pub async fn run_terminal_command(device: Option<String>, cmd: String, custom_pa
         args.push(part);
     }
 
-    let output = create_command(&exe_path)
-        .args(&args)
-        .output()
-        .await;
+    let output = create_command(&exe_path).args(&args).output().await;
 
     match output {
         Ok(o) => {
-             json!({ 
-                 "success": o.status.success(), 
-                 "binary": binary_name,
-                 "stdout": String::from_utf8_lossy(&o.stdout).to_string(),
-                 "stderr": String::from_utf8_lossy(&o.stderr).to_string()
-             })
-        },
-        Err(e) => json!({ "success": false, "message": e.to_string() })
+            json!({
+                "success": o.status.success(),
+                "binary": binary_name,
+                "stdout": String::from_utf8_lossy(&o.stdout).to_string(),
+                "stderr": String::from_utf8_lossy(&o.stderr).to_string()
+            })
+        }
+        Err(e) => json!({ "success": false, "message": e.to_string() }),
     }
 }
 
@@ -520,9 +564,13 @@ fn sanitize_filename_component(s: &str) -> String {
 }
 
 #[tauri::command]
-pub async fn push_file(device: String, file_path: String, custom_path: Option<String>) -> serde_json::Value {
+pub async fn push_file(
+    device: String,
+    file_path: String,
+    custom_path: Option<String>,
+) -> serde_json::Value {
     let adb_path = get_binary_path("adb", custom_path);
-    
+
     let output = create_command(&adb_path)
         .arg("-s")
         .arg(&device)
@@ -533,21 +581,25 @@ pub async fn push_file(device: String, file_path: String, custom_path: Option<St
         .await;
 
     match output {
-         Ok(o) => {
-             if o.status.success() {
-                 json!({ "success": true, "message": "File pushed to Downloads" })
-             } else {
-                 json!({ "success": false, "message": "Transfer failed" })
-             }
-         },
-         Err(e) => json!({ "success": false, "message": e.to_string() })
+        Ok(o) => {
+            if o.status.success() {
+                json!({ "success": true, "message": "File pushed to Downloads" })
+            } else {
+                json!({ "success": false, "message": "Transfer failed" })
+            }
+        }
+        Err(e) => json!({ "success": false, "message": e.to_string() }),
     }
 }
 
 #[tauri::command]
-pub async fn install_apk(device: String, file_path: String, custom_path: Option<String>) -> serde_json::Value {
+pub async fn install_apk(
+    device: String,
+    file_path: String,
+    custom_path: Option<String>,
+) -> serde_json::Value {
     let adb_path = get_binary_path("adb", custom_path);
-    
+
     let output = create_command(&adb_path)
         .arg("-s")
         .arg(&device)
@@ -556,31 +608,37 @@ pub async fn install_apk(device: String, file_path: String, custom_path: Option<
         .output()
         .await;
 
-     match output {
+    match output {
         Ok(o) => {
-             let out_text = String::from_utf8_lossy(&o.stdout);
-             let err_text = String::from_utf8_lossy(&o.stderr);
-             
-             if o.status.success() {
-                 json!({ "success": true, "message": out_text.trim() })
-             } else {
-                 json!({ "success": false, "message": err_text.trim() })
-             }
-        },
-        Err(e) => json!({ "success": false, "message": e.to_string() })
+            let out_text = String::from_utf8_lossy(&o.stdout);
+            let err_text = String::from_utf8_lossy(&o.stderr);
+
+            if o.status.success() {
+                json!({ "success": true, "message": out_text.trim() })
+            } else {
+                json!({ "success": false, "message": err_text.trim() })
+            }
+        }
+        Err(e) => json!({ "success": false, "message": e.to_string() }),
     }
 }
 
 #[tauri::command]
-pub async fn kill_adb(window: Window, custom_path: Option<String>) -> Result<serde_json::Value, String> {
+pub async fn kill_adb(
+    window: Window,
+    custom_path: Option<String>,
+) -> Result<serde_json::Value, String> {
     let adb_path = get_binary_path("adb", custom_path);
-    let _ = window.emit("scrcpy-log", "[SYSTEM] Terminating ADB stack...".to_string());
-    
+    let _ = window.emit(
+        "scrcpy-log",
+        "[SYSTEM] Terminating ADB stack...".to_string(),
+    );
+
     let mut child = create_command(&adb_path)
         .arg("kill-server")
         .spawn()
         .map_err(|e| e.to_string())?;
-        
+
     let _ = child.wait().await;
 
     // Force kill adb process via OS specifics
@@ -595,10 +653,7 @@ pub async fn kill_adb(window: Window, custom_path: Option<String>) -> Result<ser
 
     #[cfg(not(target_os = "windows"))]
     {
-         let _ = TokioCommand::new("pkill")
-            .arg("adb")
-            .output()
-            .await;
+        let _ = TokioCommand::new("pkill").arg("adb").output().await;
     }
 
     let _ = window.emit("scrcpy-log", "[SYSTEM] ADB Stack Terminated.".to_string());
@@ -606,22 +661,26 @@ pub async fn kill_adb(window: Window, custom_path: Option<String>) -> Result<ser
 }
 
 #[tauri::command]
-pub async fn list_scrcpy_options(device: String, arg: String, custom_path: Option<String>) -> serde_json::Value {
+pub async fn list_scrcpy_options(
+    device: String,
+    arg: String,
+    custom_path: Option<String>,
+) -> serde_json::Value {
     let exe_path = get_binary_path("scrcpy", custom_path);
-    
+
     let mut command = create_command(&exe_path);
     command.arg("-s").arg(&device).arg(&arg);
-    
+
     let output = command.output().await;
 
     match output {
         Ok(o) => {
-             let out_text = String::from_utf8_lossy(&o.stdout);
-             let err_text = String::from_utf8_lossy(&o.stderr); // scrcpy often prints lists to stderr
-             let combined = format!("{}{}", out_text, err_text);
-             json!({ "success": o.status.success(), "output": combined })
-        },
-        Err(e) => json!({ "success": false, "message": e.to_string() })
+            let out_text = String::from_utf8_lossy(&o.stdout);
+            let err_text = String::from_utf8_lossy(&o.stderr); // scrcpy often prints lists to stderr
+            let combined = format!("{}{}", out_text, err_text);
+            json!({ "success": o.status.success(), "output": combined })
+        }
+        Err(e) => json!({ "success": false, "message": e.to_string() }),
     }
 }
 
@@ -801,7 +860,10 @@ pub struct ScrcpyConfig {
     ignore_video_encoder_constraints: Option<bool>,
 }
 
-fn resolve_audio_codec_flag<'a>(config: &'a ScrcpyConfig, audio_codec_override: Option<&'a str>) -> Option<&'a str> {
+fn resolve_audio_codec_flag<'a>(
+    config: &'a ScrcpyConfig,
+    audio_codec_override: Option<&'a str>,
+) -> Option<&'a str> {
     if let Some(c) = audio_codec_override {
         let trimmed = c.trim();
         if !trimmed.is_empty() {
@@ -854,7 +916,10 @@ fn find_window_by_pid(pid: u32) -> Option<windows::Win32::Foundation::HWND> {
         if !IsWindowVisible(hwnd).as_bool() {
             return BOOL(1);
         }
-        if GetWindow(hwnd, GW_OWNER).map(|o| !o.0.is_null()).unwrap_or(false) {
+        if GetWindow(hwnd, GW_OWNER)
+            .map(|o| !o.0.is_null())
+            .unwrap_or(false)
+        {
             return BOOL(1);
         }
         let mut wnd_pid: u32 = 0;
@@ -979,9 +1044,8 @@ fn recenter_window(pid: u32) {
     {
         use windows::Win32::Foundation::RECT;
         use windows::Win32::UI::WindowsAndMessaging::{
-            GetSystemMetrics, GetWindowRect, IsIconic, IsZoomed, SetForegroundWindow,
-            SetWindowPos, ShowWindow, SM_CXSCREEN, SM_CYSCREEN, SWP_NOSIZE, SWP_NOZORDER,
-            SW_RESTORE,
+            GetSystemMetrics, GetWindowRect, IsIconic, IsZoomed, SetForegroundWindow, SetWindowPos,
+            ShowWindow, SM_CXSCREEN, SM_CYSCREEN, SWP_NOSIZE, SWP_NOZORDER, SW_RESTORE,
         };
 
         let Some(hwnd) = find_window_by_pid(pid) else {
@@ -1016,10 +1080,17 @@ fn recenter_window(pid: u32) {
     #[cfg(target_os = "linux")]
     {
         let pid_str = pid.to_string();
-        let Ok(search_out) = StdCommand::new("xdotool").args(["search", "--pid", &pid_str]).output() else {
+        let Ok(search_out) = StdCommand::new("xdotool")
+            .args(["search", "--pid", &pid_str])
+            .output()
+        else {
             return;
         };
-        let Some(window_id) = String::from_utf8_lossy(&search_out.stdout).lines().next().map(str::to_string) else {
+        let Some(window_id) = String::from_utf8_lossy(&search_out.stdout)
+            .lines()
+            .next()
+            .map(str::to_string)
+        else {
             return;
         };
 
@@ -1037,7 +1108,10 @@ fn recenter_window(pid: u32) {
             return;
         };
 
-        let Ok(display_out) = StdCommand::new("xdotool").arg("getdisplaygeometry").output() else {
+        let Ok(display_out) = StdCommand::new("xdotool")
+            .arg("getdisplaygeometry")
+            .output()
+        else {
             return;
         };
         let display_text = String::from_utf8_lossy(&display_out.stdout);
@@ -1051,8 +1125,12 @@ fn recenter_window(pid: u32) {
 
         let x = ((screen_w - w).max(0) / 2).to_string();
         let y = ((screen_h - h).max(0) / 2).to_string();
-        let _ = StdCommand::new("xdotool").args(["windowmove", &window_id, &x, &y]).output();
-        let _ = StdCommand::new("xdotool").args(["windowactivate", &window_id]).output();
+        let _ = StdCommand::new("xdotool")
+            .args(["windowmove", &window_id, &x, &y])
+            .output();
+        let _ = StdCommand::new("xdotool")
+            .args(["windowactivate", &window_id])
+            .output();
     }
     #[cfg(target_os = "macos")]
     {
@@ -1087,7 +1165,12 @@ fn recenter_window(pid: u32) {
 /// can be recovered without being able to see or focus it directly. A no-op
 /// if `device` has no tracked process (e.g. nothing is running).
 pub fn recenter_device(state: &ScrcpyState, device: &str) {
-    let pid = state.processes.lock().unwrap_or_else(|e| e.into_inner()).get(device).and_then(|c| c.id());
+    let pid = state
+        .processes
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .get(device)
+        .and_then(|c| c.id());
     if let Some(pid) = pid {
         recenter_window(pid);
     }
@@ -1103,8 +1186,14 @@ pub fn recenter_scrcpy_window(state: State<'_, ScrcpyState>, device: String) -> 
 /// recentre shortcut (which fires with no window necessarily focused) knows
 /// which mirror window to act on.
 #[tauri::command]
-pub fn set_active_device(state: State<'_, ScrcpyState>, device: Option<String>) -> Result<(), String> {
-    *state.active_device.lock().unwrap_or_else(|e| e.into_inner()) = device;
+pub fn set_active_device(
+    state: State<'_, ScrcpyState>,
+    device: Option<String>,
+) -> Result<(), String> {
+    *state
+        .active_device
+        .lock()
+        .unwrap_or_else(|e| e.into_inner()) = device;
     Ok(())
 }
 
@@ -1146,14 +1235,24 @@ fn emit_window_pos_and_stop(
 ) {
     if let Some(last) = last {
         let (x, y) = resolve_window_pos_to_persist(requested, first, last);
-        let _ = window.emit("scrcpy-window-pos", json!({ "device": device, "x": x, "y": y }));
+        let _ = window.emit(
+            "scrcpy-window-pos",
+            json!({ "device": device, "x": x, "y": y }),
+        );
     }
-    let _ = window.emit("scrcpy-status", json!({ "device": device, "running": false }));
+    let _ = window.emit(
+        "scrcpy-status",
+        json!({ "device": device, "running": false }),
+    );
 }
 
-fn build_scrcpy_args(config: &ScrcpyConfig, video_dir_fallback: Option<String>, audio_codec_override: Option<&str>) -> Vec<String> {
+fn build_scrcpy_args(
+    config: &ScrcpyConfig,
+    video_dir_fallback: Option<String>,
+    audio_codec_override: Option<&str>,
+) -> Vec<String> {
     let mut args = Vec::new();
-    
+
     // Construct arguments based on config
     if !config.device.is_empty() {
         args.push("-s".to_string());
@@ -1169,12 +1268,12 @@ fn build_scrcpy_args(config: &ScrcpyConfig, video_dir_fallback: Option<String>, 
 
     if config.session_mode == "mirror" && (hid_keyboard || hid_mouse) && otg_pure {
         if config.device.contains('.') || config.device.contains(':') {
-             args.push("--no-video".to_string());
-             args.push("--no-audio".to_string());
-             args.push("--keyboard=uhid".to_string());
-             args.push("--mouse=uhid".to_string());
+            args.push("--no-video".to_string());
+            args.push("--no-audio".to_string());
+            args.push("--keyboard=uhid".to_string());
+            args.push("--mouse=uhid".to_string());
         } else {
-             args.push("--otg".to_string());
+            args.push("--otg".to_string());
         }
     } else {
         if hid_keyboard {
@@ -1196,17 +1295,31 @@ fn build_scrcpy_args(config: &ScrcpyConfig, video_dir_fallback: Option<String>, 
             args.push("--video-bit-rate".to_string());
             args.push(format!("{}M", bitrate));
         }
-        
+
         let audio_enabled = config.audio_enabled.unwrap_or(true);
-        if !audio_enabled { args.push("--no-audio".to_string()); }
+        if !audio_enabled {
+            args.push("--no-audio".to_string());
+        }
         if audio_enabled {
             if let Some(codec) = resolve_audio_codec_flag(config, audio_codec_override) {
                 args.push(format!("--audio-codec={}", codec));
             }
         }
-        if let Some(aot) = config.always_on_top { if aot { args.push("--always-on-top".to_string()); } }
-        if let Some(fs) = config.fullscreen { if fs { args.push("--fullscreen".to_string()); } }
-        if let Some(bl) = config.borderless { if bl { args.push("--window-borderless".to_string()); } }
+        if let Some(aot) = config.always_on_top {
+            if aot {
+                args.push("--always-on-top".to_string());
+            }
+        }
+        if let Some(fs) = config.fullscreen {
+            if fs {
+                args.push("--fullscreen".to_string());
+            }
+        }
+        if let Some(bl) = config.borderless {
+            if bl {
+                args.push("--window-borderless".to_string());
+            }
+        }
 
         // Restore the last saved window position (client-area origin), for
         // mirror sessions only. Skipped in fullscreen (scrcpy ignores it) and
@@ -1220,7 +1333,7 @@ fn build_scrcpy_args(config: &ScrcpyConfig, video_dir_fallback: Option<String>, 
                 args.push(format!("--window-y={}", wy));
             }
         }
-        
+
         if let Some(rot) = &config.rotation {
             if rot != "0" {
                 args.push("--orientation".to_string());
@@ -1230,18 +1343,36 @@ fn build_scrcpy_args(config: &ScrcpyConfig, video_dir_fallback: Option<String>, 
 
         let can_control = config.session_mode != "camera";
         if can_control {
-             if let Some(sa) = config.stay_awake { if sa { args.push("--stay-awake".to_string()); } }
-             if let Some(ka) = config.keep_active { if ka { args.push("--keep-active".to_string()); } }
-             if let Some(to) = config.turn_off { if to { args.push("--turn-screen-off".to_string()); args.push("--no-power-on".to_string()); } }
+            if let Some(sa) = config.stay_awake {
+                if sa {
+                    args.push("--stay-awake".to_string());
+                }
+            }
+            if let Some(ka) = config.keep_active {
+                if ka {
+                    args.push("--keep-active".to_string());
+                }
+            }
+            if let Some(to) = config.turn_off {
+                if to {
+                    args.push("--turn-screen-off".to_string());
+                    args.push("--no-power-on".to_string());
+                }
+            }
         }
 
         if config.session_mode == "camera" {
             args.push("--video-source=camera".to_string());
             if let Some(cid) = &config.camera_id {
-                if !cid.is_empty() { args.push(format!("--camera-id={}", cid)); }
-                else if let Some(facing) = &config.camera_facing { args.push(format!("--camera-facing={}", facing)); }
-            } else if let Some(facing) = &config.camera_facing { args.push(format!("--camera-facing={}", facing)); }
-            
+                if !cid.is_empty() {
+                    args.push(format!("--camera-id={}", cid));
+                } else if let Some(facing) = &config.camera_facing {
+                    args.push(format!("--camera-facing={}", facing));
+                }
+            } else if let Some(facing) = &config.camera_facing {
+                args.push(format!("--camera-facing={}", facing));
+            }
+
             // Resolution logic: Map res (e.g., "1920") to standard camera sizes (e.g., "1920x1080")
             if let Some(res) = &config.res {
                 if res != "0" {
@@ -1264,26 +1395,39 @@ fn build_scrcpy_args(config: &ScrcpyConfig, video_dir_fallback: Option<String>, 
                 args.push("--camera-size=1920x1080".to_string());
             }
 
-            if let Some(ar) = &config.camera_ar { if ar != "0" { args.push(format!("--camera-ar={}", ar)); } }
-            if let Some(chs) = config.camera_high_speed { if chs { args.push("--camera-high-speed".to_string()); } }
+            if let Some(ar) = &config.camera_ar {
+                if ar != "0" {
+                    args.push(format!("--camera-ar={}", ar));
+                }
+            }
+            if let Some(chs) = config.camera_high_speed {
+                if chs {
+                    args.push("--camera-high-speed".to_string());
+                }
+            }
             // v4: camera torch and zoom
-            if let Some(true) = config.camera_torch { args.push("--camera-torch".to_string()); }
+            if let Some(true) = config.camera_torch {
+                args.push("--camera-torch".to_string());
+            }
             if let Some(zoom) = config.camera_zoom {
-                if zoom > 1.005 { // avoid floating point noise at 1.0
+                if zoom > 1.005 {
+                    // avoid floating point noise at 1.0
                     args.push(format!("--camera-zoom={:.1}", zoom));
                 }
             }
-             // fps handled generically below
+            // fps handled generically below
         } else if config.session_mode == "desktop" {
-             let w = config.vd_width.unwrap_or(1920);
-             let h = config.vd_height.unwrap_or(1080);
-             let dpi = config.vd_dpi.unwrap_or(420);
-             args.push(format!("--new-display={}x{}/{}", w, h, dpi));
-             args.push("--video-buffer=100".to_string());
-             // v4: flex display (resize virtual display with window)
-             if let Some(true) = config.flex_display { args.push("--flex-display".to_string()); }
+            let w = config.vd_width.unwrap_or(1920);
+            let h = config.vd_height.unwrap_or(1080);
+            let dpi = config.vd_dpi.unwrap_or(420);
+            args.push(format!("--new-display={}x{}/{}", w, h, dpi));
+            args.push("--video-buffer=100".to_string());
+            // v4: flex display (resize virtual display with window)
+            if let Some(true) = config.flex_display {
+                args.push("--flex-display".to_string());
+            }
         }
-        
+
         if let Some(fps) = config.fps {
             if fps > 0 {
                 if config.session_mode == "camera" {
@@ -1300,30 +1444,34 @@ fn build_scrcpy_args(config: &ScrcpyConfig, video_dir_fallback: Option<String>, 
 
         // Shared resolution logic (applies to mirror and desktop)
         if config.session_mode != "camera" {
-            if let Some(res) = &config.res { 
-                if res != "0" { 
-                    args.push("--max-size".to_string()); 
-                    args.push(res.clone()); 
-                } 
+            if let Some(res) = &config.res {
+                if res != "0" {
+                    args.push("--max-size".to_string());
+                    args.push(res.clone());
+                }
             }
         }
-        
-        if let Some(rec) = config.record {
-             if rec {
-                 let mut path = config.record_path.clone().unwrap_or_default();
-                 
-                 // If path is empty, try to get Video dir fallback
-                 if path.trim().is_empty() {
-                    path = video_dir_fallback.unwrap_or_else(|| ".".to_string());
-                 }
 
-                 // The device id can come from user-typed IPs or ADB output,
-                 // so sanitize it before using it inside a file name.
-                 let safe_device = sanitize_filename_component(&config.device);
-                 let filename = format!("scrcpy_{}_{}.mkv", safe_device, chrono::Local::now().format("%Y%m%d_%H%M%S"));
-                 let full_path = std::path::Path::new(&path).join(filename);
-                 args.push(format!("--record={}", full_path.to_string_lossy()));
-             }
+        if let Some(rec) = config.record {
+            if rec {
+                let mut path = config.record_path.clone().unwrap_or_default();
+
+                // If path is empty, try to get Video dir fallback
+                if path.trim().is_empty() {
+                    path = video_dir_fallback.unwrap_or_else(|| ".".to_string());
+                }
+
+                // The device id can come from user-typed IPs or ADB output,
+                // so sanitize it before using it inside a file name.
+                let safe_device = sanitize_filename_component(&config.device);
+                let filename = format!(
+                    "scrcpy_{}_{}.mkv",
+                    safe_device,
+                    chrono::Local::now().format("%Y%m%d_%H%M%S")
+                );
+                let full_path = std::path::Path::new(&path).join(filename);
+                args.push(format!("--record={}", full_path.to_string_lossy()));
+            }
         }
 
         // v4: background color (all modes)
@@ -1339,7 +1487,7 @@ fn build_scrcpy_args(config: &ScrcpyConfig, video_dir_fallback: Option<String>, 
             args.push("--ignore-video-encoder-constraints".to_string());
         }
     }
-    
+
     args
 }
 
@@ -1454,9 +1602,17 @@ enum AttemptOutcome {
 }
 
 #[tauri::command]
-pub async fn run_scrcpy(window: Window, state: State<'_, ScrcpyState>, config: ScrcpyConfig, app_handle: tauri::AppHandle) -> Result<(), String> {
-
-    let video_dir = app_handle.path().video_dir().ok().map(|p| p.to_string_lossy().to_string());
+pub async fn run_scrcpy(
+    window: Window,
+    state: State<'_, ScrcpyState>,
+    config: ScrcpyConfig,
+    app_handle: tauri::AppHandle,
+) -> Result<(), String> {
+    let video_dir = app_handle
+        .path()
+        .video_dir()
+        .ok()
+        .map(|p| p.to_string_lossy().to_string());
 
     let exe_path = get_binary_path("scrcpy", config.scrcpy_path.clone());
 
@@ -1467,27 +1623,52 @@ pub async fn run_scrcpy(window: Window, state: State<'_, ScrcpyState>, config: S
         _ => "Screen Mirroring",
     };
 
-    let res_label = config.res.as_ref().map(|r| if r == "0" { "Original" } else { r }).unwrap_or("Original");
+    let res_label = config
+        .res
+        .as_ref()
+        .map(|r| if r == "0" { "Original" } else { r })
+        .unwrap_or("Original");
     let bitrate_label = format!("{}Mbps", config.bitrate.unwrap_or(8));
     let fps_label = format!("{}fps", config.fps.unwrap_or(60));
 
-    let _ = window.emit("scrcpy-log", format!("[SYSTEM] Starting {} session...", mode_label));
-    let _ = window.emit("scrcpy-log", format!("[SYSTEM] Target: {} | Config: {} @ {}, {}", config.device, res_label, bitrate_label, fps_label));
+    let _ = window.emit(
+        "scrcpy-log",
+        format!("[SYSTEM] Starting {} session...", mode_label),
+    );
+    let _ = window.emit(
+        "scrcpy-log",
+        format!(
+            "[SYSTEM] Target: {} | Config: {} @ {}, {}",
+            config.device, res_label, bitrate_label, fps_label
+        ),
+    );
 
     if config.record.unwrap_or(false) {
-        let path = config.record_path.as_ref().map(|p| if p.is_empty() { "Videos" } else { p }).unwrap_or("Videos");
-        let _ = window.emit("scrcpy-log", format!("[SYSTEM] Recording enabled -> output to {}", path));
+        let path = config
+            .record_path
+            .as_ref()
+            .map(|p| if p.is_empty() { "Videos" } else { p })
+            .unwrap_or("Videos");
+        let _ = window.emit(
+            "scrcpy-log",
+            format!("[SYSTEM] Recording enabled -> output to {}", path),
+        );
     }
 
     let adb_exe_path = get_binary_path("adb", config.scrcpy_path.clone());
     let server_path = if !exe_path.is_empty() && exe_path != "scrcpy" {
-        Path::new(&exe_path).parent().map(|p| p.join("scrcpy-server").to_string_lossy().to_string())
+        Path::new(&exe_path)
+            .parent()
+            .map(|p| p.join("scrcpy-server").to_string_lossy().to_string())
     } else {
         None
     };
 
     let _ = window.emit("scrcpy-log", format!("[SYSTEM] Using scrcpy: {}", exe_path));
-    let _ = window.emit("scrcpy-log", format!("[SYSTEM] Using adb: {}", adb_exe_path));
+    let _ = window.emit(
+        "scrcpy-log",
+        format!("[SYSTEM] Using adb: {}", adb_exe_path),
+    );
 
     // Decide whether automatic audio codec fallback should kick in on errors.
     let audio_enabled = config.audio_enabled.unwrap_or(true);
@@ -1506,11 +1687,19 @@ pub async fn run_scrcpy(window: Window, state: State<'_, ScrcpyState>, config: S
         server_path.as_deref(),
         &initial_args,
         config.vsync.unwrap_or(true),
-    ).await?;
+    )
+    .await?;
 
     let initial_scrcpy_pid = child.id();
-    state.processes.lock().unwrap_or_else(|e| e.into_inner()).insert(config.device.clone(), child);
-    let _ = window.emit("scrcpy-status", json!({ "device": config.device, "running": true }));
+    state
+        .processes
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .insert(config.device.clone(), child);
+    let _ = window.emit(
+        "scrcpy-status",
+        json!({ "device": config.device, "running": true }),
+    );
 
     // Monitor for exit (and orchestrate the audio codec fallback chain)
     let device_mon = config.device.clone();
@@ -1567,7 +1756,10 @@ pub async fn run_scrcpy(window: Window, state: State<'_, ScrcpyState>, config: S
 
             let outcome = {
                 let state_mon = app_handle_mon.state::<ScrcpyState>();
-                let mut processes = state_mon.processes.lock().unwrap_or_else(|e| e.into_inner());
+                let mut processes = state_mon
+                    .processes
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner());
                 match processes.get_mut(&device_mon) {
                     Some(child) => match child.try_wait() {
                         Ok(Some(status)) => {
@@ -1591,8 +1783,17 @@ pub async fn run_scrcpy(window: Window, state: State<'_, ScrcpyState>, config: S
 
             match outcome {
                 AttemptOutcome::WaitError(e) => {
-                    let _ = window_mon.emit("scrcpy-log", format!("[SYSTEM] Error waiting for scrcpy: {}", e));
-                    emit_window_pos_and_stop(&window_mon, &device_mon, requested_pos, first_window_pos, last_window_pos);
+                    let _ = window_mon.emit(
+                        "scrcpy-log",
+                        format!("[SYSTEM] Error waiting for scrcpy: {}", e),
+                    );
+                    emit_window_pos_and_stop(
+                        &window_mon,
+                        &device_mon,
+                        requested_pos,
+                        first_window_pos,
+                        last_window_pos,
+                    );
                     break;
                 }
                 AttemptOutcome::UserStopped => {
@@ -1607,11 +1808,20 @@ pub async fn run_scrcpy(window: Window, state: State<'_, ScrcpyState>, config: S
                         .unwrap()
                         .remove(&device_mon);
                     let pos_to_persist = fresh_pos.or(last_window_pos);
-                    emit_window_pos_and_stop(&window_mon, &device_mon, requested_pos, first_window_pos, pos_to_persist);
+                    emit_window_pos_and_stop(
+                        &window_mon,
+                        &device_mon,
+                        requested_pos,
+                        first_window_pos,
+                        pos_to_persist,
+                    );
                     break;
                 }
                 AttemptOutcome::Exited(status) => {
-                    let _ = window_mon.emit("scrcpy-log", format!("[SYSTEM] Scrcpy process exited with status: {}", status));
+                    let _ = window_mon.emit(
+                        "scrcpy-log",
+                        format!("[SYSTEM] Scrcpy process exited with status: {}", status),
+                    );
 
                     // Give stream reader tasks a moment to flush remaining stderr
                     // lines (the audio error pattern may still be in flight).
@@ -1619,14 +1829,21 @@ pub async fn run_scrcpy(window: Window, state: State<'_, ScrcpyState>, config: S
 
                     let audio_failed = current_audio_flag.load(Ordering::SeqCst);
 
-                    if should_auto_fallback && audio_failed && chain_index < AUDIO_FALLBACK_CHAIN.len() {
+                    if should_auto_fallback
+                        && audio_failed
+                        && chain_index < AUDIO_FALLBACK_CHAIN.len()
+                    {
                         let next_codec = AUDIO_FALLBACK_CHAIN[chain_index];
                         let _ = window_mon.emit(
                             "scrcpy-log",
-                            format!("[SYSTEM] Default audio codec failed, retrying with {}...", next_codec.to_uppercase()),
+                            format!(
+                                "[SYSTEM] Default audio codec failed, retrying with {}...",
+                                next_codec.to_uppercase()
+                            ),
                         );
 
-                        let new_args = build_scrcpy_args(&config_mon, video_dir_mon.clone(), Some(next_codec));
+                        let new_args =
+                            build_scrcpy_args(&config_mon, video_dir_mon.clone(), Some(next_codec));
 
                         match spawn_scrcpy_streams(
                             &window_mon,
@@ -1635,7 +1852,9 @@ pub async fn run_scrcpy(window: Window, state: State<'_, ScrcpyState>, config: S
                             server_path_mon.as_deref(),
                             &new_args,
                             config_mon.vsync.unwrap_or(true),
-                        ).await {
+                        )
+                        .await
+                        {
                             Ok((new_child, new_flag)) => {
                                 current_scrcpy_pid = new_child.id();
                                 // New window: re-learn its decoration offset by
@@ -1647,14 +1866,27 @@ pub async fn run_scrcpy(window: Window, state: State<'_, ScrcpyState>, config: S
                                 first_window_pos = None;
                                 last_window_pos = None;
                                 let state_mon = app_handle_mon.state::<ScrcpyState>();
-                                state_mon.processes.lock().unwrap_or_else(|e| e.into_inner()).insert(device_mon.clone(), new_child);
+                                state_mon
+                                    .processes
+                                    .lock()
+                                    .unwrap_or_else(|e| e.into_inner())
+                                    .insert(device_mon.clone(), new_child);
                                 current_audio_flag = new_flag;
                                 chain_index += 1;
                                 continue;
                             }
                             Err(e) => {
-                                let _ = window_mon.emit("scrcpy-log", format!("[SYSTEM] Failed to spawn retry: {}", e));
-                                emit_window_pos_and_stop(&window_mon, &device_mon, requested_pos, first_window_pos, last_window_pos);
+                                let _ = window_mon.emit(
+                                    "scrcpy-log",
+                                    format!("[SYSTEM] Failed to spawn retry: {}", e),
+                                );
+                                emit_window_pos_and_stop(
+                                    &window_mon,
+                                    &device_mon,
+                                    requested_pos,
+                                    first_window_pos,
+                                    last_window_pos,
+                                );
                                 break;
                             }
                         }
@@ -1663,10 +1895,22 @@ pub async fn run_scrcpy(window: Window, state: State<'_, ScrcpyState>, config: S
                             "scrcpy-log",
                             "[SYSTEM] No compatible audio codec found. Consider disabling audio forwarding.".to_string(),
                         );
-                        emit_window_pos_and_stop(&window_mon, &device_mon, requested_pos, first_window_pos, last_window_pos);
+                        emit_window_pos_and_stop(
+                            &window_mon,
+                            &device_mon,
+                            requested_pos,
+                            first_window_pos,
+                            last_window_pos,
+                        );
                         break;
                     } else {
-                        emit_window_pos_and_stop(&window_mon, &device_mon, requested_pos, first_window_pos, last_window_pos);
+                        emit_window_pos_and_stop(
+                            &window_mon,
+                            &device_mon,
+                            requested_pos,
+                            first_window_pos,
+                            last_window_pos,
+                        );
                         break;
                     }
                 }
@@ -2087,7 +2331,10 @@ mod tests {
             sanitize_filename_component("192.168.1.50:5555"),
             "192.168.1.50_5555"
         );
-        assert_eq!(sanitize_filename_component("emulator-5554"), "emulator-5554");
+        assert_eq!(
+            sanitize_filename_component("emulator-5554"),
+            "emulator-5554"
+        );
         assert_eq!(sanitize_filename_component("../../evil"), "_.._evil");
         assert_eq!(sanitize_filename_component("..."), "device");
         assert_eq!(sanitize_filename_component(""), "device");
@@ -2103,30 +2350,32 @@ pub async fn stop_scrcpy(state: State<'_, ScrcpyState>, device: String) -> Resul
 
     if let Some(mut c) = child {
         if let Some(pid) = c.id() {
-             // Grab the window's position now, one last time, before it's
-             // killed: this is the only moment it's guaranteed to still be
-             // exactly where the user left it. The run_scrcpy monitor loop
-             // only refreshes its own sample every ~3s, so stopping right
-             // after a move could otherwise persist a stale, pre-move spot.
-             if let Some(pos) = try_capture_window_pos(pid) {
-                 state.final_capture_hint.lock().unwrap_or_else(|e| e.into_inner()).insert(device.clone(), pos);
-             }
+            // Grab the window's position now, one last time, before it's
+            // killed: this is the only moment it's guaranteed to still be
+            // exactly where the user left it. The run_scrcpy monitor loop
+            // only refreshes its own sample every ~3s, so stopping right
+            // after a move could otherwise persist a stale, pre-move spot.
+            if let Some(pos) = try_capture_window_pos(pid) {
+                state
+                    .final_capture_hint
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner())
+                    .insert(device.clone(), pos);
+            }
 
-             #[cfg(target_os = "windows")]
-             {
+            #[cfg(target_os = "windows")]
+            {
                 let _ = StdCommand::new("taskkill")
                     .args(&["/PID", &pid.to_string()])
                     .creation_flags(CREATE_NO_WINDOW)
                     .output();
-             }
+            }
 
-             #[cfg(not(target_os = "windows"))]
-             {
-                 // Try graceful termination first via SIGTERM
-                 let _ = StdCommand::new("kill")
-                    .arg(pid.to_string())
-                    .output();
-             }
+            #[cfg(not(target_os = "windows"))]
+            {
+                // Try graceful termination first via SIGTERM
+                let _ = StdCommand::new("kill").arg(pid.to_string()).output();
+            }
 
             // Give it a moment to finalize, but don't block too long
             tokio::time::sleep(std::time::Duration::from_millis(500)).await;
@@ -2140,24 +2389,38 @@ pub async fn stop_scrcpy(state: State<'_, ScrcpyState>, device: String) -> Resul
 #[tauri::command]
 pub async fn download_scrcpy(window: Window) -> Result<(), String> {
     use std::io::Write;
-    
+
     let (os_tag, arch_tag, extension) = if cfg!(target_os = "windows") {
-        let arch = if cfg!(target_arch = "x86_64") { "win64" } else { "win32" };
+        let arch = if cfg!(target_arch = "x86_64") {
+            "win64"
+        } else {
+            "win32"
+        };
         (arch, arch, ".zip")
     } else if cfg!(target_os = "linux") {
         ("linux", "linux-x86_64", ".tar.gz")
     } else if cfg!(target_os = "macos") {
-        let arch = if cfg!(target_arch = "aarch64") { "macos-aarch64" } else { "macos-x86_64" };
+        let arch = if cfg!(target_arch = "aarch64") {
+            "macos-aarch64"
+        } else {
+            "macos-x86_64"
+        };
         ("macos", arch, ".tar.gz")
     } else {
         return Err("Unsupported OS for auto-download".to_string());
     };
 
-    let _ = window.emit("scrcpy-log", format!("[SYSTEM] Detecting platform: {} ({})", os_tag, arch_tag));
+    let _ = window.emit(
+        "scrcpy-log",
+        format!("[SYSTEM] Detecting platform: {} ({})", os_tag, arch_tag),
+    );
     let _ = window.emit("scrcpy-status", json!({ "type": "downloading", "success": true, "message": format!("Fetching latest {} release...", arch_tag) }));
 
-    let client = reqwest::Client::builder().user_agent("OpenScrcpy-Downloader").build().map_err(|e| e.to_string())?;
-    
+    let client = reqwest::Client::builder()
+        .user_agent("OpenScrcpy-Downloader")
+        .build()
+        .map_err(|e| e.to_string())?;
+
     // Attempt to get the latest release via API, but fallback to redirect scraping if rate limited
     let mut download_url = String::new();
     let mut filename = String::new();
@@ -2174,7 +2437,10 @@ pub async fn download_scrcpy(window: Window) -> Result<(), String> {
                     for asset in assets {
                         let name = asset["name"].as_str().unwrap_or("");
                         if name.contains(arch_tag) && name.ends_with(extension) {
-                            download_url = asset["browser_download_url"].as_str().unwrap_or("").to_string();
+                            download_url = asset["browser_download_url"]
+                                .as_str()
+                                .unwrap_or("")
+                                .to_string();
                             filename = name.to_string();
                             break;
                         }
@@ -2182,7 +2448,10 @@ pub async fn download_scrcpy(window: Window) -> Result<(), String> {
                 }
             }
         } else if resp.status() == reqwest::StatusCode::FORBIDDEN {
-            let _ = window.emit("scrcpy-log", "[SYSTEM] API rate limited, attempting fallback discovery...");
+            let _ = window.emit(
+                "scrcpy-log",
+                "[SYSTEM] API rate limited, attempting fallback discovery...",
+            );
             used_fallback = true;
         }
     } else {
@@ -2191,22 +2460,34 @@ pub async fn download_scrcpy(window: Window) -> Result<(), String> {
 
     if used_fallback || download_url.is_empty() {
         // Fallback: Follow redirect of /releases/latest to get the tag name
-        let redirect_res = client.get("https://github.com/Genymobile/scrcpy/releases/latest")
-            .send().await.map_err(|e| format!("Fallback failed: {}", e))?;
-        
+        let redirect_res = client
+            .get("https://github.com/Genymobile/scrcpy/releases/latest")
+            .send()
+            .await
+            .map_err(|e| format!("Fallback failed: {}", e))?;
+
         let final_url = redirect_res.url().as_str();
         // URL is like https://github.com/Genymobile/scrcpy/releases/tag/v2.7
         if let Some(tag) = final_url.split('/').next_back() {
             if tag.starts_with('v') {
                 filename = format!("scrcpy-{}-{}{}", arch_tag, tag, extension);
-                download_url = format!("https://github.com/Genymobile/scrcpy/releases/download/{}/{}", tag, filename);
-                let _ = window.emit("scrcpy-log", format!("[SYSTEM] Discovered latest tag via fallback: {}", tag));
+                download_url = format!(
+                    "https://github.com/Genymobile/scrcpy/releases/download/{}/{}",
+                    tag, filename
+                );
+                let _ = window.emit(
+                    "scrcpy-log",
+                    format!("[SYSTEM] Discovered latest tag via fallback: {}", tag),
+                );
             }
         }
     }
-    
+
     if download_url.is_empty() {
-        return Err(format!("Could not find {} binary. (API rate limit might be active)", arch_tag));
+        return Err(format!(
+            "Could not find {} binary. (API rate limit might be active)",
+            arch_tag
+        ));
     }
 
     // Only accept asset names matching the expected scrcpy release pattern.
@@ -2217,26 +2498,35 @@ pub async fn download_scrcpy(window: Window) -> Result<(), String> {
     }
 
     let _ = window.emit("scrcpy-log", format!("[SYSTEM] Found asset: {}", filename));
-    
+
     let current_dir = std::env::current_exe()
         .ok()
         .and_then(|p| p.parent().map(|p| p.to_path_buf()))
         .or_else(|| std::env::current_dir().ok())
         .ok_or_else(|| "Could not determine application directory".to_string())?;
-        
+
     let temp_archive_path = current_dir.join(format!("scrcpy_temp{}", extension));
     let extract_path = current_dir.join("scrcpy-bin");
-    
+
     {
-        let mut file = std::fs::File::create(&temp_archive_path).map_err(|e| format!("Failed to create archive file: {}", e))?;
-        let mut download_resp = client.get(&download_url).send().await.map_err(|e| format!("Failed to connect to download URL: {}", e))?;
+        let mut file = std::fs::File::create(&temp_archive_path)
+            .map_err(|e| format!("Failed to create archive file: {}", e))?;
+        let mut download_resp = client
+            .get(&download_url)
+            .send()
+            .await
+            .map_err(|e| format!("Failed to connect to download URL: {}", e))?;
         let total_size = download_resp.content_length().unwrap_or(0);
-        
-        let _ = window.emit("scrcpy-log", format!("[SYSTEM] Downloading: {} MB", total_size / 1024 / 1024));
+
+        let _ = window.emit(
+            "scrcpy-log",
+            format!("[SYSTEM] Downloading: {} MB", total_size / 1024 / 1024),
+        );
 
         let mut downloaded: u64 = 0;
         while let Some(chunk) = download_resp.chunk().await.map_err(|e| e.to_string())? {
-            file.write_all(&chunk).map_err(|e| format!("Failed to write chunk: {}", e))?;
+            file.write_all(&chunk)
+                .map_err(|e| format!("Failed to write chunk: {}", e))?;
             downloaded += chunk.len() as u64;
             if total_size > 0 {
                 let percent = (downloaded * 100) / total_size;
@@ -2244,14 +2534,20 @@ pub async fn download_scrcpy(window: Window) -> Result<(), String> {
             }
         }
     }
-    
-    let _ = window.emit("scrcpy-log", "[SYSTEM] Download finished. Starting extraction...");
-    let _ = window.emit("scrcpy-status", json!({ "type": "downloading", "success": true, "message": "Extracting binaries..." }));
+
+    let _ = window.emit(
+        "scrcpy-log",
+        "[SYSTEM] Download finished. Starting extraction...",
+    );
+    let _ = window.emit(
+        "scrcpy-status",
+        json!({ "type": "downloading", "success": true, "message": "Extracting binaries..." }),
+    );
 
     if extract_path.exists() {
         let _ = std::fs::remove_dir_all(&extract_path);
     }
-    
+
     let temp_extract_dir = current_dir.join("temp_extract");
     if temp_extract_dir.exists() {
         let _ = std::fs::remove_dir_all(&temp_extract_dir);
@@ -2260,36 +2556,41 @@ pub async fn download_scrcpy(window: Window) -> Result<(), String> {
 
     if extension == ".zip" {
         let _ = window.emit("scrcpy-log", "[SYSTEM] Decompressing ZIP archive...");
-        let file = std::fs::File::open(&temp_archive_path).map_err(|e| format!("Failed to open zip: {}", e))?;
-        let mut archive = zip::ZipArchive::new(file).map_err(|e| format!("Failed to read zip archive: {}", e))?;
-        archive.extract(&temp_extract_dir).map_err(|e| format!("Failed to extract: {}", e))?;
+        let file = std::fs::File::open(&temp_archive_path)
+            .map_err(|e| format!("Failed to open zip: {}", e))?;
+        let mut archive =
+            zip::ZipArchive::new(file).map_err(|e| format!("Failed to read zip archive: {}", e))?;
+        archive
+            .extract(&temp_extract_dir)
+            .map_err(|e| format!("Failed to extract: {}", e))?;
     } else {
         let _ = window.emit("scrcpy-log", "[SYSTEM] Decompressing TAR.GZ archive...");
-        let file = std::fs::File::open(&temp_archive_path).map_err(|e| format!("Failed to open tar.gz: {}", e))?;
+        let file = std::fs::File::open(&temp_archive_path)
+            .map_err(|e| format!("Failed to open tar.gz: {}", e))?;
         let tar = GzDecoder::new(file);
         let mut archive = Archive::new(tar);
-        archive.unpack(&temp_extract_dir).map_err(|e| format!("Failed to extract tar: {}", e))?;
+        archive
+            .unpack(&temp_extract_dir)
+            .map_err(|e| format!("Failed to extract tar: {}", e))?;
     }
-    
+
     // Verify entries and move to scrcpy-bin
     let mut entries = std::fs::read_dir(&temp_extract_dir).map_err(|e| e.to_string())?;
     if let Some(entry) = entries.next() {
         let entry = entry.map_err(|e| e.to_string())?;
         let path = entry.path();
-        
+
         if path.is_dir() {
             // Usually scrcpy archives contain a single root folder
-            let _ = std::fs::rename(&path, &extract_path).or_else(|_| {
-                copy_dir_all(&path, &extract_path)
-            });
+            let _ = std::fs::rename(&path, &extract_path)
+                .or_else(|_| copy_dir_all(&path, &extract_path));
         } else {
             // If files are in root, rename the whole temp dir
-            let _ = std::fs::rename(&temp_extract_dir, &extract_path).or_else(|_| {
-                copy_dir_all(&temp_extract_dir, &extract_path)
-            });
+            let _ = std::fs::rename(&temp_extract_dir, &extract_path)
+                .or_else(|_| copy_dir_all(&temp_extract_dir, &extract_path));
         }
     }
-    
+
     // Confirm the extracted tree actually contains the scrcpy binary before
     // trusting it. The release feed publishes no checksum, so this is a
     // best-effort check against a wrong or tampered archive.
@@ -2305,8 +2606,12 @@ pub async fn download_scrcpy(window: Window) -> Result<(), String> {
     }
 
     // Cleanup
-    if temp_extract_dir.exists() { let _ = std::fs::remove_dir_all(&temp_extract_dir); }
-    if temp_archive_path.exists() { let _ = std::fs::remove_file(&temp_archive_path); }
+    if temp_extract_dir.exists() {
+        let _ = std::fs::remove_dir_all(&temp_extract_dir);
+    }
+    if temp_archive_path.exists() {
+        let _ = std::fs::remove_file(&temp_archive_path);
+    }
 
     let _ = window.emit("scrcpy-status", json!({ "type": "download-complete", "success": true, "message": extract_path.to_string_lossy() }));
     Ok(())
@@ -2315,17 +2620,25 @@ pub async fn download_scrcpy(window: Window) -> Result<(), String> {
 #[tauri::command]
 pub async fn get_videos_dir(app_handle: tauri::AppHandle) -> Result<String, String> {
     use tauri::Manager;
-    app_handle.path().video_dir()
+    app_handle
+        .path()
+        .video_dir()
         .map(|p| p.to_string_lossy().to_string())
         .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub async fn save_report(app_handle: tauri::AppHandle, content: String, name: String) -> Result<String, String> {
+pub async fn save_report(
+    app_handle: tauri::AppHandle,
+    content: String,
+    name: String,
+) -> Result<String, String> {
     use std::fs;
     use tauri::Manager;
 
-    let downloads = app_handle.path().download_dir()
+    let downloads = app_handle
+        .path()
+        .download_dir()
         .map_err(|e| e.to_string())?;
 
     // Keep only the final path component so a crafted `name` cannot escape
@@ -2333,7 +2646,7 @@ pub async fn save_report(app_handle: tauri::AppHandle, content: String, name: St
     let safe_name = safe_file_name(&name).ok_or_else(|| "Invalid report name".to_string())?;
     let path = downloads.join(&safe_name);
     fs::write(&path, content).map_err(|e| e.to_string())?;
-    
+
     Ok(path.to_string_lossy().to_string())
 }
 
@@ -2344,9 +2657,9 @@ pub async fn get_scrcpy_bin_dir() -> Result<String, String> {
         .and_then(|p| p.parent().map(|p| p.to_path_buf()))
         .or_else(|| std::env::current_dir().ok())
         .ok_or_else(|| "Could not determine application directory".to_string())?;
-        
+
     let extract_path = current_dir.join("scrcpy-bin");
-    
+
     if extract_path.exists() {
         Ok(extract_path.to_string_lossy().to_string())
     } else {
@@ -2406,10 +2719,12 @@ pub async fn get_latest_scrcpy_version() -> Result<String, String> {
     }
 
     if used_fallback || tag_name.is_empty() {
-        let redirect_res = client.get("https://github.com/Genymobile/scrcpy/releases/latest")
-            .send().await
+        let redirect_res = client
+            .get("https://github.com/Genymobile/scrcpy/releases/latest")
+            .send()
+            .await
             .map_err(|e| format!("Fallback failed: {}", e))?;
-        
+
         let final_url = redirect_res.url().as_str();
         if let Some(tag) = final_url.split('/').next_back() {
             if tag.starts_with('v') || tag.chars().next().map_or(false, |c| c.is_ascii_digit()) {
@@ -2426,11 +2741,25 @@ pub async fn get_latest_scrcpy_version() -> Result<String, String> {
 }
 
 fn compare_versions(local: &str, remote: &str) -> bool {
-    let local_parts: Vec<u32> = local.split('.')
-        .filter_map(|s| s.chars().take_while(|c| c.is_ascii_digit()).collect::<String>().parse().ok())
+    let local_parts: Vec<u32> = local
+        .split('.')
+        .filter_map(|s| {
+            s.chars()
+                .take_while(|c| c.is_ascii_digit())
+                .collect::<String>()
+                .parse()
+                .ok()
+        })
         .collect();
-    let remote_parts: Vec<u32> = remote.split('.')
-        .filter_map(|s| s.chars().take_while(|c| c.is_ascii_digit()).collect::<String>().parse().ok())
+    let remote_parts: Vec<u32> = remote
+        .split('.')
+        .filter_map(|s| {
+            s.chars()
+                .take_while(|c| c.is_ascii_digit())
+                .collect::<String>()
+                .parse()
+                .ok()
+        })
         .collect();
 
     for i in 0..std::cmp::max(local_parts.len(), remote_parts.len()) {
@@ -2449,12 +2778,16 @@ fn compare_versions(local: &str, remote: &str) -> bool {
 pub async fn check_scrcpy_update(custom_path: Option<String>) -> serde_json::Value {
     let local_version = match get_local_scrcpy_version(custom_path.clone()) {
         Some(v) => v,
-        None => return json!({ "update_available": false, "local_version": null, "latest_version": null, "message": "Scrcpy not installed or not working" })
+        None => {
+            return json!({ "update_available": false, "local_version": null, "latest_version": null, "message": "Scrcpy not installed or not working" })
+        }
     };
 
     let latest_version = match get_latest_scrcpy_version().await {
         Ok(v) => v,
-        Err(e) => return json!({ "update_available": false, "local_version": local_version, "latest_version": null, "message": format!("Could not fetch latest release: {}", e) })
+        Err(e) => {
+            return json!({ "update_available": false, "local_version": local_version, "latest_version": null, "message": format!("Could not fetch latest release: {}", e) })
+        }
     };
 
     let update_available = compare_versions(&local_version, &latest_version);
@@ -2474,16 +2807,19 @@ pub async fn check_scrcpy_update(custom_path: Option<String>) -> serde_json::Val
 pub async fn check_app_update(app: tauri::AppHandle) -> serde_json::Value {
     let current_version = app.package_info().version.to_string();
 
-    let no_update = |msg: String| json!({
-        "update_available": false,
-        "current": current_version.clone(),
-        "message": msg
-    });
+    let no_update = |msg: String| {
+        json!({
+            "update_available": false,
+            "current": current_version.clone(),
+            "message": msg
+        })
+    };
 
     let client = match reqwest::Client::builder()
         .user_agent("OpenScrcpy-Updater")
         .timeout(std::time::Duration::from_secs(10))
-        .build() {
+        .build()
+    {
         Ok(c) => c,
         Err(e) => return no_update(e.to_string()),
     };
@@ -2525,7 +2861,10 @@ pub async fn check_app_update(app: tauri::AppHandle) -> serde_json::Value {
 #[tauri::command]
 pub async fn open_app_release(app: tauri::AppHandle) -> Result<(), String> {
     tauri_plugin_shell::ShellExt::shell(&app)
-        .open("https://github.com/Umbr-Corp/OpenScrcpy/releases/latest", None)
+        .open(
+            "https://github.com/Umbr-Corp/OpenScrcpy/releases/latest",
+            None,
+        )
         .map_err(|e| e.to_string())
 }
 
@@ -2540,7 +2879,10 @@ pub async fn goto_wireless(
     custom_path: Option<String>,
 ) -> Result<serde_json::Value, String> {
     let adb_path = get_binary_path("adb", custom_path);
-    let _ = window.emit("scrcpy-log", "[SYSTEM] Switching to wireless...".to_string());
+    let _ = window.emit(
+        "scrcpy-log",
+        "[SYSTEM] Switching to wireless...".to_string(),
+    );
 
     // 1) The phone's Wi-Fi IPv4. `addr show wlan0` reads the Wi-Fi interface
     //    directly, so a VPN tunnel on the phone cannot steal the answer the
@@ -2564,11 +2906,18 @@ pub async fn goto_wireless(
         }
     }
     if ip.is_empty() {
-        let _ = window.emit("scrcpy-log", "[SYSTEM] Could not read the Wi-Fi IP — is the phone actually on a Wi-Fi network?".to_string());
+        let _ = window.emit(
+            "scrcpy-log",
+            "[SYSTEM] Could not read the Wi-Fi IP — is the phone actually on a Wi-Fi network?"
+                .to_string(),
+        );
         return Ok(json!({ "success": false, "message": "could not read the device Wi-Fi IPv4" }));
     }
 
-    let _ = window.emit("scrcpy-log", format!("[SYSTEM] adbd restarting in TCP mode (Wi-Fi IP {}).", ip));
+    let _ = window.emit(
+        "scrcpy-log",
+        format!("[SYSTEM] adbd restarting in TCP mode (Wi-Fi IP {}).", ip),
+    );
     let child = create_command(&adb_path)
         .args(["-s", &device, "tcpip", "5555"])
         .stdout(Stdio::piped())
@@ -2610,7 +2959,13 @@ pub async fn goto_wireless(
         && !out_text.contains("cannot connect")
         && !out_text.contains("failed");
     if success {
-        let _ = window.emit("scrcpy-log", format!("[OK] Wireless ready at {} — you can unplug the cable.", target));
+        let _ = window.emit(
+            "scrcpy-log",
+            format!(
+                "[OK] Wireless ready at {} — you can unplug the cable.",
+                target
+            ),
+        );
     }
     Ok(json!({ "success": success, "ip": ip, "port": 5555, "message": out_text }))
 }
@@ -2628,15 +2983,12 @@ fn find_wlan_ipv4(text: &str) -> Option<String> {
         let candidate = raw.split('/').next().unwrap_or("");
         let segs: Vec<&str> = candidate.split('.').collect();
         let is_v4 = segs.len() == 4
-            && segs.iter().all(|s| {
-                !s.is_empty() && s.len() <= 3 && s.chars().all(|c| c.is_ascii_digit())
-            });
+            && segs
+                .iter()
+                .all(|s| !s.is_empty() && s.len() <= 3 && s.chars().all(|c| c.is_ascii_digit()));
         if is_v4 {
             return Some(candidate.to_string());
         }
     }
     None
 }
-
-
-

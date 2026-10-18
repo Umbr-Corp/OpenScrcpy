@@ -65,6 +65,12 @@ export const ptBR: Translations = {
         aboutRepository: 'Repositório',
         aboutReleases: 'Lançamentos',
         aboutLicense: 'Licenciado sob a Licença MIT',
+        autoUpdateBtn: 'Atualizar e Reiniciar',
+        autoDownloading: 'Baixando…',
+        autoProgress: 'Baixando atualização… {p}%',
+        autoInstalled: 'Instalado — reiniciando o app…',
+        autoFailTitle: 'Falha na Atualização',
+        autoFailMsg: 'Não deu para instalar agora. Baixe manualmente na página da release.',
         aboutDonate: 'Doar'
     },
     sidebar: {

@@ -68,6 +68,12 @@ export const ar: Translations = {
         aboutRepository: 'المستودع',
         aboutReleases: 'الإصدارات',
         aboutLicense: 'مرخص بموجب رخصة MIT',
+        autoUpdateBtn: 'تحديث وإعادة تشغيل',
+        autoDownloading: 'جارٍ التنزيل…',
+        autoProgress: 'جارٍ تنزيل التحديث… {p}%',
+        autoInstalled: 'تم التثبيت — إعادة تشغيل التطبيق…',
+        autoFailTitle: 'فشل التحديث',
+        autoFailMsg: 'تعذّر التثبيت الآن. نزّل يدويًا من صفحة الإصدار.',
         aboutDonate: 'تبرع'
     },
     sidebar: {

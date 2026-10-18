@@ -65,6 +65,12 @@ export const fr: Translations = {
         aboutRepository: 'Dépôt',
         aboutReleases: 'Versions',
         aboutLicense: 'Sous licence MIT',
+        autoUpdateBtn: 'Mettre à jour et relancer',
+        autoDownloading: 'Téléchargement…',
+        autoProgress: 'Téléchargement de la mise à jour… {p}%',
+        autoInstalled: "Installé — relance de l'app en cours…",
+        autoFailTitle: 'Échec de la mise à jour',
+        autoFailMsg: "Impossible d'installer maintenant. Téléchargez manuellement sur la page de la release.",
         aboutDonate: 'Faire un don'
     },
     sidebar: {

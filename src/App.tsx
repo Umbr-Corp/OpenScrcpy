@@ -67,6 +67,8 @@ function App() {
     kind: 'warning' | 'error' | 'info' | 'success';
     actionLabel?: string;
     onAction?: () => void;
+    secondaryLabel?: string;
+    onSecondary?: () => void;
     showCancel?: boolean;
     cancelLabel?: string;
     onCancel?: () => void;
@@ -98,7 +100,9 @@ function App() {
     onAction?: () => void,
     showCancel = false,
     cancelLabel = t('common.cancel'),
-    onCancel?: () => void
+    onCancel?: () => void,
+    secondaryLabel?: string,
+    onSecondary?: () => void
   ) => {
     setAlertState({
       isOpen: true,
@@ -107,6 +111,8 @@ function App() {
       kind,
       actionLabel,
       onAction,
+      secondaryLabel,
+      onSecondary,
       showCancel,
       cancelLabel,
       onCancel
@@ -178,6 +184,42 @@ function App() {
   // ── App self-update (GitHub releases) ────────────────────────────────
   // Opens "releases/latest" in the user's browser; the download itself
   // stays out of the app on purpose (Route 1, no updater plugin yet).
+  // In-app install path (validator-checked): the updater plugin downloads
+  // the signed artifact announced by latest.json and installs it; a manual
+  // "See on GitHub" secondary path stays for when the plugin path fails.
+  const handleAutoUpdate = async () => {
+    try {
+      const { check } = await import('@tauri-apps/plugin-updater');
+      const { relaunch } = await import('@tauri-apps/plugin-process');
+      const update = await check();
+      if (!update) {
+        showAlert(t('alerts.appUpToDateTitle'), t('alerts.appUpToDateMsg', { v: appVersion }), 'info');
+        return;
+      }
+      let total = 0;
+      let done = 0;
+      await update.downloadAndInstall((event) => {
+        if (event.event === 'Started') {
+          total = event.data.contentLength ?? 0;
+        } else if (event.event === 'Progress') {
+          done += event.data.chunkLength;
+          if (total > 0) {
+            const p = Math.min(100, Math.round((done / total) * 100));
+            showAlert(t('about.autoDownloading'), t('about.autoProgress', { p }), 'info');
+          }
+        }
+      });
+      showAlert(t('about.autoInstalled'), t('about.autoRestarting'), 'success');
+      await relaunch();
+    } catch (e) {
+      showAlert(
+        t('about.autoFailTitle'),
+        `${t('about.autoFailMsg')}\n\n${t('alerts.wirelessConsoleLabel')}: ${String(e)}`,
+        'warning'
+      );
+    }
+  };
+
   const openAppUpdateModal = (info: { latest: string; notes: string }) => {
     // Release bodies are markdown; strip the obvious markup so the plain
     // modal text stays readable.
@@ -190,6 +232,11 @@ function App() {
       t('alerts.newAppVersionTitle', { v: info.latest }),
       notes || t('alerts.newAppVersionMsg'),
       'info',
+      t('about.autoUpdateBtn'),
+      handleAutoUpdate,
+      true,
+      t('alerts.appCloseBtn'),
+      undefined,
       t('alerts.updateOpenBtn'),
       async () => {
         try {
@@ -198,9 +245,7 @@ function App() {
         } catch {
           window.open('https://github.com/Umbr-Corp/OpenScrcpy/releases/latest', '_blank');
         }
-      },
-      true,
-      t('alerts.appCloseBtn')
+      }
     );
   };
 
@@ -508,6 +553,8 @@ function App() {
           kind={alertState.kind}
           actionLabel={alertState.actionLabel}
           onAction={alertState.onAction}
+          secondaryLabel={alertState.secondaryLabel}
+          onSecondary={alertState.onSecondary}
           showCancel={alertState.showCancel}
           cancelLabel={alertState.cancelLabel}
           onCancel={alertState.onCancel}

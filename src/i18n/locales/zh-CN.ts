@@ -65,6 +65,12 @@ export const zhCN: Translations = {
         aboutRepository: '代码仓库',
         aboutReleases: '发布版本',
         aboutLicense: '基于 MIT 许可证授权',
+        autoUpdateBtn: '更新并重启',
+        autoDownloading: '下载中…',
+        autoProgress: '正在下载更新… {p}%',
+        autoInstalled: '已安装——正在重启应用…',
+        autoFailTitle: '更新失败',
+        autoFailMsg: '暂时无法安装。请到发布页手动下载。',
         aboutDonate: '捐赠'
     },
     sidebar: {

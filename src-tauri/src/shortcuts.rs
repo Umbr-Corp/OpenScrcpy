@@ -50,13 +50,18 @@ pub fn plugin<R: Runtime>() -> TauriPlugin<R> {
 pub fn register<R: Runtime>(app: &AppHandle<R>) -> Result<(), Box<dyn std::error::Error>> {
     app.global_shortcut().register(recenter_shortcut())?;
     #[cfg(target_os = "windows")]
-    app.global_shortcut().register(crate::grab::toggle_shortcut())?;
+    app.global_shortcut()
+        .register(crate::grab::toggle_shortcut())?;
     Ok(())
 }
 
 fn recenter_active_device<R: Runtime>(app: &AppHandle<R>) {
     let state = app.state::<ScrcpyState>();
-    let device = state.active_device.lock().unwrap_or_else(|e| e.into_inner()).clone();
+    let device = state
+        .active_device
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .clone();
     if let Some(device) = device {
         crate::commands::recenter_device(&state, &device);
     }
