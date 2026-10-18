@@ -68,6 +68,10 @@ languages: {
         aboutDonate: 'Donasi'
     },
     sidebar: {
+        gotoWireless: 'Beralih ke Wi-Fi',
+        switching: 'Beralih…',
+        transport: 'Transportasi',
+
         deviceHub: 'Pusat Perangkat',
         killAdb: 'Matikan ADB',
         killAdbTitle: 'Paksa hentikan semua operasi adb',
@@ -274,6 +278,13 @@ languages: {
         diagnosticSavedAlert: 'Laporan diagnostik disimpan ke Unduhan sebagai: {fileName}'
     },
     alerts: {
+        wirelessOkTitle: 'Terhubung via Wi-Fi',
+        wirelessOkMsg: 'Siap di {ip}:5555 — kabel dilepas.',
+        wirelessFailTitle: 'Gagal Beralih ke Wi-Fi',
+        wirelessHintAuth: 'Buka kunci ponsel: dialog "Allow USB debugging?" menunggu konfirmasi — muncul lagi setiap kali mode TCP dimulai.',
+        wirelessHintConn: "Cek IP di konsol: jika angkanya bukan milik ponsel, perangkat pindah jaringan atau dibalas perangkat lain lebih dulu.",
+        wirelessHintGeneric: 'Lihat langkah yang gagal di Konsol Sistem.',
+        wirelessConsoleLabel: 'Konsol',
         newAppVersionTitle: 'Versi Baru Tersedia: v{v}',
         newAppVersionMsg: 'Lihat perubahan dan unduh versi baru dari halaman rilis GitHub.',
         updateOpenBtn: 'Buka di GitHub',

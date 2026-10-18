@@ -68,6 +68,10 @@ export const zhTW: Translations = {
         aboutDonate: '贊助'
     },
     sidebar: {
+        gotoWireless: '切換到 Wi-Fi',
+        switching: '切換中…',
+        transport: '連接方式',
+
         deviceHub: '裝置中心',
         killAdb: '終止 ADB',
         killAdbTitle: '強制終止所有 ADB 操作',
@@ -274,6 +278,13 @@ export const zhTW: Translations = {
         diagnosticSavedAlert: '診斷報告已儲存至「下載」資料夾，檔案名稱為：{fileName}'
     },
     alerts: {
+        wirelessOkTitle: '已連接無線',
+        wirelessOkMsg: '已在 {ip}:5555 就緒 — 可以拔掉傳輸線。',
+        wirelessFailTitle: '切換到無線失敗',
+        wirelessHintAuth: '解鎖手機：螢幕上正在等「允許 USB 偵錯？」的確認——每次進入 TCP 模式都會重新彈出。',
+        wirelessHintConn: '在控制台核對 IP：如果不是手機的號碼，代表裝置換了網路或別的裝置先回應。',
+        wirelessHintGeneric: '在系統控制台查看失敗的步驟。',
+        wirelessConsoleLabel: '控制台',
         newAppVersionTitle: '有新版本：v{v}',
         newAppVersionMsg: '查看更新內容並從 GitHub 發布頁下載新版本。',
         updateOpenBtn: '前往 GitHub',

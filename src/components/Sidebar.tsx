@@ -36,6 +36,10 @@ export interface SidebarProps {
     onSelectDevice: (d: string) => void;
     onPair: (ip: string, code: string) => Promise<any>;
     onConnect: (ip: string) => Promise<any>;
+    // One-click USB -> wireless switch (only shown while the hub card has a
+    // USB transport and no wireless one yet).
+    onGotoWireless?: (device: string) => void;
+    wirelessSwitching?: string | null;
     isRefreshing?: boolean;
     onFilePush: () => void;
     // History props
@@ -55,6 +59,8 @@ export default function Sidebar({
     onSelectDevice,
     onPair,
     onConnect,
+    onGotoWireless,
+    wirelessSwitching = null,
     isRefreshing,
     onFilePush,
     historyDevices = [],
@@ -206,6 +212,9 @@ export default function Sidebar({
                                 const primary = ids[0];
                                 const isRunning = runningDevices.some(r => ids.includes(r));
                                 const isSelected = selectedDevice != null && ids.includes(selectedDevice);
+                                const usbId = ids.find(id => !id.includes('.'));
+                                const hasWireless = ids.some(id => id.includes('.'));
+                                const switching = wirelessSwitching != null && ids.includes(wirelessSwitching);
                                 return (
                                     <button
                                         key={primary}
@@ -226,7 +235,41 @@ export default function Sidebar({
                                                         {isRunning ? t('sidebar.live') : t('sidebar.ready')}
                                                     </span>
                                                 </span>
-                                                {ids.map(id => id.includes('.') ? (
+                                                {ids.length > 1 ? (
+                                                    // Two transports: a real switch, visually
+                                                    // distinct from the status badge.
+                                                    <div className="tpx-group" role="group" aria-label={t('sidebar.transport')}>
+                                                        {ids.map(id => id.includes('.') ? (
+                                                            <span
+                                                                key={id}
+                                                                role="button"
+                                                                aria-pressed={selectedDevice === id}
+                                                                aria-label={`${t('sidebar.wifi')}: ${id}`}
+                                                                className="tpx-seg"
+                                                                data-active={selectedDevice === id ? 'true' : 'false'}
+                                                                onClick={(e) => { e.stopPropagation(); onSelectDevice(id); }}
+                                                            >
+                                                                <Wifi size={9.5} />
+                                                                {t('sidebar.wifi')}
+                                                            </span>
+                                                        ) : (
+                                                            <span
+                                                                key={id}
+                                                                role="button"
+                                                                aria-pressed={selectedDevice === id}
+                                                                aria-label={`${t('sidebar.usb')}: ${id}`}
+                                                                className="tpx-seg"
+                                                                data-active={selectedDevice === id ? 'true' : 'false'}
+                                                                onClick={(e) => { e.stopPropagation(); onSelectDevice(id); }}
+                                                            >
+                                                                <Usb size={9.5} />
+                                                                {t('sidebar.usb')}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                ) : ids.map(id => id.includes('.') ? (
+                                                    // One transport: informational badge; the
+                                                    // card click handles selection.
                                                     <span
                                                         key={id}
                                                         role="button"
@@ -235,7 +278,7 @@ export default function Sidebar({
                                                         style={selectedDevice === id ? { borderColor: 'var(--primary)', color: 'var(--primary)' } : undefined}
                                                         onClick={(e) => { e.stopPropagation(); onSelectDevice(id); }}
                                                     >
-                                                        <Wifi size={8} />
+                                                        <Wifi size={9.5} />
                                                         {t('sidebar.wifi')}
                                                     </span>
                                                 ) : (
@@ -247,10 +290,22 @@ export default function Sidebar({
                                                         style={selectedDevice === id ? { borderColor: 'var(--primary)', color: 'var(--primary)' } : undefined}
                                                         onClick={(e) => { e.stopPropagation(); onSelectDevice(id); }}
                                                     >
-                                                        <Usb size={8} />
+                                                        <Usb size={9.5} />
                                                         {t('sidebar.usb')}
                                                     </span>
                                                 ))}
+                                                {usbId && !hasWireless && onGotoWireless && (
+                                                    <button
+                                                        type="button"
+                                                        disabled={wirelessSwitching != null}
+                                                        onClick={(e) => { e.stopPropagation(); onGotoWireless(usbId); }}
+                                                        className="ds-btn ds-btn-tertiary w-full mt-1"
+                                                        style={{ padding: '5px 8px', fontSize: 11.5, lineHeight: '14px', gap: 6 }}
+                                                    >
+                                                        <Wifi size={11} />
+                                                        {switching ? t('sidebar.switching') : t('sidebar.gotoWireless')}
+                                                    </button>
+                                                )}
                                             </div>
                                         </div>
                                     </button>

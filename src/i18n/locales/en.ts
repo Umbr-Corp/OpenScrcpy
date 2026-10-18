@@ -69,6 +69,10 @@ export const en = {
         aboutDonate: 'Donate'
     },
     sidebar: {
+        gotoWireless: 'Go Wireless',
+        switching: 'Switching…',
+        transport: 'Transport',
+
         deviceHub: 'Device Hub',
         killAdb: 'Kill ADB',
         killAdbTitle: 'Force kill all adb operations',
@@ -275,6 +279,13 @@ export const en = {
         diagnosticSavedAlert: 'Diagnostic report saved to Downloads as: {fileName}'
     },
     alerts: {
+        wirelessOkTitle: 'Wireless Connected',
+        wirelessOkMsg: 'Ready at {ip}:5555 — you can unplug the cable now.',
+        wirelessFailTitle: 'Wireless Switch Failed',
+        wirelessHintAuth: "The phone is waiting for the 'Allow USB debugging?' tap — the prompt re-appears whenever TCP mode starts.",
+        wirelessHintConn: "Check the IP in the console. If it is not the phone's number, the device moved networks or another gadget answered first.",
+        wirelessHintGeneric: 'See which step failed in the System Console.',
+        wirelessConsoleLabel: 'Console',
         newAppVersionTitle: 'New Version Available: v{v}',
         newAppVersionMsg: 'Check out the changelog and download the new version from the GitHub releases page.',
         updateOpenBtn: 'See on GitHub',

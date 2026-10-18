@@ -212,6 +212,7 @@ export default function SessionBehavior({ config, setConfig }: SessionBehaviorPr
                             type="button"
                             onClick={handlePickFolder}
                             className="ds-btn-tertiary"
+                            style={{ padding: '3px 8px', fontSize: 12, lineHeight: '15px' }}
                         >
                             {t('sessionBehavior.change')}
                         </button>

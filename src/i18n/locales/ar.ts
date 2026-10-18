@@ -71,6 +71,10 @@ export const ar: Translations = {
         aboutDonate: 'تبرع'
     },
     sidebar: {
+        gotoWireless: 'التبديل إلى واي فاي',
+        switching: 'جارٍ التبديل…',
+        transport: 'الوسيلة',
+
         deviceHub: 'إدارة الأجهزة',
         killAdb: 'إنهاء ADB',
         killAdbTitle: 'إنهاء جميع عمليات ADB بالقوة',
@@ -277,6 +281,13 @@ export const ar: Translations = {
         diagnosticSavedAlert: 'تم حفظ تقرير التشخيص في مجلد التنزيلات باسم: {fileName}'
     },
     alerts: {
+        wirelessOkTitle: 'تم الاتصال لاسلكيًا',
+        wirelessOkMsg: 'جاهز على {ip}:5555 — يمكنك فصل الكابل.',
+        wirelessFailTitle: 'فشل التبديل إلى واي فاي',
+        wirelessHintAuth: 'افتح قفل الهاتف: ينتظر موافقة «السماح بتصحيح USB؟» — يظهر الطلب كل مرة يدخل وضع TCP.',
+        wirelessHintConn: 'تحقق من عنوان IP في الطرفية: إن لم يكن رقم الهاتف، فقد غيّر الشبكة أو استجاب جهاز آخر أولاً.',
+        wirelessHintGeneric: 'انظر الخطوة التي فشلت في طرفية النظام.',
+        wirelessConsoleLabel: 'الطرفية',
         newAppVersionTitle: 'إصدار جديد متاح: v{v}',
         newAppVersionMsg: 'اطّلع على الجديد ونزّل الإصدار الجديد من صفحة الإصدارات على GitHub.',
         updateOpenBtn: 'فتح على GitHub',

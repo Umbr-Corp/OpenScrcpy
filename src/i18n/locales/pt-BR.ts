@@ -68,6 +68,10 @@ export const ptBR: Translations = {
         aboutDonate: 'Doar'
     },
     sidebar: {
+        gotoWireless: 'Ir para Wi-Fi',
+        switching: 'Trocando…',
+        transport: 'Transporte',
+
         deviceHub: 'Hub de Dispositivos',
         killAdb: 'Matar ADB',
         killAdbTitle: 'Forçar encerramento de todas as operações adb',
@@ -274,6 +278,13 @@ export const ptBR: Translations = {
         diagnosticSavedAlert: 'Relatório de diagnóstico salvo em Downloads como: {fileName}'
     },
     alerts: {
+        wirelessOkTitle: 'Wi-Fi Conectado',
+        wirelessOkMsg: 'Pronto em {ip}:5555 — já pode desconectar o cabo.',
+        wirelessFailTitle: 'Não Foi Possível Trocar',
+        wirelessHintAuth: 'Desbloqueie o telefone: ele está esperando o toque em "Permitir depuração USB?" — o diálogo reaparece quando o modo TCP começa.',
+        wirelessHintConn: 'Confira no Console o IP usado. Se não for o número do telefone, ele trocou de rede ou outro aparelho da casa respondeu primeiro.',
+        wirelessHintGeneric: 'Veja qual passo falhou no Console do Sistema.',
+        wirelessConsoleLabel: 'Console',
         newAppVersionTitle: 'Nova Versão Disponível: v{v}',
         newAppVersionMsg: 'Confira as novidades e baixe a nova versão na página de releases no GitHub.',
         updateOpenBtn: 'Ver no GitHub',

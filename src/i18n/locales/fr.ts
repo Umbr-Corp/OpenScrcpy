@@ -68,6 +68,10 @@ export const fr: Translations = {
         aboutDonate: 'Faire un don'
     },
     sidebar: {
+        gotoWireless: 'Passer au Wi-Fi',
+        switching: 'Bascule…',
+        transport: 'Transport',
+
         deviceHub: 'Hub d\'Appareils',
         killAdb: 'Tuer ADB',
         killAdbTitle: 'Forcer l\'arrêt de toutes les opérations adb',
@@ -274,6 +278,13 @@ export const fr: Translations = {
         diagnosticSavedAlert: 'Rapport de diagnostic enregistré dans Téléchargements sous : {fileName}'
     },
     alerts: {
+        wirelessOkTitle: 'Connecté au Wi-Fi',
+        wirelessOkMsg: 'Prêt sur {ip}:5555 — vous pouvez débrancher le câble.',
+        wirelessFailTitle: 'Échec de la bascule',
+        wirelessHintAuth: "Déverrouillez le téléphone : la demande « Autoriser le débogage USB ? » attend votre accord — elle réapparaît dès que le mode TCP démarre.",
+        wirelessHintConn: "Vérifiez l'IP dans la console ; si le numéro n'est pas celui du téléphone, l'appareil a changé de réseau ou un autre a répondu d'abord.",
+        wirelessHintGeneric: "Voyez l'étape en échec dans la console système.",
+        wirelessConsoleLabel: 'Console',
         newAppVersionTitle: 'Nouvelle version disponible : v{v}',
         newAppVersionMsg: 'Consultez les nouveautés et téléchargez la nouvelle version sur la page des releases GitHub.',
         updateOpenBtn: 'Voir sur GitHub',

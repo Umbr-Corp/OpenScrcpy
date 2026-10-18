@@ -27,7 +27,9 @@ export default function ShortcutsPanel() {
                         title={s.label}
                         className="ds-inset flex flex-col items-center justify-center p-1.5 cursor-help"
                     >
-                        <s.icon size={14} className="mb-1" style={{ color: 'var(--text-muted)' }} />
+                        <span className="flex items-center justify-center mb-1" style={{ height: 16 }}>
+                            <s.icon size={13} style={{ color: 'var(--text-muted)' }} />
+                        </span>
                         <kbd className="ds-badge">
                             {s.key}
                         </kbd>

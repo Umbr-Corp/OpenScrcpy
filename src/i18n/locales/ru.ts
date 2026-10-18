@@ -72,6 +72,10 @@ export const ru: Translations = {
   },
 
   sidebar: {
+    gotoWireless: 'Перейти на Wi-Fi',
+    switching: 'Переключение…',
+    transport: 'Транспорт',
+
     deviceHub: 'Центр устройств',
     killAdb: 'Остановить ADB',
     killAdbTitle: 'Принудительно завершить все операции adb',
@@ -285,6 +289,13 @@ export const ru: Translations = {
   },
 
   alerts: {
+    wirelessOkTitle: 'Подключено по Wi-Fi',
+    wirelessOkMsg: 'Готово на {ip}:5555 — кабель можно отключать.',
+    wirelessFailTitle: 'Переход на Wi-Fi не удался',
+        wirelessHintAuth: 'Разблокируйте телефон: он ждёт подтверждения «Разрешить отладку USB?» — запрос всплывает при каждом входе в TCP-режим.',
+        wirelessHintConn: 'Проверьте IP в консоли: если это не адрес телефона, устройство сменило сеть или первым отозвался другой гаджет.',
+        wirelessHintGeneric: 'Смотрите сбойный шаг в системной консоли.',
+        wirelessConsoleLabel: 'Консоль',
     newAppVersionTitle: 'Доступна новая версия: v{v}',
     newAppVersionMsg: 'Посмотрите изменения и скачайте новую версию на странице релизов GitHub.',
     updateOpenBtn: 'Открыть на GitHub',

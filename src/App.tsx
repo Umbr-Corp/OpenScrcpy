@@ -87,6 +87,8 @@ function App() {
     current: string;
     notes: string;
   } | null>(null);
+  // Device being switched from USB to wireless (drives the card button state).
+  const [wirelessSwitching, setWirelessSwitching] = useState<string | null>(null);
 
   const showAlert = (
     title: string,
@@ -223,6 +225,51 @@ function App() {
     checkAppUpdate(true).catch(() => { });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // USB -> wireless in one click: the backend reads the phone's Wi-Fi IP,
+  // flips adbd into TCPIP and reconnects; here we surface the outcome and
+  // let the device poll fold the :5555 transport into the same hub card.
+  // Failure messages carry a short why + the console excerpt. The three
+  // known failure shapes map to plain-language guidance:
+  // - adbd waiting for the USB-debugging prompt on the phone
+  // - unreachable/different host (DHCP moved or another gadget answered)
+  // - anything else → point at the console for the exact step.
+  const diagnoseWirelessFailure = (msg: string): string => {
+    const m = msg || '';
+    if (/authenticate|unauthorized/i.test(m)) return t('alerts.wirelessHintAuth');
+    if (/timed ?out|cannot connect|not connected|failed to connect/i.test(m)) return t('alerts.wirelessHintConn');
+    return t('alerts.wirelessHintGeneric');
+  };
+
+  const handleGotoWireless = async (device: string) => {
+    if (wirelessSwitching) return;
+    setWirelessSwitching(device);
+    try {
+      const { invoke } = await import('@tauri-apps/api/core');
+      const res = await invoke<{ success: boolean; message: string; ip?: string }>('goto_wireless', { device });
+      if (res.success) {
+        showAlert(t('alerts.wirelessOkTitle'), t('alerts.wirelessOkMsg', { ip: res.ip ?? '' }), 'success');
+      } else {
+        const detail = (res.message || '').trim();
+        const hint = diagnoseWirelessFailure(detail);
+        showAlert(
+          t('alerts.wirelessFailTitle'),
+          detail ? `${hint}\n\n${t('alerts.wirelessConsoleLabel')}: ${detail}` : hint,
+          'warning'
+        );
+      }
+    } catch (e) {
+      const detail = String(e).trim();
+      showAlert(
+        t('alerts.wirelessFailTitle'),
+        detail ? `${diagnoseWirelessFailure(detail)}\n\n${t('alerts.wirelessConsoleLabel')}: ${detail}` : t('alerts.wirelessHintGeneric'),
+        'warning'
+      );
+    } finally {
+      setWirelessSwitching(null);
+      refreshDevices().catch(() => { });
+    }
+  };
 
   useEffect(() => {
     // No-op outside the Tauri WebView (plain browser preview): there is
@@ -401,6 +448,8 @@ function App() {
                   historyDevices={historyDevices}
                   clearHistory={clearHistory}
                   mdnsDevices={mdnsDevices}
+                  onGotoWireless={handleGotoWireless}
+                  wirelessSwitching={wirelessSwitching}
                 />
               </div>
 
