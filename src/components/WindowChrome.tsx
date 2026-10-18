@@ -90,7 +90,6 @@ export function WindowButtons() {
                 style={BTN}
                 aria-label={t('common.winMinimize')}
                 title={t('common.winMinimize')}
-                onMouseDown={e => e.stopPropagation()}
                 onClick={() => getCurrentWindow().minimize().catch(() => { })}
             >
                 <svg {...svgProps} viewBox="0 0 24 24"><path d="M5 12h14" /></svg>
@@ -100,7 +99,6 @@ export function WindowButtons() {
                 style={BTN}
                 aria-label={maximized ? t('common.winRestore') : t('common.winMaximize')}
                 title={maximized ? t('common.winRestore') : t('common.winMaximize')}
-                onMouseDown={e => e.stopPropagation()}
                 onClick={() => getCurrentWindow().toggleMaximize().catch(() => { })}
             >
                 {maximized ? (
@@ -117,7 +115,6 @@ export function WindowButtons() {
                 style={BTN}
                 aria-label={t('common.winClose')}
                 title={t('common.winClose')}
-                onMouseDown={e => e.stopPropagation()}
                 onClick={() => getCurrentWindow().close().catch(() => { })}
             >
                 <svg {...svgProps} viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12" /></svg>
