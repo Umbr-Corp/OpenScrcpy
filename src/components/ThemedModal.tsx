@@ -85,7 +85,7 @@ export default function ThemedModal({
                 <h3 className="ds-body ds-strong mb-3">
                     {title}
                 </h3>
-                <p className="ds-caption max-w-[280px]" style={{ color: 'var(--text-muted)' }}>
+                <p className="ds-caption max-w-[280px] whitespace-pre-line" style={{ color: 'var(--text-muted)' }}>
                     {message}
                 </p>
             </div>
