@@ -30,6 +30,7 @@
 - **One-click core setup** — automatic core binary download and update checks, right from the header.
 - **Render driver selection** — capability-aware graphics backends, filtered by OS.
 - **Drag and drop files** — drop an APK to install it, or push any file to `/sdcard/Download/`.
+- **In-app update notices** — checks the GitHub releases for a newer app version and surfaces a one-click link in the header.
 
 ---
 
