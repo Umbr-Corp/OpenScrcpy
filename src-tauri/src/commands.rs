@@ -1985,12 +1985,21 @@ async fn spawn_mic_level_meter(window: Window, device: String, app_handle: tauri
             );
             return;
         };
+        let _ = window.emit(
+            "scrcpy-log",
+            format!("[MIC] Level meter started (parec on {}).", &monitor),
+        );
         let Some(mut stdout) = child.stdout.take() else {
             let _ = child.kill().await;
+            let _ = window.emit(
+                "scrcpy-log",
+                "[MIC] Level meter ended (no stdout).".to_string(),
+            );
             return;
         };
-        // 88200 bytes/s → one 100 ms chunk at s16le mono 44.1 kHz.
+        // 88200 bytes/s -> one 100 ms chunk at s16le mono 44.1 kHz.
         let mut buf = vec![0u8; 8820];
+        let mut chunks: u32 = 0;
         loop {
             let session_alive = app_handle
                 .state::<ScrcpyState>()
@@ -2001,10 +2010,15 @@ async fn spawn_mic_level_meter(window: Window, device: String, app_handle: tauri
             if !session_alive {
                 break;
             }
-            let n = match timeout(Duration::from_millis(700), stdout.read(&mut buf)).await {
-                Ok(Ok(0)) | Err(_) | Ok(Err(_)) => break,
+            // Generous timeout: chunks arrive ~every 100 ms while the stream
+            // plays; a 3s drought means parec stalled.
+            let read_next = timeout(Duration::from_secs(3), stdout.read(&mut buf));
+            let n = match read_next.await {
+                Ok(Ok(0)) => break,
                 Ok(Ok(n)) => n,
+                Ok(Err(_)) | Err(_) => break,
             };
+            chunks += 1;
             let samples: Vec<f64> = buf[..(n / 2) * 2]
                 .chunks_exact(2)
                 .map(|c| {
@@ -2026,6 +2040,10 @@ async fn spawn_mic_level_meter(window: Window, device: String, app_handle: tauri
             let _ = window.emit("mic-level", db);
         }
         let _ = child.kill().await;
+        let _ = window.emit(
+            "scrcpy-log",
+            format!("[MIC] Level meter ended after {} chunks.", chunks),
+        );
     });
 }
 
