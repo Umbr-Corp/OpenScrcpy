@@ -1,6 +1,6 @@
 [package]
 name = "openscrcpy"
-version = "1.0.1"
+version = "1.0.5"
 authors = ["yanhenrique-dev"]
 description = "A modern desktop GUI for controlling Android devices"
 edition = "2021"

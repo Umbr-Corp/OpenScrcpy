@@ -23,6 +23,10 @@ jobs:
     runs-on: ${{ matrix.platform }}
     env:
       PKG_CONFIG_ALLOW_CROSS: 1
+      # linuxdeploy's bundled strip cannot handle the .relr.dyn sections the
+      # current linker emits; skipping the strip step keeps the AppImage
+      # bundling from failing. (Cost: a slightly larger binary.)
+      NO_STRIP: 1
     steps:
       - uses: actions/checkout@v4
 
