@@ -87,4 +87,13 @@ export interface ScrcpyConfig {
      *  invoking run_scrcpy; never set directly by the UI. */
     windowX?: number;
     windowY?: number;
+    /** Mic bridge (audio-only capture source). */
+    /** Audio source: "mic" (raw) or "voice-communication" (Android NS/AGC/AEC). */
+    micSource?: string;
+    /** Lossy codec: "opus" (default) or "aac". */
+    micCodec?: string;
+    /** Bitrate in kbps for lossy mic codecs (32..256, default 128). */
+    micBitrate?: number;
+    /** Experimental: PipeWire RNNoise filter-chain sink on the PC. */
+    micDenoise?: boolean;
 }

@@ -91,6 +91,8 @@ function App() {
   } | null>(null);
   // Device being switched from USB to wireless (drives the card button state).
   const [wirelessSwitching, setWirelessSwitching] = useState<string | null>(null);
+  /** Live mic bridge level (dB) from the backend meter; null when idle. */
+  const [micLevel, setMicLevel] = useState<number | null>(null);
 
   const showAlert = (
     title: string,
@@ -357,6 +359,22 @@ function App() {
     }
   }, [activeDevice]);
 
+  useEffect(() => {
+    // Live mic-bridge level (dB) emitted by the Rust meter (Linux only).
+    if (!isTauri()) return;
+    const unlisten = getCurrentWindow().listen<number>("mic-level", (event) => {
+      const db = event.payload;
+      setMicLevel(typeof db === 'number' && Number.isFinite(db) ? Math.round(db) : null);
+    });
+    return () => {
+      unlisten.then(f => f());
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!sessionRunning) setMicLevel(null);
+  }, [sessionRunning]);
+
   const handleStart = async () => {
     if (!activeDevice) {
       showAlert(t('alerts.noDeviceSelectedTitle'), t('alerts.noDeviceSelectedMessage'), "warning");
@@ -505,6 +523,7 @@ function App() {
                   onStart={handleStart}
                   onStop={handleStop}
                   isRunning={sessionRunning}
+                  micLevel={micLevel}
                   detectedCameras={detectedCameras}
                   renderDriverSupport={renderDriverSupport}
                   onListOptions={(arg) => {

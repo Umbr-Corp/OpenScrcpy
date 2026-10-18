@@ -15,6 +15,8 @@ interface ControlPanelProps {
     onListOptions: (arg: string) => void;
     detectedCameras?: { id: string, name: string }[];
     renderDriverSupport?: RenderDriverSupport;
+    /** Live mic bridge level (dB, -60..0) while the bridge runs. */
+    micLevel?: number | null;
 }
 
 // Hover states for custom rows use Settings tokens only (no extra hues).
@@ -194,6 +196,7 @@ export default function ControlPanel({
     onStop,
     isRunning,
     onListOptions,
+    micLevel = null,
     detectedCameras = [],
     renderDriverSupport = { hostOs: 'unknown', supportsRenderDriver: false, supportedDrivers: [] }
 }: ControlPanelProps) {
@@ -614,6 +617,75 @@ export default function ControlPanel({
                                         </span>
                                     )}
                                 </div>
+
+                                {isRunning && (
+                                    <div className="space-y-1">
+                                        <div className="flex items-center justify-between">
+                                            <span className="ds-label">{t('controlPanel.micLevelLabel')}</span>
+                                            <span className="ds-caption font-mono" style={{ color: 'var(--text-muted)' }}>
+                                                {typeof micLevel === 'number' ? `${micLevel} dB` : '—'}
+                                            </span>
+                                        </div>
+                                        <div style={{ height: 8, borderRadius: 99, background: 'var(--surface-inset, rgba(0,0,0,0.25))', overflow: 'hidden' }}>
+                                            <div
+                                                style={{
+                                                    height: '100%',
+                                                    width: `${typeof micLevel === 'number' ? Math.max(0, Math.min(100, ((micLevel + 60) / 60) * 100)) : 0}%`,
+                                                    background: 'var(--primary)',
+                                                    transition: 'width 120ms linear'
+                                                }}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+                                    <Select
+                                        label={t('controlPanel.micSourceLabel')}
+                                        value={config.micSource || 'mic'}
+                                        onChange={(val: string) => handleChange('micSource', val)}
+                                        options={[
+                                            { value: 'mic', label: t('controlPanel.micSourceMic') },
+                                            { value: 'voice-communication', label: t('controlPanel.micSourceVoiceComm') },
+                                        ]}
+                                        {...selectClassNames}
+                                    />
+                                    <Select
+                                        label={t('controlPanel.micQualityLabel')}
+                                        value={String(config.micBitrate || 128)}
+                                        onChange={(val: string) => handleChange('micBitrate', Number(val))}
+                                        options={[
+                                            { value: '64', label: '64 kbps' },
+                                            { value: '128', label: '128 kbps' },
+                                            { value: '192', label: '192 kbps' },
+                                            { value: '256', label: '256 kbps' },
+                                        ]}
+                                        {...selectClassNames}
+                                    />
+                                    <Select
+                                        label={t('controlPanel.micCodecLabel')}
+                                        value={config.micCodec || 'opus'}
+                                        onChange={(val: string) => handleChange('micCodec', val)}
+                                        options={[
+                                            { value: 'opus', label: 'Opus' },
+                                            { value: 'aac', label: 'AAC' },
+                                        ]}
+                                        {...selectClassNames}
+                                    />
+                                    <div className="flex items-end">
+                                        <button
+                                            type="button"
+                                            aria-pressed={!!config.micDenoise}
+                                            onClick={() => handleChange('micDenoise', !config.micDenoise)}
+                                            className="ds-btn-tertiary"
+                                            style={config.micDenoise ? { color: 'var(--primary)' } : undefined}
+                                            title={t('controlPanel.micDenoiseTooltip')}
+                                        >
+                                            <span>{t('controlPanel.micDenoiseLabel')}</span>
+                                        </button>
+                                    </div>
+                                </div>
+
                                 <p className="ds-caption" style={{ color: 'var(--text-secondary)', lineHeight: 1.5 }}>
                                     {t('controlPanel.micBridgeDesc')}
                                 </p>

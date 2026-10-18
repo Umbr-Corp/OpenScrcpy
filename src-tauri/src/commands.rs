@@ -858,6 +858,17 @@ pub struct ScrcpyConfig {
     /// Useful when the device reports incorrect encoder limits that prevent
     /// scrcpy from starting.
     ignore_video_encoder_constraints: Option<bool>,
+    // Mic bridge (audio-only capture source)
+    /// Audio source: "mic" (raw) or "voice-communication" (Android-side
+    /// noise suppression + AGC + echo cancellation), for Android 12+.
+    mic_source: Option<String>,
+    /// Lossy codec for the bridge: "opus" (default) or "aac".
+    mic_codec: Option<String>,
+    /// Bitrate in kbps for the lossy mic codecs (64..256).
+    mic_bitrate: Option<u32>,
+    /// Experimental: create the virtual sink through a PipeWire RNNoise
+    /// filter-chain (PC-side noise suppression). Best effort with fallback.
+    mic_denoise: Option<bool>,
 }
 
 fn resolve_audio_codec_flag<'a>(
@@ -1283,9 +1294,29 @@ fn build_scrcpy_args(
             // builds a minimal set and returns early.
             args.push("--no-window".to_string());
             args.push("--no-video".to_string());
-            args.push("--audio-source=mic".to_string());
-            if let Some(codec) = resolve_audio_codec_flag(config, audio_codec_override) {
-                args.push(format!("--audio-codec={}", codec));
+            let source = config.mic_source.as_deref().unwrap_or("").trim();
+            let source = if source.is_empty() { "mic" } else { source };
+            args.push(format!("--audio-source={}", source));
+            // The bridge has its own codec choice; the automatic repair
+            // chain's override (when present) still wins so recovery can try
+            // alternatives after a codec failure.
+            let codec = audio_codec_override
+                .map(str::trim)
+                .filter(|c| !c.is_empty())
+                .map(str::to_string)
+                .or_else(|| {
+                    config
+                        .mic_codec
+                        .as_deref()
+                        .map(str::trim)
+                        .filter(|c| !c.is_empty())
+                        .map(str::to_string)
+                })
+                .unwrap_or_else(|| "opus".to_string());
+            args.push(format!("--audio-codec={}", codec));
+            if codec == "opus" || codec == "aac" {
+                let kbps = config.mic_bitrate.unwrap_or(128).clamp(32, 256);
+                args.push(format!("--audio-bit-rate={}k", kbps));
             }
             return args;
         }
@@ -1631,25 +1662,37 @@ const MIC_SINK_NAME: &str = "openscrcpy_mic";
 const MIC_SINK_LABEL: &str = "OpenScrcpy Mic";
 
 #[cfg(unix)]
-async fn pactl_run(args: &[&str]) -> Option<String> {
+struct PactlOut {
+    ok: bool,
+    stdout: String,
+    stderr: String,
+}
+
+#[cfg(unix)]
+async fn pactl_run(args: &[&str]) -> Option<PactlOut> {
     let child = create_command("pactl")
         .args(args)
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn();
     match child {
-        Ok(c) => timeout(Duration::from_secs(4), c.wait_with_output())
-            .await
-            .ok()?
-            .ok()
-            .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string()),
+        Ok(c) => match timeout(Duration::from_secs(4), c.wait_with_output()).await {
+            Ok(Ok(o)) => Some(PactlOut {
+                ok: o.status.success(),
+                stdout: String::from_utf8_lossy(&o.stdout).trim().to_string(),
+                stderr: String::from_utf8_lossy(&o.stderr).trim().to_string(),
+            }),
+            _ => None,
+        },
         Err(_) => None,
     }
 }
 
 // Returns true when the virtual sink exists (created now, if absent).
+// With mic_denoise (experimental) the sink is born from a PipeWire RNNoise
+// filter-chain, so apps recording its monitor pick up suppressed noise.
 #[cfg(unix)]
-async fn ensure_mic_sink(window: &Window) -> bool {
+async fn ensure_mic_sink(window: &Window, denoise: bool) -> bool {
     let Some(sinks) = pactl_run(&["list", "short", "sinks"]).await else {
         let _ = window.emit(
             "scrcpy-log",
@@ -1659,6 +1702,7 @@ async fn ensure_mic_sink(window: &Window) -> bool {
         return false;
     };
     if sinks
+        .stdout
         .lines()
         .any(|l| l.split('\t').nth(1) == Some(MIC_SINK_NAME))
     {
@@ -1668,30 +1712,93 @@ async fn ensure_mic_sink(window: &Window) -> bool {
         );
         return true;
     }
+
+    if denoise {
+        // RNNoise ships with PipeWire's example filter-chain configs; try the
+        // known install paths before falling back to the plain sink.
+        let candidates = [
+            "/usr/share/pipewire/filter-chain/sink-rnnoise.conf",
+            "/usr/share/pipewire/filter-chain/rnnoise-sink.conf",
+        ];
+        match candidates.iter().find(|p| Path::new(p).exists()) {
+            Some(conf) => {
+                let load = pactl_run(&[
+                    "load-module",
+                    "module-filter-chain",
+                    &format!("x={}", conf),
+                    &format!("sink_name={}", MIC_SINK_NAME),
+                    &format!("sink_properties=device.description=\"{}\"", MIC_SINK_LABEL),
+                ])
+                .await;
+                match load {
+                    Some(o) if o.ok => {
+                        let _ = window.emit(
+                            "scrcpy-log",
+                            format!(
+                                "[MIC] Noise-suppressed sink \"OpenScrcpy Mic\" created (RNNoise: {}).",
+                                conf
+                            ),
+                        );
+                        return true;
+                    }
+                    Some(o) => {
+                        let _ = window.emit(
+                            "scrcpy-log",
+                            format!("[MIC] RNNoise sink rejected by PipeWire: {}.", o.stderr),
+                        );
+                    }
+                    None => {
+                        let _ = window.emit(
+                            "scrcpy-log",
+                            "[MIC] RNNoise sink failed to load; trying the plain sink.".to_string(),
+                        );
+                    }
+                }
+            }
+            None => {
+                let _ = window.emit(
+                    "scrcpy-log",
+                    "[MIC] RNNoise filter-chain file not found; using the unfiltered sink."
+                        .to_string(),
+                );
+            }
+        }
+    }
+
     let created = pactl_run(&[
         "load-module",
         "module-null-sink",
         &format!("sink_name={}", MIC_SINK_NAME),
         &format!("sink_properties=device.description=\"{}\"", MIC_SINK_LABEL),
     ])
-    .await
-    .is_some();
-    if created {
-        let _ = window.emit(
-            "scrcpy-log",
-            format!(
-                "[MIC] Virtual sink \"{}\" created — pick it as the microphone in Discord/OBS/Recorder.",
-                MIC_SINK_LABEL
-            ),
-        );
-    } else {
-        let _ = window.emit(
-            "scrcpy-log",
-            "[MIC] Could not create the virtual sink; audio goes to the default output."
-                .to_string(),
-        );
+    .await;
+    match created {
+        Some(o) if o.ok => {
+            let _ = window.emit(
+                "scrcpy-log",
+                format!(
+                    "[MIC] Virtual sink \"{}\" created — pick it as the microphone in Discord/OBS/Recorder.",
+                    MIC_SINK_LABEL
+                ),
+            );
+            true
+        }
+        Some(o) => {
+            let _ = window.emit(
+                "scrcpy-log",
+                format!("[MIC] Could not create the virtual sink: {}.", o.stderr),
+            );
+            false
+        }
+        None => {
+            let _ = window.emit(
+                "scrcpy-log",
+                "[MIC] Could not create the virtual sink; audio goes to the default output."
+                    .to_string(),
+            );
+            false
+        }
     }
-    created
 }
 
 #[cfg(unix)]
@@ -1700,6 +1807,7 @@ async fn unload_mic_sink(window: &Window) {
         return;
     };
     if !sinks
+        .stdout
         .lines()
         .any(|l| l.split('\t').nth(1) == Some(MIC_SINK_NAME))
     {
@@ -1709,6 +1817,7 @@ async fn unload_mic_sink(window: &Window) {
         return;
     };
     let module_idx = modules
+        .stdout
         .lines()
         .find(|l| l.contains(&format!("sink_name={}", MIC_SINK_NAME)))
         .and_then(|l| l.split('\t').next().map(str::to_string));
@@ -1721,26 +1830,46 @@ async fn unload_mic_sink(window: &Window) {
     }
 }
 
-// Second-chance routing: libpulse's PULSE_SINK covers SDL/pipewire on most
-// setups, but a client that landed on the default output gets moved over.
+// Second-chance routing: the PULSE_SINK env does not reach SDL3 clients, and
+// the scrcpy stream only shows up after its server handshake (seconds later).
+// Poll every 2s for up to 20s: find the client stream, land it in the virtual
+// sink, confirm on the console.
 #[cfg(unix)]
 async fn verify_mic_route(window: Window, sink_present: bool) {
     if !sink_present {
         return;
     }
-    tokio::time::sleep(Duration::from_millis(1800)).await;
+    for _attempt in 0..10 {
+        tokio::time::sleep(Duration::from_millis(2000)).await;
+        if route_mic_stream_once(&window).await {
+            return;
+        }
+    }
+    let _ = window.emit(
+        "scrcpy-log",
+        "[MIC] No scrcpy stream was found in 20s; routing left untouched.".to_string(),
+    );
+}
+
+// Finds the scrcpy client stream and lands it in the virtual sink.
+// Returns true once the stream exists (freshly routed or already in place).
+#[cfg(unix)]
+async fn route_mic_stream_once(window: &Window) -> bool {
     let Some(sinks) = pactl_run(&["list", "short", "sinks"]).await else {
-        return;
+        return false;
     };
-    let target = sinks
+    let Some(target) = sinks
+        .stdout
         .lines()
         .find(|l| l.split('\t').nth(1) == Some(MIC_SINK_NAME))
-        .and_then(|l| l.split('\t').next().map(str::to_string));
-    let Some(target) = target else { return };
-    let Some(inputs) = pactl_run(&["list", "sink-inputs"]).await else {
-        return;
+        .and_then(|l| l.split('\t').next().map(str::to_string))
+    else {
+        return false;
     };
-    for block in inputs.split("\n\n") {
+    let Some(inputs) = pactl_run(&["list", "sink-inputs"]).await else {
+        return false;
+    };
+    for block in inputs.stdout.split("\n\n") {
         let is_scrcpy = block
             .lines()
             .any(|l| l.trim().starts_with("application.name = \"scrcpy\""));
@@ -1760,22 +1889,103 @@ async fn verify_mic_route(window: Window, sink_present: bool) {
             .and_then(|l| l.split(':').nth(1).map(|v| v.trim().to_string()));
         match (stream_idx, current) {
             (Some(stream), Some(cur)) if cur != target => {
-                let _ = pactl_run(&["move-sink-input", &stream, &target]).await;
+                let moved = pactl_run(&["move-sink-input", &stream, &target]).await;
+                let ok = moved.as_ref().map(|m| m.ok).unwrap_or(false);
                 let _ = window.emit(
                     "scrcpy-log",
-                    "[MIC] Audio stream moved into the virtual sink.".to_string(),
+                    if ok {
+                        "[MIC] Audio stream moved into the virtual sink.".to_string()
+                    } else {
+                        format!(
+                            "[MIC] move-sink-input failed: {}.",
+                            moved.map(|m| m.stderr).unwrap_or_default()
+                        )
+                    },
                 );
+                return true;
             }
             (Some(_), Some(_)) => {
                 let _ = window.emit(
                     "scrcpy-log",
                     "[MIC] Audio stream confirmed in the virtual sink.".to_string(),
                 );
+                return true;
             }
-            _ => {}
+            _ => return false,
         }
-        break;
     }
+    false
+}
+
+// Live level feedback: parec taps the virtual sink's monitor and the RMS of
+// each 100 ms chunk is emitted to the GUI as dB. The loop ends when parec
+// exits or the owning scrcpy session leaves the process registry.
+#[cfg(unix)]
+async fn spawn_mic_level_meter(window: Window, device: String, app_handle: tauri::AppHandle) {
+    tokio::spawn(async move {
+        use tokio::io::AsyncReadExt;
+        let monitor = format!("{}.monitor", MIC_SINK_NAME);
+        let Some(mut child) = create_command("parec")
+            .args([
+                "-d",
+                &monitor,
+                "--format=s16le",
+                "--channels=1",
+                "--rate=44100",
+            ])
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .ok()
+        else {
+            let _ = window.emit(
+                "scrcpy-log",
+                "[MIC] Level meter unavailable (parec not found).".to_string(),
+            );
+            return;
+        };
+        let Some(mut stdout) = child.stdout.take() else {
+            let _ = child.kill().await;
+            return;
+        };
+        // 88200 bytes/s → one 100 ms chunk at s16le mono 44.1 kHz.
+        let mut buf = vec![0u8; 8820];
+        loop {
+            let session_alive = app_handle
+                .state::<ScrcpyState>()
+                .processes
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .contains_key(&device);
+            if !session_alive {
+                break;
+            }
+            let n = match timeout(Duration::from_millis(700), stdout.read(&mut buf)).await {
+                Ok(Ok(0)) | Err(_) | Ok(Err(_)) => break,
+                Ok(Ok(n)) => n,
+            };
+            let samples: Vec<f64> = buf[..(n / 2) * 2]
+                .chunks_exact(2)
+                .map(|c| {
+                    let v = i16::from_le_bytes([c[0], c[1]]) as f64 / 32768.0;
+                    v * v
+                })
+                .collect();
+            let mean_sq = if samples.is_empty() {
+                0.0
+            } else {
+                samples.iter().sum::<f64>() / samples.len() as f64
+            };
+            let rms = mean_sq.sqrt();
+            let db = if rms < 0.0016 {
+                -60.0
+            } else {
+                (20.0 * rms.log10()).floor().max(-60.0).min(0.0)
+            };
+            let _ = window.emit("mic-level", db);
+        }
+        let _ = child.kill().await;
+    });
 }
 
 #[tauri::command]
@@ -1863,7 +2073,7 @@ pub async fn run_scrcpy(
         let mut routed = false;
         #[cfg(unix)]
         {
-            routed = ensure_mic_sink(&window).await;
+            routed = ensure_mic_sink(&window, config.mic_denoise.unwrap_or(false)).await;
         }
         #[cfg(not(unix))]
         {
@@ -1899,7 +2109,14 @@ pub async fn run_scrcpy(
 
     if config.session_mode == "mic" {
         #[cfg(unix)]
-        tokio::spawn(verify_mic_route(window.clone(), pulse_sink.is_some()));
+        {
+            tokio::spawn(verify_mic_route(window.clone(), pulse_sink.is_some()));
+            tokio::spawn(spawn_mic_level_meter(
+                window.clone(),
+                config.device.clone(),
+                app_handle.clone(),
+            ));
+        }
         #[cfg(not(unix))]
         drop(pulse_sink.as_deref());
     }
@@ -2044,16 +2261,19 @@ pub async fn run_scrcpy(
                         format!("[SYSTEM] Scrcpy process exited with status: {}", status),
                     );
 
-                    // Mic bridge exited on its own: if no session remains, drop
-                    // the shared virtual sink behind it.
-                    if config_mon.session_mode == "mic"
-                        && app_handle_mon
-                            .state::<ScrcpyState>()
+                    // Mic bridge exited on its own: drop its registry entry,
+                    // then unload the shared virtual sink when no session
+                    // remains.
+                    let mic_cleanup = {
+                        let state_lock = app_handle_mon.state::<ScrcpyState>();
+                        let mut processes = state_lock
                             .processes
                             .lock()
-                            .unwrap_or_else(|e| e.into_inner())
-                            .is_empty()
-                    {
+                            .unwrap_or_else(|e| e.into_inner());
+                        processes.remove(&device_mon);
+                        processes.is_empty()
+                    };
+                    if config_mon.session_mode == "mic" && mic_cleanup {
                         #[cfg(unix)]
                         unload_mic_sink(&window_mon).await;
                         #[cfg(not(unix))]
