@@ -34,6 +34,8 @@ export const ar: Translations = {
         loading: 'جارٍ التحميل...'
     },
     header: {
+        updateBadge: 'الإصدار الجديد v{v} متاح',
+        checkAppUpdate: 'تحقق من التحديثات',
         colorModes: {
             light: 'فاتح',
             dark: 'داكن',
@@ -195,7 +197,7 @@ export const ar: Translations = {
     },
     sessionBehavior: {
         title: 'سلوك الجلسة',
-        stayAwake: 'إبقاء الشاشة نشطة',
+        stayAwake: 'إبقاء الجهاز مستيقظًا',
         stayAwakeTooltip: 'إبقاء الجهاز في وضع التشغيل أثناء عرض الشاشة.',
         screenOff: 'إطفاء الشاشة',
         screenOffTooltip: 'إيقاف شاشة الجهاز أثناء العرض لتوفير البطارية.',
@@ -221,7 +223,7 @@ export const ar: Translations = {
         defaultVideosFolder: 'الافتراضي (مجلد الفيديو)',
         selectRecordingFolderTitle: 'اختر مجلد التسجيل',
         // v4 features
-        keepActive: 'الحفاظ على النشاط',
+        keepActive: 'مضاد الخمول (v4)',
         keepActiveTooltip: 'يحاكي نشاط المستخدم لمنع الشاشة من الدخول في وضع السكون (Scrcpy v4+).',
         rememberWindowPosition: 'تذكر موضع النافذة',
         rememberWindowPositionTooltip: 'إعادة فتح نافذة العرض في نفس المكان الذي وُضعت فيه آخر مرة. عطّل هذا الخيار إذا كنت تغيّر الدقة بشكل متكرر، فقد يفسد الموضع المحفوظ. إذا انتهى بها الأمر خارج الشاشة، اضغط Ctrl+Alt+Shift+C لإعادتها إلى المنتصف.'
@@ -275,6 +277,14 @@ export const ar: Translations = {
         diagnosticSavedAlert: 'تم حفظ تقرير التشخيص في مجلد التنزيلات باسم: {fileName}'
     },
     alerts: {
+        newAppVersionTitle: 'إصدار جديد متاح: v{v}',
+        newAppVersionMsg: 'اطّلع على الجديد ونزّل الإصدار الجديد من صفحة الإصدارات على GitHub.',
+        updateOpenBtn: 'فتح على GitHub',
+        appCloseBtn: 'إغلاق',
+        appUpToDateTitle: 'لديك آخر إصدار',
+        appUpToDateMsg: 'OpenScrcpy v{v} هو بالفعل آخر إصدار منشور.',
+        appCheckFailedTitle: 'تعذّر التحقق',
+        appCheckFailedMsg: 'لا يستجيب GitHub الآن. حاول لاحقًا.',
         noDeviceSelectedTitle: 'لم يتم تحديد جهاز',
         noDeviceSelectedMessage: 'يرجى اختيار جهاز من الشريط الجانبي للمتابعة. تلميح: إذا قمت بتوصيل هاتفك للتو، فانقر على "تحديث" في الشريط الجانبي لتحديث القائمة.',
         noDeviceForListOptions: 'اختر جهازًا من القائمة الجانبية أولًا.',

@@ -34,6 +34,8 @@ export const ru: Translations = {
   },
 
   header: {
+    updateBadge: 'Доступна новая версия v{v}',
+    checkAppUpdate: 'Проверить обновления',
     colorModes: {
       light: 'Светлая',
       dark: 'Тёмная',
@@ -198,7 +200,7 @@ export const ru: Translations = {
 
   sessionBehavior: {
     title: 'Поведение сессии',
-    stayAwake: 'Не выключать экран',
+    stayAwake: 'Устройство не спит',
     stayAwakeTooltip: 'Не давать устройству засыпать во время трансляции.',
     screenOff: 'Экран выключен',
     screenOffTooltip: 'Выключить экран устройства во время трансляции для экономии батареи.',
@@ -226,7 +228,7 @@ export const ru: Translations = {
     defaultVideosFolder: 'По умолчанию (папка Видео)',
     selectRecordingFolderTitle: 'Выберите папку для записи',
     // v4 features
-    keepActive: 'Держать активным',
+    keepActive: 'Анти-простой (v4)',
     keepActiveTooltip: 'Имитирует активность пользователя, чтобы экран не отключался (scrcpy v4+).',
   },
 
@@ -283,6 +285,14 @@ export const ru: Translations = {
   },
 
   alerts: {
+    newAppVersionTitle: 'Доступна новая версия: v{v}',
+    newAppVersionMsg: 'Посмотрите изменения и скачайте новую версию на странице релизов GitHub.',
+    updateOpenBtn: 'Открыть на GitHub',
+    appCloseBtn: 'Закрыть',
+    appUpToDateTitle: 'У вас последняя версия',
+    appUpToDateMsg: 'OpenScrcpy v{v} — уже последняя опубликованная версия.',
+    appCheckFailedTitle: 'Не удалось проверить',
+    appCheckFailedMsg: 'GitHub сейчас не отвечает. Попробуйте позже.',
     noDeviceSelectedTitle: 'Устройство не выбрано',
     noDeviceSelectedMessage: 'Выберите устройство на боковой панели, чтобы продолжить.\nПодсказка: если вы только что подключили телефон, нажмите «Обновить» на боковой панели, чтобы обновить список.',
     noDeviceForListOptions: 'Выберите устройство на боковой панели, чтобы получить список параметров.',

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
-import { Download, FolderOpen, RefreshCcw, HelpCircle, Info, Heart, X, ExternalLink, Languages, ChevronDown, Sun, Moon, Monitor, Cpu } from 'lucide-react';
+import { Download, FolderOpen, RefreshCcw, HelpCircle, Info, Heart, X, ExternalLink, Languages, ChevronDown, Sun, Moon, Monitor, Cpu, ArrowUp } from 'lucide-react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { SUPPORTED_LOCALES, useI18n, type Locale } from '../i18n';
 import { isTauri } from '../tauri';
@@ -16,9 +16,13 @@ interface HeaderProps {
     isDownloading: boolean;
     downloadProgress: number;
     version: string;
+    /** Latest app release tag when newer than the running build (null otherwise). */
+    appUpdateLatest?: string | null;
+    onOpenAppUpdate?: () => void;
+    onCheckAppUpdate?: () => void;
 }
 
-export default function Header({ colorMode, onColorModeChange, binaryStatus, onDownload, onSetPath, onResetPath, isDownloading, downloadProgress, version }: HeaderProps) {
+export default function Header({ colorMode, onColorModeChange, binaryStatus, onDownload, onSetPath, onResetPath, isDownloading, downloadProgress, version, appUpdateLatest, onOpenAppUpdate, onCheckAppUpdate }: HeaderProps) {
     const { t, locale, setLocale, translations } = useI18n();
     const [showHelp, setShowHelp] = useState(false);
     const [showAbout, setShowAbout] = useState(false);
@@ -64,7 +68,7 @@ export default function Header({ colorMode, onColorModeChange, binaryStatus, onD
 
     return (
         <header
-            className="flex items-center gap-2 px-4 py-2 flex-nowrap"
+            className="flex items-center gap-3 px-4 py-2 flex-nowrap"
             style={{ backgroundColor: 'var(--bg-surface)', borderBottom: '1px solid var(--border-base)' }}
             onMouseDown={onHeaderMouseDown}
             onDoubleClick={onHeaderDoubleClick}
@@ -188,6 +192,14 @@ export default function Header({ colorMode, onColorModeChange, binaryStatus, onD
                                     <Heart size={12} /> {t('header.aboutDonate')}
                                 </a>
                             </div>
+                            {onCheckAppUpdate && (
+                                <button
+                                    onClick={onCheckAppUpdate}
+                                    className="ds-btn ds-btn-tertiary w-full"
+                                >
+                                    <RefreshCcw size={12} /> {t('header.checkAppUpdate')}
+                                </button>
+                            )}
                             <p className="ds-caption" style={{ color: 'var(--text-muted)' }}>
                                 {t('header.aboutLicense')}
                             </p>
@@ -208,6 +220,18 @@ export default function Header({ colorMode, onColorModeChange, binaryStatus, onD
                     OpenScrcpy
                 </h1>
                 <span className="ds-badge">V{version}</span>
+                {appUpdateLatest && (
+                    <button
+                        onClick={onOpenAppUpdate}
+                        title={t('header.updateBadge', { v: appUpdateLatest })}
+                        aria-label={t('header.updateBadge', { v: appUpdateLatest })}
+                        className="ds-badge cursor-pointer flex items-center gap-1"
+                        style={{ color: '#E0C559', borderColor: '#E0C559' }}
+                    >
+                        <ArrowUp size={9} />
+                        {t('header.updateBadge', { v: appUpdateLatest })}
+                    </button>
+                )}
             </div>
 
             <div className="flex-1" />
