@@ -1,7 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
 import { Download, FolderOpen, RefreshCcw, HelpCircle, Info, Heart, X, ExternalLink, Languages, ChevronDown, Sun, Moon, Monitor, Cpu } from 'lucide-react';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import { SUPPORTED_LOCALES, useI18n, type Locale } from '../i18n';
+import { isTauri } from '../tauri';
 import Modal from './Modal';
+import { WindowButtons, WINDOW_DRAG_EXCLUDE } from './WindowChrome';
 
 interface HeaderProps {
     colorMode: 'light' | 'dark' | 'system';
@@ -45,10 +48,26 @@ export default function Header({ colorMode, onColorModeChange, binaryStatus, onD
             ? t('header.scrcpyReady')
             : binaryStatus.message;
 
+    // Linux custom titlebar: this header IS the window drag region (the
+    // modals it renders, popovers included, opt out via WINDOW_DRAG_EXCLUDE).
+    const onHeaderMouseDown = (e: ReactMouseEvent<HTMLElement>) => {
+        if (!isTauri() || e.button !== 0) return;
+        if ((e.target as HTMLElement).closest(WINDOW_DRAG_EXCLUDE)) return;
+        e.preventDefault();
+        getCurrentWindow().startDragging().catch(() => { });
+    };
+    const onHeaderDoubleClick = (e: ReactMouseEvent<HTMLElement>) => {
+        if (!isTauri()) return;
+        if ((e.target as HTMLElement).closest(WINDOW_DRAG_EXCLUDE)) return;
+        getCurrentWindow().toggleMaximize().catch(() => { });
+    };
+
     return (
         <header
             className="flex items-center gap-2 px-4 py-2 flex-nowrap"
             style={{ backgroundColor: 'var(--bg-surface)', borderBottom: '1px solid var(--border-base)' }}
+            onMouseDown={onHeaderMouseDown}
+            onDoubleClick={onHeaderDoubleClick}
         >
             {showHelp && (
                 <Modal
@@ -319,6 +338,8 @@ export default function Header({ colorMode, onColorModeChange, binaryStatus, onD
                     </div>
                 )}
             </div>
+
+            {isTauri() && <WindowButtons />}
         </header>
     );
 }

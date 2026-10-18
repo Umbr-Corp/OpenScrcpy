@@ -5,6 +5,7 @@ import Sidebar from "./components/Sidebar";
 import ControlPanel from "./components/ControlPanel";
 import LogPanel from "./components/LogPanel";
 import Header from "./components/Header";
+import { WindowResizeEdges } from "./components/WindowChrome";
 import SessionBehavior from "./components/SessionBehavior";
 import ShortcutsPanel from "./components/ShortcutsPanel";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -318,6 +319,7 @@ function App() {
             downloadProgress={downloadProgress}
             version={appVersion}
           />
+          <WindowResizeEdges />
 
           <div className="flex-1 overflow-y-auto flex flex-col pt-6">
             <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 px-6 pb-6">
