@@ -68,6 +68,8 @@ export const zhTW: Translations = {
         aboutDonate: '贊助'
     },
     sidebar: {
+        gotoWireless: '切換到 Wi-Fi',
+        switching: '切換中…',
         deviceHub: '裝置中心',
         killAdb: '終止 ADB',
         killAdbTitle: '強制終止所有 ADB 操作',
@@ -274,6 +276,10 @@ export const zhTW: Translations = {
         diagnosticSavedAlert: '診斷報告已儲存至「下載」資料夾，檔案名稱為：{fileName}'
     },
     alerts: {
+        wirelessOkTitle: '已連接無線',
+        wirelessOkMsg: '已在 {ip}:5555 就緒 — 可以拔掉傳輸線。',
+        wirelessFailTitle: '切換到無線失敗',
+        wirelessFailMsg: '詳情見控制台。手機必須處於 Wi-Fi 網路。',
         newAppVersionTitle: '有新版本：v{v}',
         newAppVersionMsg: '查看更新內容並從 GitHub 發布頁下載新版本。',
         updateOpenBtn: '前往 GitHub',

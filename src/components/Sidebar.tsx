@@ -36,6 +36,10 @@ export interface SidebarProps {
     onSelectDevice: (d: string) => void;
     onPair: (ip: string, code: string) => Promise<any>;
     onConnect: (ip: string) => Promise<any>;
+    // One-click USB -> wireless switch (only shown while the hub card has a
+    // USB transport and no wireless one yet).
+    onGotoWireless?: (device: string) => void;
+    wirelessSwitching?: string | null;
     isRefreshing?: boolean;
     onFilePush: () => void;
     // History props
@@ -55,6 +59,8 @@ export default function Sidebar({
     onSelectDevice,
     onPair,
     onConnect,
+    onGotoWireless,
+    wirelessSwitching = null,
     isRefreshing,
     onFilePush,
     historyDevices = [],
@@ -206,6 +212,9 @@ export default function Sidebar({
                                 const primary = ids[0];
                                 const isRunning = runningDevices.some(r => ids.includes(r));
                                 const isSelected = selectedDevice != null && ids.includes(selectedDevice);
+                                const usbId = ids.find(id => !id.includes('.'));
+                                const hasWireless = ids.some(id => id.includes('.'));
+                                const switching = wirelessSwitching != null && ids.includes(wirelessSwitching);
                                 return (
                                     <button
                                         key={primary}
@@ -251,6 +260,18 @@ export default function Sidebar({
                                                         {t('sidebar.usb')}
                                                     </span>
                                                 ))}
+                                                {usbId && !hasWireless && onGotoWireless && (
+                                                    <button
+                                                        type="button"
+                                                        disabled={wirelessSwitching != null}
+                                                        onClick={(e) => { e.stopPropagation(); onGotoWireless(usbId); }}
+                                                        className="ds-btn ds-btn-tertiary w-full mt-1"
+                                                        style={{ padding: '4px 8px', fontSize: 11.5, gap: 6 }}
+                                                    >
+                                                        <Wifi size={11} />
+                                                        {switching ? t('sidebar.switching') : t('sidebar.gotoWireless')}
+                                                    </button>
+                                                )}
                                             </div>
                                         </div>
                                     </button>

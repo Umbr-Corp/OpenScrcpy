@@ -72,6 +72,8 @@ export const ru: Translations = {
   },
 
   sidebar: {
+    gotoWireless: 'Перейти на Wi-Fi',
+    switching: 'Переключение…',
     deviceHub: 'Центр устройств',
     killAdb: 'Остановить ADB',
     killAdbTitle: 'Принудительно завершить все операции adb',
@@ -285,6 +287,10 @@ export const ru: Translations = {
   },
 
   alerts: {
+    wirelessOkTitle: 'Подключено по Wi-Fi',
+    wirelessOkMsg: 'Готово на {ip}:5555 — кабель можно отключать.',
+    wirelessFailTitle: 'Переход на Wi-Fi не удался',
+    wirelessFailMsg: 'Подробности в консоли. Телефон должен быть в сети Wi-Fi.',
     newAppVersionTitle: 'Доступна новая версия: v{v}',
     newAppVersionMsg: 'Посмотрите изменения и скачайте новую версию на странице релизов GitHub.',
     updateOpenBtn: 'Открыть на GitHub',

@@ -134,6 +134,7 @@ pub fn run() {
             commands::check_scrcpy_update,
             commands::check_app_update,
             commands::open_app_release,
+            commands::goto_wireless,
             get_app_version
         ])
         .run(tauri::generate_context!())

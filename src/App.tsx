@@ -87,6 +87,8 @@ function App() {
     current: string;
     notes: string;
   } | null>(null);
+  // Device being switched from USB to wireless (drives the card button state).
+  const [wirelessSwitching, setWirelessSwitching] = useState<string | null>(null);
 
   const showAlert = (
     title: string,
@@ -223,6 +225,28 @@ function App() {
     checkAppUpdate(true).catch(() => { });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // USB -> wireless in one click: the backend reads the phone's Wi-Fi IP,
+  // flips adbd into TCPIP and reconnects; here we surface the outcome and
+  // let the device poll fold the :5555 transport into the same hub card.
+  const handleGotoWireless = async (device: string) => {
+    if (wirelessSwitching) return;
+    setWirelessSwitching(device);
+    try {
+      const { invoke } = await import('@tauri-apps/api/core');
+      const res = await invoke<{ success: boolean; message: string; ip?: string }>('goto_wireless', { device });
+      if (res.success) {
+        showAlert(t('alerts.wirelessOkTitle'), t('alerts.wirelessOkMsg', { ip: res.ip ?? '' }), 'success');
+      } else {
+        showAlert(t('alerts.wirelessFailTitle'), res.message || t('alerts.wirelessFailMsg'), 'warning');
+      }
+    } catch (e) {
+      showAlert(t('alerts.wirelessFailTitle'), String(e) || t('alerts.wirelessFailMsg'), 'warning');
+    } finally {
+      setWirelessSwitching(null);
+      refreshDevices().catch(() => { });
+    }
+  };
 
   useEffect(() => {
     // No-op outside the Tauri WebView (plain browser preview): there is
@@ -401,6 +425,8 @@ function App() {
                   historyDevices={historyDevices}
                   clearHistory={clearHistory}
                   mdnsDevices={mdnsDevices}
+                  onGotoWireless={handleGotoWireless}
+                  wirelessSwitching={wirelessSwitching}
                 />
               </div>
 

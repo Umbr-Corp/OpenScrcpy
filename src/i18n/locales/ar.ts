@@ -71,6 +71,8 @@ export const ar: Translations = {
         aboutDonate: 'تبرع'
     },
     sidebar: {
+        gotoWireless: 'التبديل إلى واي فاي',
+        switching: 'جارٍ التبديل…',
         deviceHub: 'إدارة الأجهزة',
         killAdb: 'إنهاء ADB',
         killAdbTitle: 'إنهاء جميع عمليات ADB بالقوة',
@@ -277,6 +279,10 @@ export const ar: Translations = {
         diagnosticSavedAlert: 'تم حفظ تقرير التشخيص في مجلد التنزيلات باسم: {fileName}'
     },
     alerts: {
+        wirelessOkTitle: 'تم الاتصال لاسلكيًا',
+        wirelessOkMsg: 'جاهز على {ip}:5555 — يمكنك فصل الكابل.',
+        wirelessFailTitle: 'فشل التبديل إلى واي فاي',
+        wirelessFailMsg: 'التفاصيل في شريط الطرفية. يجب أن يكون الهاتف على شبكة واي فاي.',
         newAppVersionTitle: 'إصدار جديد متاح: v{v}',
         newAppVersionMsg: 'اطّلع على الجديد ونزّل الإصدار الجديد من صفحة الإصدارات على GitHub.',
         updateOpenBtn: 'فتح على GitHub',

@@ -68,6 +68,8 @@ languages: {
         aboutDonate: 'Donasi'
     },
     sidebar: {
+        gotoWireless: 'Beralih ke Wi-Fi',
+        switching: 'Beralih…',
         deviceHub: 'Pusat Perangkat',
         killAdb: 'Matikan ADB',
         killAdbTitle: 'Paksa hentikan semua operasi adb',
@@ -274,6 +276,10 @@ languages: {
         diagnosticSavedAlert: 'Laporan diagnostik disimpan ke Unduhan sebagai: {fileName}'
     },
     alerts: {
+        wirelessOkTitle: 'Terhubung via Wi-Fi',
+        wirelessOkMsg: 'Siap di {ip}:5555 — kabel dilepas.',
+        wirelessFailTitle: 'Gagal Beralih ke Wi-Fi',
+        wirelessFailMsg: 'Lihat konsol untuk detail. Ponsel harus di jaringan Wi-Fi.',
         newAppVersionTitle: 'Versi Baru Tersedia: v{v}',
         newAppVersionMsg: 'Lihat perubahan dan unduh versi baru dari halaman rilis GitHub.',
         updateOpenBtn: 'Buka di GitHub',

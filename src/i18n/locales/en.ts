@@ -69,6 +69,8 @@ export const en = {
         aboutDonate: 'Donate'
     },
     sidebar: {
+        gotoWireless: 'Go Wireless',
+        switching: 'Switching…',
         deviceHub: 'Device Hub',
         killAdb: 'Kill ADB',
         killAdbTitle: 'Force kill all adb operations',
@@ -275,6 +277,10 @@ export const en = {
         diagnosticSavedAlert: 'Diagnostic report saved to Downloads as: {fileName}'
     },
     alerts: {
+        wirelessOkTitle: 'Wireless Connected',
+        wirelessOkMsg: 'Ready at {ip}:5555 — you can unplug the cable now.',
+        wirelessFailTitle: 'Wireless Switch Failed',
+        wirelessFailMsg: 'See the console for details. The phone must be on a Wi-Fi network.',
         newAppVersionTitle: 'New Version Available: v{v}',
         newAppVersionMsg: 'Check out the changelog and download the new version from the GitHub releases page.',
         updateOpenBtn: 'See on GitHub',

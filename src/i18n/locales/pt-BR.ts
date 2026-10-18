@@ -68,6 +68,8 @@ export const ptBR: Translations = {
         aboutDonate: 'Doar'
     },
     sidebar: {
+        gotoWireless: 'Ir para Wi-Fi',
+        switching: 'Trocando…',
         deviceHub: 'Hub de Dispositivos',
         killAdb: 'Matar ADB',
         killAdbTitle: 'Forçar encerramento de todas as operações adb',
@@ -274,6 +276,10 @@ export const ptBR: Translations = {
         diagnosticSavedAlert: 'Relatório de diagnóstico salvo em Downloads como: {fileName}'
     },
     alerts: {
+        wirelessOkTitle: 'Wi-Fi Conectado',
+        wirelessOkMsg: 'Pronto em {ip}:5555 — já pode desconectar o cabo.',
+        wirelessFailTitle: 'Não Foi Possível Trocar',
+        wirelessFailMsg: 'Veja o console para detalhes. O telefone precisa estar numa rede Wi-Fi.',
         newAppVersionTitle: 'Nova Versão Disponível: v{v}',
         newAppVersionMsg: 'Confira as novidades e baixe a nova versão na página de releases no GitHub.',
         updateOpenBtn: 'Ver no GitHub',

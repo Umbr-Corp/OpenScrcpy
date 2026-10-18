@@ -2529,5 +2529,113 @@ pub async fn open_app_release(app: tauri::AppHandle) -> Result<(), String> {
         .map_err(|e| e.to_string())
 }
 
+// One-click USB -> wireless switch: read the phone's Wi-Fi IP from its own
+// routing table, lift adbd into TCPIP mode, then point the daemon back at
+// the phone over the network. Every step is logged to the console like
+// the rest of the adb surface, so a failure is diagnosable in-app.
+#[tauri::command]
+pub async fn goto_wireless(
+    window: Window,
+    device: String,
+    custom_path: Option<String>,
+) -> Result<serde_json::Value, String> {
+    let adb_path = get_binary_path("adb", custom_path);
+    let _ = window.emit("scrcpy-log", "[SYSTEM] Switching to wireless...".to_string());
+
+    // 1) The phone's Wi-Fi IPv4. `ip route get` answers with the active
+    //    route's source address; `addr show wlan0` as fallback (a few OEMs
+    //    rename the interface).
+    let mut ip = String::new();
+    for probe in ["ip route get 1.1.1.1", "ip -f inet addr show wlan0"] {
+        let child = create_command(&adb_path)
+            .args(["-s", &device, "shell", probe])
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .map_err(|e| format!("Failed to start adb shell: {}", e))?;
+        let output = timeout(Duration::from_secs(5), child.wait_with_output())
+            .await
+            .map_err(|_| "Timeout querying device IP".to_string())?
+            .map_err(|e| e.to_string())?;
+        if let Some(found) = find_wlan_ipv4(&String::from_utf8_lossy(&output.stdout)) {
+            ip = found;
+            break;
+        }
+    }
+    if ip.is_empty() {
+        let _ = window.emit("scrcpy-log", "[SYSTEM] Could not read the Wi-Fi IP — is the phone actually on a Wi-Fi network?".to_string());
+        return Ok(json!({ "success": false, "message": "could not read the device Wi-Fi IPv4" }));
+    }
+
+    let _ = window.emit("scrcpy-log", format!("[SYSTEM] adbd restarting in TCP mode (Wi-Fi IP {}).", ip));
+    let child = create_command(&adb_path)
+        .args(["-s", &device, "tcpip", "5555"])
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .map_err(|e| format!("Failed to start adb tcpip: {}", e))?;
+    let output = timeout(Duration::from_secs(5), child.wait_with_output())
+        .await
+        .map_err(|_| "adb tcpip timed out".to_string())?
+        .map_err(|e| e.to_string())?;
+    if !output.status.success() {
+        let err = String::from_utf8_lossy(&output.stderr).trim().to_string();
+        let _ = window.emit("scrcpy-log", format!("[ADB ERROR] {}", err));
+        return Ok(json!({
+            "success": false,
+            "message": if err.is_empty() { "adb tcpip failed".to_string() } else { err }
+        }));
+    }
+
+    // 2) adbd needs a beat to come back up before the connect can land.
+    tokio::time::sleep(Duration::from_millis(1500)).await;
+
+    let target = format!("{}:5555", ip);
+    let child = create_command(&adb_path)
+        .args(["connect", &target])
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .map_err(|e| format!("Failed to start adb connect: {}", e))?;
+    let output = timeout(Duration::from_secs(7), child.wait_with_output())
+        .await
+        .map_err(|_| "adb connect timed out".to_string())?
+        .map_err(|e| e.to_string())?;
+    let out_text = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    if !out_text.is_empty() {
+        let _ = window.emit("scrcpy-log", format!("[ADB] {}", out_text));
+    }
+    let success = output.status.success()
+        && !out_text.contains("cannot connect")
+        && !out_text.contains("failed");
+    if success {
+        let _ = window.emit("scrcpy-log", format!("[OK] Wireless ready at {} — you can unplug the cable.", target));
+    }
+    Ok(json!({ "success": success, "ip": ip, "port": 5555, "message": out_text }))
+}
+
+// Pull the first dotted-quad after "src"/"inet" out of `ip` output.
+// Skips IPv6 candidates ("inet6 fe80::.../64" yields nothing valid), so the
+// caller always gets a wlan v4 address or None.
+fn find_wlan_ipv4(text: &str) -> Option<String> {
+    let tokens: Vec<&str> = text.split_whitespace().collect();
+    for (i, tok) in tokens.iter().enumerate() {
+        if *tok != "src" && *tok != "inet" {
+            continue;
+        }
+        let raw = tokens.get(i + 1)?;
+        let candidate = raw.split('/').next().unwrap_or("");
+        let segs: Vec<&str> = candidate.split('.').collect();
+        let is_v4 = segs.len() == 4
+            && segs.iter().all(|s| {
+                !s.is_empty() && s.len() <= 3 && s.chars().all(|c| c.is_ascii_digit())
+            });
+        if is_v4 {
+            return Some(candidate.to_string());
+        }
+    }
+    None
+}
+
 
 

@@ -68,6 +68,8 @@ export const zhCN: Translations = {
         aboutDonate: '捐赠'
     },
     sidebar: {
+        gotoWireless: '切换到 Wi-Fi',
+        switching: '切换中…',
         deviceHub: '设备中心',
         killAdb: '结束 ADB',
         killAdbTitle: '强制结束所有 ADB 操作',
@@ -274,6 +276,10 @@ export const zhCN: Translations = {
         diagnosticSavedAlert: '诊断报告已保存到“下载”文件夹：{fileName}'
     },
     alerts: {
+        wirelessOkTitle: '已连接无线',
+        wirelessOkMsg: '已在 {ip}:5555 就绪 — 可以拔掉数据线。',
+        wirelessFailTitle: '切换到无线失败',
+        wirelessFailMsg: '详情见控制台。手机必须处于 Wi-Fi 网络。',
         newAppVersionTitle: '有新版本：v{v}',
         newAppVersionMsg: '查看更新内容并从 GitHub 发布页下载新版本。',
         updateOpenBtn: '前往 GitHub',
