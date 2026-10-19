@@ -2151,6 +2151,24 @@ pub async fn run_scrcpy(
         None
     };
 
+    // One session per device: launching with a live session for this device
+    // would overwrite the registry entry and orphan the previous child
+    // (Stop would then never see it — e.g. audio kept flowing). Replace it.
+    // The guard must be released before the await below, hence the binding.
+    let existing_to_replace = state
+        .processes
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .remove(&config.device);
+    if let Some(mut existing) = existing_to_replace {
+        let _ = window.emit(
+            "scrcpy-log",
+            "[SYSTEM] Replacing the previous session for this device.".to_string(),
+        );
+        let _ = existing.kill().await;
+        tokio::time::sleep(Duration::from_millis(300)).await;
+    }
+
     // First attempt: honour the user's audio codec choice. In "auto" mode this
     // launches without --audio-codec, matching the previous default behaviour.
     let initial_args = build_scrcpy_args(&config, video_dir.clone(), None);
@@ -2914,6 +2932,8 @@ pub async fn stop_scrcpy(
 
     // Mic bridge cleanup: when the last session is gone, drop the shared
     // virtual sink (other running sessions must keep it alive).
+    // Mic bridge cleanup: when the last session is gone, drop the shared
+    // virtual sink (other running sessions must keep it alive).
     if state
         .processes
         .lock()
@@ -2926,6 +2946,55 @@ pub async fn stop_scrcpy(
         drop(&window);
     }
     Ok(())
+}
+
+// App exit teardown: kill every registered child (mirror, camera, mic
+// bridge) and unload the mic sink, so closing the app cannot leave audio
+// or a mirror running in the background.
+pub fn teardown_sessions(app_handle: &tauri::AppHandle) {
+    let state = app_handle.state::<ScrcpyState>();
+    let children: Vec<_> = {
+        let mut processes = state.processes.lock().unwrap_or_else(|e| e.into_inner());
+        processes.drain().collect()
+    };
+    for (_, mut child) in children {
+        if let Some(pid) = child.id() {
+            #[cfg(target_os = "windows")]
+            {
+                let _ = StdCommand::new("taskkill")
+                    .args(&["/PID", &pid.to_string(), "/T", "/F"])
+                    .creation_flags(CREATE_NO_WINDOW)
+                    .output();
+            }
+            #[cfg(not(target_os = "windows"))]
+            {
+                let _ = StdCommand::new("kill").arg(pid.to_string()).output();
+            }
+        }
+        let _ = child.start_kill();
+    }
+    #[cfg(unix)]
+    teardown_mic_sink();
+}
+
+// Synchronous sink teardown for process exit: event handlers run outside
+// the async runtime, so this cannot reuse the window-based helper.
+#[cfg(unix)]
+fn teardown_mic_sink() {
+    let Ok(modules) = StdCommand::new("pactl")
+        .args(["list", "short", "modules"])
+        .output()
+        .map(|o| String::from_utf8_lossy(&o.stdout).to_string())
+    else {
+        return;
+    };
+    let module_idx = modules
+        .lines()
+        .find(|l| l.contains(&format!("sink_name={}", MIC_SINK_NAME)))
+        .and_then(|l| l.split('\t').next().map(str::to_string));
+    if let Some(idx) = module_idx {
+        let _ = StdCommand::new("pactl").args(["unload-module", &idx]).output();
+    }
 }
 
 #[tauri::command]

@@ -80,7 +80,7 @@ pub fn run() {
         // shortcuts are registered below in setup.
         .plugin(shortcuts::plugin());
 
-    builder
+    let app = builder
         .setup(|app| {
             app.manage(ScrcpyState {
                 processes: Mutex::new(HashMap::new()),
@@ -139,8 +139,16 @@ pub fn run() {
             commands::goto_wireless,
             get_app_version
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application");
+
+    // Kill every registered child + drop the mic sink on exit, so closing
+    // the app cannot leave sessions (or audio) running in the background.
+    app.run(|app_handle, event| {
+        if let tauri::RunEvent::Exit = event {
+            commands::teardown_sessions(app_handle);
+        }
+    });
 }
 
 #[tauri::command]
