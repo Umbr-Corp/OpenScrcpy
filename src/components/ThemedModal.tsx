@@ -19,6 +19,10 @@ interface ThemedModalProps {
     showCancel?: boolean;
     cancelLabel?: string;
     onCancel?: () => void;
+    // Download screen: deterministic bar + a bytes caption. When set, the
+    // action footer goes away (buttons mean nothing mid-download).
+    progress?: number;
+    progressDetail?: string;
 }
 
 // Kind is signalled by border style (solid vs dashed) + a text label, never
@@ -44,7 +48,9 @@ export default function ThemedModal({
     onSecondary,
     showCancel = false,
     cancelLabel,
-    onCancel
+    onCancel,
+    progress,
+    progressDetail
 }: ThemedModalProps) {
     const { t } = useI18n();
 
@@ -55,6 +61,7 @@ export default function ThemedModal({
     const Icon = KIND_ICON[kind];
     const dashed = DASHED_KINDS.has(kind);
     const borderStyle = dashed ? { borderStyle: 'dashed' as const } : undefined;
+    const isProgress = typeof progress === 'number';
 
     return (
         <Modal
@@ -94,9 +101,34 @@ export default function ThemedModal({
                 <p className="ds-caption max-w-[280px] whitespace-pre-line" style={{ color: 'var(--text-muted)' }}>
                     {message}
                 </p>
+
+                {/* Determinate download bar; the text message carries the
+                    percent for screen readers, the bar for everyone else. */}
+                {isProgress && (
+                    <div className="mt-5 w-full max-w-[280px]">
+                        <div
+                            role="progressbar"
+                            aria-valuemin={0}
+                            aria-valuemax={100}
+                            aria-valuenow={progress}
+                            className="ds-inset h-2.5 w-full overflow-hidden rounded-sm"
+                        >
+                            <div
+                                className="h-full rounded-sm"
+                                style={{ width: `${progress}%`, background: 'var(--primary)', transition: 'width 150ms linear' }}
+                            />
+                        </div>
+                        {progressDetail && (
+                            <div className="ds-caption mt-2" style={{ color: 'var(--text-muted)' }}>
+                                {progressDetail}
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
 
             {/* Footer Actions */}
+            {!isProgress && (
             <div className="p-4 pt-0 flex gap-3">
                 {showCancel && (
                     <button
@@ -130,6 +162,7 @@ export default function ThemedModal({
                     {resolvedActionLabel}
                 </button>
             </div>
+            )}
         </Modal>
     );
 }

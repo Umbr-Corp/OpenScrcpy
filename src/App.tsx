@@ -72,6 +72,8 @@ function App() {
     showCancel?: boolean;
     cancelLabel?: string;
     onCancel?: () => void;
+    progress?: number;
+    progressDetail?: string;
   }>({
     isOpen: false,
     title: '',
@@ -106,6 +108,9 @@ function App() {
     onCancel?: () => void;
     secondaryLabel?: string;
     onSecondary?: () => void;
+    // Download screen (ThemedModal renders a bar and hides its buttons).
+    progress?: number;
+    progressDetail?: string;
   }
 
   const showAlert = (opts: AlertOptions) => {
@@ -201,16 +206,35 @@ function App() {
       // whole app through showAlert (a new alert object every call). Showing
       // only on integer-percent change caps it at ~101 renders per download.
       let lastShownPct = -1;
+      const fmtMb = (b: number) => (b / (1024 * 1024)).toFixed(1);
       await update.downloadAndInstall((event) => {
         if (event.event === 'Started') {
           total = event.data.contentLength ?? 0;
+          // First frame of the download bar (0%) so the screen is up before
+          // the first chunk lands.
+          if (total > 0) {
+            lastShownPct = 0;
+            showAlert({
+              title: t('about.autoDownloading'),
+              message: t('about.autoProgress', { p: 0 }),
+              kind: 'info',
+              progress: 0,
+              progressDetail: `0/${fmtMb(total)} MB`
+            });
+          }
         } else if (event.event === 'Progress') {
           done += event.data.chunkLength;
           if (total > 0) {
             const p = Math.min(100, Math.round((done / total) * 100));
             if (p !== lastShownPct) {
               lastShownPct = p;
-              showAlert({ title: t('about.autoDownloading'), message: t('about.autoProgress', { p }), kind: 'info' });
+              showAlert({
+                title: t('about.autoDownloading'),
+                message: t('about.autoProgress', { p }),
+                kind: 'info',
+                progress: p,
+                progressDetail: `${fmtMb(done)}/${fmtMb(total)} MB`
+              });
             }
           }
         }
@@ -236,7 +260,7 @@ function App() {
       .trim();
     showAlert({
       title: t('alerts.newAppVersionTitle', { v: info.latest }),
-      message: notes || t('alerts.newAppVersionMsg'),
+      message: `${t('alerts.newAppVersionFrom', { old: appVersion, v: info.latest })}\n\n${notes || t('alerts.newAppVersionMsg')}`,
       kind: 'info',
       actionLabel: t('about.autoUpdateBtn'),
       onAction: handleAutoUpdate,
@@ -602,6 +626,8 @@ function App() {
           showCancel={alertState.showCancel}
           cancelLabel={alertState.cancelLabel}
           onCancel={alertState.onCancel}
+          progress={alertState.progress}
+          progressDetail={alertState.progressDetail}
         />
       </div>
     </ErrorBoundary>
