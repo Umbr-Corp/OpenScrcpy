@@ -1837,8 +1837,8 @@ async fn unload_mic_sink(window: &Window) {
 #[cfg(unix)]
 async fn spawn_mic_route_watcher(window: Window, device: String, app_handle: tauri::AppHandle) {
     tokio::spawn(async move {
-        let mut last: Option<(String, bool)> = None;
         let mut attempts: u32 = 0;
+        let mut routed_seen = false;
         loop {
             let session_alive = app_handle
                 .state::<ScrcpyState>()
@@ -1850,16 +1850,22 @@ async fn spawn_mic_route_watcher(window: Window, device: String, app_handle: tau
                 break;
             }
             attempts += 1;
+            let mut routed_now = false;
             if let Some((display, routed)) = poll_mic_route(&window).await {
-                if last.as_ref() != Some(&(display.clone(), routed)) {
-                    let _ = window.emit("mic-route", (display.clone(), routed));
-                    last = Some((display, routed));
+                routed_now = routed;
+                if routed_now {
+                    routed_seen = true;
                 }
+                // Emit every pass instead of only on change: the GUI only
+                // subscribes while the mic tab is mounted, so a remounted tab
+                // would otherwise stay without destination info until the
+                // route actually changes. Traffic stays ~2 events/s at worst,
+                // and the frontend just updates two display rows.
+                let _ = window.emit("mic-route", (display, routed));
             }
             // Fast cadence while hunting the fresh stream (the handshake
             // lands in ~1.3s), slow down once routed.
-            let steady = last.as_ref().map(|(_, routed)| *routed).unwrap_or(false);
-            if steady || attempts > 10 {
+            if routed_seen || attempts > 10 {
                 tokio::time::sleep(Duration::from_millis(2000)).await;
             } else {
                 tokio::time::sleep(Duration::from_millis(500)).await;

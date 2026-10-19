@@ -3,6 +3,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { useI18n } from '../../i18n';
 import { isTauri } from '../../tauri';
+import { LogLevel } from '../../logs';
 import { loadStoredJSON } from './storage';
 import { ScrcpyConfig } from './types';
 
@@ -22,7 +23,7 @@ interface UseSessionOptions {
     /** config.rememberWindowPosition, forwarded raw: the ref below converts
      *  the possible undefined to its "on unless false" semantics. */
     rememberWindowPosition?: boolean;
-    addLogs: (lines: string | string[]) => void;
+    addLogs: (lines: string | string[], level?: LogLevel) => void;
 }
 
 /** Mirror sessions and device-side actions: launching/stopping scrcpy,
@@ -94,7 +95,7 @@ export function useSession({ scrcpyPath, activeDevice, rememberWindowPosition, a
 
     const runScrcpy = async (config: ScrcpyConfig) => {
         try {
-            addLogs(t('logs.initializingScrcpy', { device: config.device }));
+            addLogs(t('logs.initializingScrcpy', { device: config.device }), 'system');
             // Resolve the saved position for this specific device only, so
             // launching one device never reuses another device's window spot.
             const savedPos = config.rememberWindowPosition !== false ? windowPositions[config.device] : undefined;
@@ -105,7 +106,7 @@ export function useSession({ scrcpyPath, activeDevice, rememberWindowPosition, a
             };
             await invoke('run_scrcpy', { config: configWithPos });
         } catch (e: any) {
-            addLogs(t('logs.failedToStartScrcpy', { error: String(e) }));
+            addLogs(t('logs.failedToStartScrcpy', { error: String(e) }), 'err');
         }
     };
 
@@ -132,7 +133,7 @@ export function useSession({ scrcpyPath, activeDevice, rememberWindowPosition, a
 
     const listScrcpyOptions = async (device: string, arg: string, customPath?: string) => {
         try {
-            addLogs(t('logs.runningScrcpyArg', { arg }));
+            addLogs(t('logs.runningScrcpyArg', { arg }), 'system');
             const res: any = await invoke('list_scrcpy_options', { device, arg, customPath: customPath || scrcpyPath });
             if (res.output) {
                 const lines = res.output.split('\n');
@@ -168,37 +169,37 @@ export function useSession({ scrcpyPath, activeDevice, rememberWindowPosition, a
                     if (cameras.length > 0) {
                         setDetectedCameras(cameras);
                     } else {
-                        addLogs(t('logs.noCamerasParsed'));
+                        addLogs(t('logs.noCamerasParsed'), 'warn');
                     }
                 }
             }
             return res;
         } catch (e: any) {
-            addLogs(t('logs.genericError', { error: String(e) }));
+            addLogs(t('logs.genericError', { error: String(e) }), 'err');
             return { success: false, message: e };
         }
     };
 
     const pushFile = async (device: string, filePath: string, customPath?: string) => {
         try {
-            addLogs(t('logs.pushingFile', { device, filePath }));
+            addLogs(t('logs.pushingFile', { device, filePath }), 'system');
             const res: any = await invoke('push_file', { device, filePath, customPath: customPath || scrcpyPath });
             addLogs(t('logs.adbPrefix', { message: String(res.message) }));
             return res;
         } catch (e: any) {
-            addLogs(t('logs.genericError', { error: String(e) }));
+            addLogs(t('logs.genericError', { error: String(e) }), 'err');
             return { success: false, message: e };
         }
     };
 
     const installApk = async (device: string, filePath: string, customPath?: string) => {
         try {
-            addLogs(t('logs.installingApk', { device, filePath }));
+            addLogs(t('logs.installingApk', { device, filePath }), 'system');
             const res: any = await invoke('install_apk', { device, filePath, customPath: customPath || scrcpyPath });
             addLogs(t('logs.adbPrefix', { message: String(res.message) }));
             return res;
         } catch (e: any) {
-            addLogs(t('logs.genericError', { error: String(e) }));
+            addLogs(t('logs.genericError', { error: String(e) }), 'err');
             return { success: false, message: e };
         }
     };
@@ -208,7 +209,7 @@ export function useSession({ scrcpyPath, activeDevice, rememberWindowPosition, a
             // Check if user specifically typed scrcpy or adb to format log nicely
             const lower = command.trim().toLowerCase();
             const prefix = (lower.startsWith('scrcpy') || lower.startsWith('adb')) ? '' : 'adb ';
-            addLogs(`> ${prefix}${command}`);
+            addLogs(`> ${prefix}${command}`, 'system');
 
             const res: any = await invoke('run_terminal_command', {
                 device: activeDevice,
@@ -226,7 +227,7 @@ export function useSession({ scrcpyPath, activeDevice, rememberWindowPosition, a
             }
             return res;
         } catch (e: any) {
-            addLogs(t('logs.commandFailed', { error: String(e) }));
+            addLogs(t('logs.commandFailed', { error: String(e) }), 'err');
             return { success: false, message: e };
         }
     };

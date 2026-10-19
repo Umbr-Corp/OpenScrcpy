@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Auditoria de Frontend — OpenScrcpy (v2, achados validados)</title>
+<style>
+  :root {
+    --bg-base: #16161a;
+    --bg-surface: #1e1e24;
+    --bg-inset: #26262d;
+    --border-base: #3a3a42;
+    --text-base: #fafafa;
+    --text-secondary: #b8b8c0;
+    --text-muted: #8a8a95;
+    --primary: #8fa6ff;
+    --success: #57d06f;
+    --warning: #e0c559;
+    --danger: #f88686;
+    --radius-md: 10px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg-base);
+    color: var(--text-base);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.55;
+    padding: 40px 24px 80px;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; }
+  header.meta { border-bottom: 1px solid var(--border-base); padding-bottom: 24px; margin-bottom: 32px; }
+  h1 { font-size: 26px; margin: 0 0 8px; }
+  h1 small { display: block; font-size: 14px; color: var(--text-muted); font-weight: 400; margin-top: 6px; }
+  .meta p { margin: 4px 0; color: var(--text-secondary); font-size: 14px; }
+  .badges { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+  .badge {
+    border: 1px solid var(--border-base);
+    border-radius: 999px;
+    padding: 4px 14px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    background: var(--bg-surface);
+  }
+  .badge strong { color: var(--text-base); }
+  .badge.b1 { border-style: dashed; border-color: var(--danger); }
+  .badge.b2 { border-style: dashed; border-color: var(--warning); }
+  .badge.ok-badge { border-color: var(--success); color: var(--success); }
+  .badge.adj { border-color: var(--warning); color: var(--warning); }
+  h2 { font-size: 18px; margin: 40px 0 4px; }
+  h2 + p.sub { margin: 0 0 16px; color: var(--text-muted); font-size: 13.5px; }
+  .card {
+    border: 1px solid var(--border-base);
+    border-radius: var(--radius-md);
+    background: var(--bg-surface);
+    padding: 16px 20px;
+    margin-bottom: 14px;
+  }
+  .card.p1 { border-style: dashed; border-color: var(--danger); }
+  .card.p2 { border-style: dashed; border-color: var(--warning); }
+  .card.p3 { border-left: 3px solid var(--text-muted); }
+  .card.reframed { border-color: var(--warning); border-left: 3px solid var(--warning); }
+  .card .title { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+  .card .num { color: var(--text-muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+  .card h3 { margin: 0; font-size: 15.5px; }
+  .verdict {
+    font-size: 12px;
+    letter-spacing: .03em;
+    border-radius: 999px;
+    padding: 2px 10px;
+    border: 1px dashed var(--border-base);
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+  .verdict.ok { border-color: var(--success); color: var(--success); }
+  .verdict.adj { border-color: var(--warning); color: var(--warning); }
+  .verdict.refuted { border-color: var(--danger); color: var(--danger); }
+  .card p { margin: 6px 0 0; font-size: 14px; color: var(--text-secondary); }
+  .proof b { color: var(--text-base); font-weight: 600; }
+  .file {
+    font-family: ui-monospace, monospace;
+    font-size: 12.5px;
+    background: var(--bg-inset);
+    border: 1px solid var(--border-base);
+    border-radius: 6px;
+    padding: 1px 8px;
+    color: var(--primary);
+    white-space: nowrap;
+  }
+  .plan {
+    margin-top: 10px;
+    padding: 10px 14px;
+    background: var(--bg-inset);
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+  .plan b { color: var(--primary); font-weight: 600; }
+  .plan .eff { color: var(--text-muted); font-size: 12px; margin-top: 4px; }
+  .alt { margin-top: 6px; padding-top: 8px; border-top: 1px dashed var(--border-base); }
+  .alt::before { content: "Alternativa rejeitada: "; color: var(--danger); font-weight: 600; }
+  .good { border-left: 3px solid var(--success); }
+  .good ul { margin: 8px 0 0; padding-left: 20px; color: var(--text-secondary); font-size: 14px; }
+  .good li { margin-bottom: 6px; }
+  .good .h { color: var(--success); font-weight: 600; }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--border-base); vertical-align: top; }
+  th { color: var(--text-muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+  td .file { border: none; background: transparent; padding: 0; }
+  .next {
+    margin-top: 32px;
+    background: var(--bg-inset);
+    border: 1px solid var(--primary);
+    border-radius: var(--radius-md);
+    padding: 16px 20px;
+  }
+  .next h2 { margin: 0 0 6px; font-size: 15px; color: var(--primary); }
+  .next p { margin: 0; font-size: 14px; color: var(--text-secondary); }
+  footer { margin-top: 56px; padding-top: 20px; border-top: 1px solid var(--border-base); color: var(--text-muted); font-size: 12.5px; }
+  .deltas { background: var(--bg-surface); border: 1px dashed var(--border-base); border-radius: var(--radius-md); padding: 14px 20px; margin-bottom: 24px; font-size: 13.5px; color: var(--text-secondary); }
+  .deltas b { color: var(--text-base); }
+  .deltas li { margin-bottom: 4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="meta">
+  <h1>Auditoria de Frontend — OpenScrcpy <small>v2 · re-verificação linha a linha dos achados da v1</small></h1>
+  <p>Cada achado da v1 foi relido no código real, com a hipótese testada (grep, re-leitura, <code>scrcpy --help</code> v5.0.1). Esta versão separa o que confirmou, o que ajusta, e escolhe a melhor resolução entre alternativas discutidas.</p>
+  <div class="badges">
+    <span class="badge b1"><strong>4</strong> P1 confirmados</span>
+    <span class="badge b2"><strong>4</strong> P2 confirmados</span>
+    <span class="badge adj"><strong>1</strong> P1 reenquadrado (3) · <strong>1</strong> rebaixado (9)</span>
+    <span class="badge ok-badge">hipótese vp8/vp9 refutada</span>
+  </div>
+</header>
+
+<div class="deltas">
+  <b>Δ Correções v1 → v2:</b>
+  <ul style="margin:6px 0 0; padding-left:20px">
+    <li><b>Δ1</b> — <span class="file">useDevices.ts:190-244</span> rebaixado P2 → P3: app de lifetime único, setState pós-unmount é inofensivo, e o não-retry é decisão comentada no código.</li>
+    <li><b>Δ2</b> — <span class="file">Sidebar.tsx:219-311</span> reenquadrado: DOM inválido + chips inalcançáveis por teclado confirmados, mas <b>nenhum mau funcionamento</b> no WebKitGTK — <code>stopPropagation</code> cobre o clique, e <code>validateDOMNesting</code> só existe em dev.</li>
+    <li><b>Δ3</b> — <span class="file">App.tsx</span> quantificado: 13 call sites de <code>showAlert</code>; gate por % inteiro derruba centenas de re-renders para ~100.</li>
+    <li><b>Δ4</b> — hipótese da v1 (<code>vp8/vp9</code> inválido como video-codec) <b>refutada</b>: <code>scrcpy --help</code> v5.0.1 lista h264/h265/av1/vp8/vp9. As listas do painel estão corretas.</li>
+    <li><b>Δ5</b> — <span class="file">LogPanel.tsx:18-24</span> com a regra corrigida: <b>en também tem palavras cobertas</b> (failed/error/success) — sem cobertura real: ru, fr, id, zh-CN, zh-TW, ar.</li>
+  </ul>
+</div>
+
+<h2>P1 · Confirmados</h2>
+<p class="sub">Cada card traz a prova, o melhor fix discutido e uma alternativa descartada.</p>
+
+<article class="card p1">
+  <div class="title"><span class="num">1</span><h3>showAlert por chunk no auto-update</h3><span class="verdict ok">CONFIRMADO</span><span class="file">App.tsx:206-216</span></div>
+  <p class="proof">Cada evento <code>Progress</code> do plugin updater chama <code>showAlert</code>, que faz <code>setAlertState</code> com <b>objeto novo a cada chamada</b> → re-render do App inteiro (Sidebar de ~600 linhas, ControlPanel, LogPanel). Números: 13 call sites de <code>showAlert</code> confirmados por grep; com AppImage de ~100 MB, são centenas de eventos de download. O custo é por <i>evento</i>, não por percentual visível.</p>
+  <div class="plan">
+    <b>Melhor fix</b>: guardar o último percentual inteiro exibido (<code>lastPctRef</code>) e só chamar <code>showAlert</code> quando <code>Math.round(p)</code> muda — cai de centenas para ~100 re-renders, distribuídos pela duração do download.
+    <div class="eff">Esforço: ~10 min, zero risco.</div>
+    <div class="alt">modal dedicado com barra de progresso própria. Melhor visual, mas só vale depois do gate; o gate resolve o custo hoje.</div>
+  </div>
+</article>
+
+<article class="card p1">
+  <div class="title"><span class="num">2</span><h3>Flag de onboarding escrito e nunca lido</h3><span class="verdict ok">CONFIRMADO — COM NUANCE</span><span class="file">useDownloads.ts:113-115 · :130</span></div>
+  <p class="proof">Fato cravo (grep): <code>scrcpy_onboarding_done</code> aparece <b>uma única vez</b> — o <code>setItem</code>. Nenhuma linha lê o flag, e <code>checkScrcpy</code> abre o modal sempre que <code>!found</code>.</p>
+  <p class="nuance" style="margin-top:6px"><b>Nuance que a v1 ignorava</b>: reabrir o modal enquanto o binário não existe é comportamento <i>razoável</i> — o app não funciona sem scrcpy e o modal é o melhor guia. O erro real é ignorar a preferência de quem já completou o setup: se a instalação é perdida, o modal volta a cada boot, com o botão Continuar desabilitado, recursivamente.</p>
+  <div class="plan">
+    <b>Melhor fix</b>: <code>if (!res.found && !localStorage.getItem('scrcpy_onboarding_done')) setIsOnboardingOpen(true)</code>. Quem já completou recebe o status vermelho normal no header (com caminho manual via popover do Engine); quem fechou o modal sem completar continua sendo guiado — o flag só é escrito ao completar, então o loop não reaparece.
+    <div class="eff">Esforço: ~10 min + teste unitário de <code>checkScrcpy</code> com <code>invoke</code> mockado.</div>
+    <div class="alt">apagar o flag morto e manter o comportamento atual — mais simples e honesto, mas preserva o loop irritante que motivou o achado.</div>
+  </div>
+</article>
+
+<article class="card p1 reframed">
+  <div class="title"><span class="num">3</span><h3>&lt;button&gt; aninhado + chips inalcançáveis por teclado</h3><span class="verdict adj">REENQUADRADO</span><span class="file">Sidebar.tsx:219-311</span></div>
+  <p class="proof">O que fica: o card é <code>&lt;button&gt;</code> contendo outro <code>&lt;button&gt;</code> real ("Ir para wireless", linha 298) — proibido pelo content model da tag; os chips de transporte são <code>span role="button"</code> <b>sem <code>tabIndex</code> e sem <code>onKeyDown</code></b>, então nunca recebem foco; e <code>role="button"</code> externo não pode conter focáveis (regra ARIA).</p>
+  <p class="proof"><b>O que a v1 exagerou</b>: não há mau funcionamento observável no WebKitGTK — o <code>stopPropagation</code> do botão interno impede o duplo disparo, e o warning do React só aparece em dev. O custo real é validade de HTML e a11y (teclado e leitores de tela), não crash.</p>
+  <div class="plan">
+    <b>Melhor fix</b>: card vira <code>&lt;div&gt;</code> com <code>onClick</code> (a seleção por mouse fica); chips e "Ir para wireless" viram <code>&lt;button&gt;</code> reais. HTML válido, chips entram no ciclo de Tab, nenhuma regra ARIA violada (o container externo não carrega <code>role</code>). Seleção por teclado entra pelos chips, que chamam o mesmo <code>onSelectDevice</code>.
+    <div class="eff">Esforço: ~30-40 min. <code>Sidebar.test.tsx</code> já existe — estender com teclado nos chips.</div>
+    <div class="alt">manter <code>&lt;button&gt;</code> externo e só adicionar key handler nos chips — deixa o aninhamento inválido e a regra AARI quebrada.</div>
+  </div>
+</article>
+
+<article class="card p1">
+  <div class="title"><span class="num">4</span><h3>Cores do terminal dependentes do idioma</h3><span class="verdict ok">CONFIRMADO — REGRA CORRIGIDA</span><span class="file">LogPanel.tsx:18-24</span></div>
+  <p class="proof">Regra real do código: <code>falha|erro|aviso|pronto|iniciad|concluíd</code> (pt) <b>e</b> <code>failed|error|connected|success|ready</code> (en) têm semântica; ru, fr, id, zh-CN, zh-TW e ar ficam sem cor em quase tudo. Os marcadores estruturais (<code>[ADB]</code>, <code>[SYSTEM]</code>, <code>[MIC]</code>) cobrem só uma parte das linhas — o resto dos <code>t('logs.*')</code> é texto nu (ex.: <code>logs.adbPrefix</code> é <code>'[ADB] {message}'</code>).</p>
+  <div class="plan">
+    <b>Melhor fix (estrutural)</b>: <code>LogEntry</code> ganha <code>level?: 'info'|'warn'|'err'|'ok'</code>; <code>appendLogs</code> aceita o nível; os ~10 emissores que conhecem o significado da linha passam o nível na chamada (useSession, useDevices, useDownloads). <code>logColor</code> respeita <code>level</code> primeiro, heurística de palavras como fallback. É i18n de verdade — nenhuma palavra para adivinhar.
+    <div class="eff">Esforço: ~45-60 min. Locales não mudam; muda a assinatura de <code>appendLogs</code> e o render.</div>
+    <div class="alt">quick fix de regex: marcadores primeiro + manter as palavras pt/en como fallback. 20 min, resolve 90% do dia a dia, mantém a heurística binária para os outros 6 locales.</div>
+  </div>
+</article>
+
+<h2>P2 · Re-verificados</h2>
+
+<article class="card p2">
+  <div class="title"><span class="num">5</span><h3>Trocar de aba com sessão ativa não avisa</h3><span class="verdict ok">CONFIRMADO</span><span class="file">ControlPanel.tsx:260-269 · App.tsx</span></div>
+  <p class="proof">O backend substitui a sessão registrada (comportamento correto); a lacuna é de visibilidade — nada na UI guarda <i>qual modo</i> está rodando, então Iniciar na aba nova mata a sessão antiga sem aviso.</p>
+  <div class="plan">
+    <b>Melhor fix (sem backend)</b>: guardar o modo no <code>handleStart</code> (<code>startedModeRef.current = config.sessionMode</code>); num próximo start com <code>isRunning</code> e modo diferente, interpor um <code>showAlert</code> de confirmação antes de <code>runScrcpy</code>. Uma vez por troca, não um aviso permanente.
+    <div class="eff">Esforço: ~30 min incl. chave de i18n ×8.</div>
+    <div class="alt">emissor do modo no <code>scrcpy-status</code> (registry guarda o modo) — nova fiação no backend, desnecessária para o caso.</div>
+  </div>
+</article>
+
+<article class="card p2">
+  <div class="title"><span class="num">6</span><h3><code>any</code> nos handlers de config</h3><span class="verdict ok">CONFIRMADO — FIX É O GENÉRICO</span><span class="file">Select.tsx:9-25 · ControlPanel.tsx:209 · SessionBehavior.tsx:98</span></div>
+  <p class="proof">Cravo: <code>onChange: (val: any)</code> no <code>Select</code> contamina tudo acima dele. O risco concreto: um campo recebendo o tipo errado (ex. <code>micBitrate</code> como string) cruza para o backend <b>sem erro de build</b> e só quebra em runtime.</p>
+  <div class="plan">
+    <b>Melhor fix</b>: <code>Select&lt;V extends string | number = string&gt;</code> com <code>options: { value: V }[]</code> e <code>onChange: (value: V) =&gt; void</code> — a inferência automática cobre os ~30 usos sem mudar nenhum call site na maioria — mais <code>handleChange&lt;K extends keyof ScrcpyConfig&gt;(field: K, value: ScrcpyConfig[K])</code>. Botar tipo errado num campo vira erro de <i>compilação</i> no ponto exato.
+    <div class="eff">Esforço: ~45-60 min, mecânico (o compilador aponta cada call site que quebra). Pega regressão de campo para sempre.</div>
+  </div>
+</article>
+
+<article class="card p2">
+  <div class="title"><span class="num">7</span><h3>showAlert com 10 parâmetros posicionais</h3><span class="verdict ok">CONFIRMADO</span><span class="file">App.tsx:100-125</span></div>
+  <p class="proof">13 call sites; pelo menos um passa <code>undefined</code> de marcador de posição para encostar num argumento posterior — ordem por memória é onde esse padrão vira bug de verdade.</p>
+  <div class="plan">
+    <b>Melhor fix</b>: assinatura <code>showAlert(opts: AlertOptions)</code> com <code>{ title, message, kind?, actions: AlertAction[] }</code>; atualizar os 13 call sites (o compilador aponta um a um). <code>ThemedModal</code> não muda.
+    <div class="eff">Esforço: ~30 min. Qualquer erro de migração = erro de TS, não de runtime.</div>
+  </div>
+</article>
+
+<article class="card p2">
+  <div class="title"><span class="num">8</span><h3>Re-renders 4×/s do mic-level atravessam a árvore</h3><span class="verdict adj">CONFIRMADO — FIX MUDOU DE DIREÇÃO</span><span class="file">App.tsx:365-388 · Sidebar/ControlPanel sem memo</span></div>
+  <p class="proof">Confirmado: com a ponte de mic ativa, <code>mic-level</code> chega ~4×/s e cada evento re-renderiza o App inteiro. O que mudou: o fix da v1 (<code>memo(Sidebar)</code>) <b>não funciona</b> — os callbacks passados ao Sidebar são recriados a cada render, então a comparação de props nunca empata; consertar isso exige <code>useCallback</code> em toda a cadeia, frágil a cada handler futuro.</p>
+  <div class="plan">
+    <b>Melhor fix</b>: isolar o medidor — componente <code>&lt;MicMeter&gt;</code> dentro do ControlPanel que assina <code>mic-level</code>/<code>mic-route</code>, guarda os valores em estado próprio e reseta via prop <code>sessionRunning</code> (muda só quando sessão liga/desliga). O App deixa de ouvir esses eventos e para de renderizar 4×/s; nada de memo em cadeia.
+    <div class="eff">Esforço: ~30-40 min. Componente testável com mock de <code>listen</code>.</div>
+    <div class="alt"><code>memo</code> + <code>useCallback</code> em toda a cadeia — mais código, frágil a novos handlers, mesmo resultado.</div>
+  </div>
+</article>
+
+<h2>P3 · Confirmados, baixa prioridade</h2>
+<table>
+  <tr><th>#</th><th>Achado · validação</th><th>Local</th><th>Fix recomendado</th></tr>
+  <tr><td>9 ▼</td><td><b>Rebaixado de P2.</b> App de lifetime único; setState pós-unmount é inofensivo; o não-retry é decisão comentada no código.</td><td><span class="file">useDevices.ts:190-244</span></td><td>Deixar como está; flag de cancelamento só se virar hot-path.</td></tr>
+  <tr><td>10</td><td>CONFIRMADO — <code>cameraFacing</code> só na declaração (grep).</td><td><span class="file">types.ts:56</span></td><td>Remover o campo.</td></tr>
+  <tr><td>11</td><td>CONFIRMADO — App sempre passa <code>onAddLog</code> (App.tsx:557): branch morta no LogPanel; o <code>alert()</code> do ErrorBoundary está num path real.</td><td><span class="file">LogPanel.tsx:104</span> · <span class="file">ErrorBoundary.tsx:73</span></td><td>Remover a branch morta; no ErrorBoundary, status inline ("Relatório salvo em {caminho}").</td></tr>
+  <tr><td>12</td><td>CONFIRMADO — <code>WindowButtons</code> já chama <code>useI18n()</code> 4 linhas acima.</td><td><span class="file">WindowChrome.tsx:86</span></td><td><code>t('common.windowControls')</code> + chave ×8.</td></tr>
+  <tr><td>13</td><td>CONFIRMADO — comentário "Route 1, no updater plugin yet" contradiz o código atual.</td><td><span class="file">App.tsx:190-194</span></td><td>Remover 2 linhas.</td></tr>
+  <tr><td>14</td><td>CONFIRMADO — comentário de tipos diz 32..256; UI oferece 64/128/192/256.</td><td><span class="file">types.ts:95-96</span> · <span class="file">ControlPanel.tsx:678-683</span></td><td>Adicionar opção 32 kbps (voz) ou alinhar o comentário.</td></tr>
+  <tr><td>15</td><td>CONFIRMADO — relatório de diagnóstico exporta o localStorage inteiro.</td><td><span class="file">LogPanel.tsx:82-99</span> · <span class="file">ErrorBoundary.tsx:52-77</span></td><td>Documentar no corpo do relatório o que está sendo exportado.</td></tr>
+</table>
+
+<h2>O que está sólido (re-verificado)</h2>
+<article class="card good">
+  <div class="title"><h3><span class="h">Fundamento correto</span></h3></div>
+  <ul>
+    <li><span class="h">i18n</span> — 8 × 324 chaves sem drift (script); fallback para <code>en</code> no deep-merge; guardas de prototype-pollution; RTL para ar; detecção de navigator.language correta (zh-hant → zh-TW, pt-* → pt-BR).</li>
+    <li><span class="h">Select</span> — listbox completo de verdade (activedescendant, Home/End, scrollIntoView, outside-click).</li>
+    <li><span class="h">Modal</span> — trap de Tab, Escape, restauração de foco no close; handler no backdrop separado do overlay resolve o bug target≠currentTarget documentado no comentário.</li>
+    <li><span class="h">Contenção de remount</span> — PerformanceGrid/Select/Toggle declarados no escopo de módulo com o porquê comentado (a poll de 5s fechava dropdowns); interval protegido por ref em useDevices.</li>
+    <li><span class="h">logs.ts</span> — caminho único de append, cap 100, timestamp por entrada; LogPanel memoizado.</li>
+    <li><span class="h">Posição de janela por device</span> — design correto e comentado, determinismo de localStorage por chave.</li>
+  </ul>
+</article>
+
+<div class="next">
+  <h2>Ordem ajustada após validação</h2>
+  <p>2 (10 min) → 1 (10 min) → 8 (isolar MicMeter) → 5 (confirmação de início) → 7 (options object) → 6 (Select genérico) → 4 (LogEntry.level) → 3 (markup do card). P3 em lote próprio. Total P1+P2: <b>~4 h</b> de trabalho focado, com dois testes novos baratos (checkScrcpy e MicMeter).</p>
+</div>
+
+<footer>
+  v2 — re-verificação em 19 out 2026 · base <code>09eecd2</code> (v1.1.2) · hipóteses testadas contra <code>scrcpy --help</code> v5.0.1, grep e re-leitura linha a linha. Mudanças v1→v2: 1 rebaixado (9), 1 reenquadrado (3), 2 fixes reinterpretados (4, 8), 1 hipótese refutada (vp8). Nenhum arquivo de código alterado neste passo.
+</footer>
+
+</div>
+</body>
+</html>

@@ -97,3 +97,12 @@ export interface ScrcpyConfig {
     /** Experimental: PipeWire RNNoise filter-chain sink on the PC. */
     micDenoise?: boolean;
 }
+
+/** Typed writer for one config field: `handleChange('micBitrate', val)` must
+ *  hand over a number, `handleChange('res', val)` a string, etc. Swapping a
+ *  wrong type across the dropdown boundary becomes a compile error at that
+ *  call site instead of a runtime one (frontend audit P2-6). */
+export type ConfigFieldSetter = <K extends keyof ScrcpyConfig>(
+    field: K,
+    value: ScrcpyConfig[K]
+) => void;

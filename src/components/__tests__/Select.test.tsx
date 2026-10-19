@@ -75,4 +75,24 @@ describe('Select', () => {
         await user.keyboard('{ArrowDown}');
         expect(trigger).toHaveFocus();
     });
+
+    it('carries the option value type through onChange (numbers stay numbers)', async () => {
+        const user = userEvent.setup();
+        const onChange = vi.fn();
+        render(
+            <Select<number>
+                value={60}
+                onChange={onChange}
+                options={[
+                    { value: 30, label: '30' },
+                    { value: 60, label: '60' }
+                ]}
+            />
+        );
+        await user.click(screen.getByRole('button'));
+        await user.click(screen.getByRole('option', { name: '30' }));
+        expect(onChange).toHaveBeenCalledWith(30);
+        // Guard against the string/any coercion that used to hide this.
+        expect(typeof onChange.mock.calls[0][0]).toBe('number');
+    });
 });

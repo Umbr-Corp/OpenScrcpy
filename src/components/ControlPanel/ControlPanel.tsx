@@ -1,9 +1,10 @@
-import { Play, Square, Monitor, Camera, LayoutGrid, Mic, Lock, Unlock, Settings2, Video, ExternalLink, Keyboard, Mouse } from 'lucide-react';
-import { RenderDriverSupport, ScrcpyConfig } from '../../hooks/useScrcpy';
+import { Play, Square, Monitor, Camera, LayoutGrid, Mic, Lock, Unlock, Settings2, Video, ExternalLink, Keyboard, Mouse, type LucideIcon } from 'lucide-react';
+import { ConfigFieldSetter, RenderDriverSupport, ScrcpyConfig } from '../../hooks/useScrcpy';
 import Tooltip from '../Tooltip';
 import Select from '../Select';
 import SliderRow from '../SliderRow';
 import { buildRendererOptions, mapRendererSelection } from './rendererOptions';
+import MicMeter from './MicMeter';
 import { useI18n } from '../../i18n';
 
 interface ControlPanelProps {
@@ -15,11 +16,6 @@ interface ControlPanelProps {
     onListOptions: (arg: string) => void;
     detectedCameras?: { id: string, name: string }[];
     renderDriverSupport?: RenderDriverSupport;
-    /** Live mic bridge level (dB, -60..0) while the bridge runs. */
-    micLevel?: number | null;
-    /** Destination of the bridge audio stream: sink description + "in
-     *  our virtual microphone" flag. */
-    micRoute?: { sink: string; ok: boolean } | null;
 }
 
 // Hover states for custom rows use Settings tokens only (no extra hues).
@@ -36,7 +32,7 @@ interface ToggleRowProps {
     onChange: (v: boolean) => void;
     label: string;
     hint?: string;
-    icon?: any;
+    icon?: LucideIcon;
 }
 
 // Single settings toggle row: label on the left, .ds-toggle on the right.
@@ -88,7 +84,7 @@ const PerformanceGrid = ({
     showCodec = true
 }: {
     config: ScrcpyConfig;
-    handleChange: (field: keyof ScrcpyConfig, value: any) => void;
+    handleChange: ConfigFieldSetter;
     rendererOptions: { value: string; label: string }[];
     showResolution?: boolean;
     showCodec?: boolean;
@@ -139,7 +135,7 @@ const PerformanceGrid = ({
                 <Select
                     label={t('controlPanel.fps')}
                     value={config.fps === undefined || config.fps === null ? 0 : config.fps}
-                    onChange={(val) => handleChange('fps', parseInt(val) === 0 ? undefined : parseInt(val))}
+                    onChange={(val) => handleChange('fps', val === 0 ? undefined : val)}
                     options={[
                         { value: 0, label: t('controlPanel.rendererAuto') || "Automatic" },
                         { value: 30, label: "30" },
@@ -199,15 +195,15 @@ export default function ControlPanel({
     onStop,
     isRunning,
     onListOptions,
-    micLevel = null,
-    micRoute = null,
     detectedCameras = [],
     renderDriverSupport = { hostOs: 'unknown', supportsRenderDriver: false, supportedDrivers: [] }
 }: ControlPanelProps) {
     const { t } = useI18n();
 
-    const handleChange = (field: keyof ScrcpyConfig, value: any) => {
-        setConfig({ ...config, [field]: value });
+    const handleChange: ConfigFieldSetter = (field, value) => {
+        const next = { ...config };
+        next[field] = value;
+        setConfig(next);
     };
 
     const rendererOptions = buildRendererOptions(renderDriverSupport, t('controlPanel.rendererAuto'));
@@ -216,6 +212,19 @@ export default function ControlPanel({
         optionClassName: 'cp-opt',
         customLabel: t('controlPanel.custom')
     };
+
+    // Which quick preset matches the current virtual-display size, so the
+    // trigger shows the preset name (or "custom"). Plain string on purpose:
+    // the options list is narrower than the possible matches.
+    const vdPreset: string = (() => {
+        const w = config.vdWidth;
+        const h = config.vdHeight;
+        if (w === 1920 && h === 1080) return "1080p";
+        if (w === 2560 && h === 1440) return "1440p";
+        if (w === 3840 && h === 2160) return "4k";
+        if (w === 2560 && h === 1080) return "ultrawide";
+        return "custom";
+    })();
 
     return (
         <main className="lg:col-span-6 space-y-4">
@@ -546,15 +555,7 @@ export default function ControlPanel({
                                     />
                                     <Select
                                         label={t('controlPanel.quickPresets')}
-                                        value={(() => {
-                                            const w = config.vdWidth;
-                                            const h = config.vdHeight;
-                                            if (w === 1920 && h === 1080) return "1080p";
-                                            if (w === 2560 && h === 1440) return "1440p";
-                                            if (w === 3840 && h === 2160) return "4k";
-                                            if (w === 2560 && h === 1080) return "ultrawide";
-                                            return "custom";
-                                        })()}
+                                        value={vdPreset}
                                         onChange={(val: string) => {
                                             if (val === '1080p') setConfig({ ...config, vdWidth: 1920, vdHeight: 1080 });
                                             if (val === '1440p') setConfig({ ...config, vdWidth: 2560, vdHeight: 1440 });
@@ -622,43 +623,7 @@ export default function ControlPanel({
                                     )}
                                 </div>
 
-                                <div className="flex items-center justify-between">
-                                    <span className="ds-label">{t('controlPanel.micDestLabel')}</span>
-                                    {!isRunning ? (
-                                        <span className="ds-caption" style={{ color: 'var(--text-muted)' }}>{t('controlPanel.micDestIdle')}</span>
-                                    ) : !micRoute?.sink ? (
-                                        <span className="ds-caption" style={{ color: 'var(--text-muted)' }}>{t('controlPanel.micDestSearching')}</span>
-                                    ) : (
-                                        <span
-                                            className="ds-caption ds-strong"
-                                            style={{ color: micRoute.ok ? 'var(--success, var(--primary))' : 'var(--warning, var(--secondary))' }}
-                                            title={micRoute.sink}
-                                        >
-                                            {micRoute.sink}{micRoute.ok ? '' : ' *'}
-                                        </span>
-                                    )}
-                                </div>
-
-                                {isRunning && (
-                                    <div className="space-y-1">
-                                        <div className="flex items-center justify-between">
-                                            <span className="ds-label">{t('controlPanel.micLevelLabel')}</span>
-                                            <span className="ds-caption font-mono" style={{ color: 'var(--text-muted)' }}>
-                                                {typeof micLevel === 'number' ? `${micLevel} dB` : '—'}
-                                            </span>
-                                        </div>
-                                        <div style={{ height: 8, borderRadius: 99, background: 'var(--surface-inset, rgba(0,0,0,0.25))', overflow: 'hidden' }}>
-                                            <div
-                                                style={{
-                                                    height: '100%',
-                                                    width: `${typeof micLevel === 'number' ? Math.max(0, Math.min(100, ((micLevel + 60) / 60) * 100)) : 0}%`,
-                                                    background: 'var(--primary)',
-                                                    transition: 'width 120ms linear'
-                                                }}
-                                            />
-                                        </div>
-                                    </div>
-                                )}
+                                <MicMeter sessionRunning={isRunning} />
 
                                 <div className="grid grid-cols-2 gap-x-4 gap-y-3">
                                     <Select

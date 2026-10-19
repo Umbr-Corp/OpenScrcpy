@@ -216,11 +216,16 @@ export default function Sidebar({
                                 const hasWireless = ids.some(id => id.includes('.'));
                                 const switching = wirelessSwitching != null && ids.includes(wirelessSwitching);
                                 return (
-                                    <button
+                                    /* The card selects on click; the real buttons inside
+                                       (transport chips, "go wireless") stop propagation and
+                                       keep their own keyboard activation. No role="button"
+                                       here on purpose: a button container may not hold
+                                       focusable children (ARIA), and keyboard selection
+                                       enters through the chips, which are real buttons. */
+                                    <div
                                         key={primary}
                                         onClick={() => onSelectDevice(primary)}
-                                        aria-pressed={isSelected}
-                                        className="ds-panel flex items-center gap-2 p-2 text-left w-full"
+                                        className="ds-panel flex items-center gap-2 p-2 text-left w-full cursor-pointer"
                                         style={isSelected ? { borderColor: 'var(--primary)' } : undefined}
                                     >
                                         <div className="ds-inset p-1.5 flex items-center justify-center shrink-0">
@@ -240,9 +245,9 @@ export default function Sidebar({
                                                     // distinct from the status badge.
                                                     <div className="tpx-group" role="group" aria-label={t('sidebar.transport')}>
                                                         {ids.map(id => id.includes('.') ? (
-                                                            <span
+                                                            <button
                                                                 key={id}
-                                                                role="button"
+                                                                type="button"
                                                                 aria-pressed={selectedDevice === id}
                                                                 aria-label={`${t('sidebar.wifi')}: ${id}`}
                                                                 className="tpx-seg"
@@ -251,11 +256,11 @@ export default function Sidebar({
                                                             >
                                                                 <Wifi size={9.5} />
                                                                 {t('sidebar.wifi')}
-                                                            </span>
+                                                            </button>
                                                         ) : (
-                                                            <span
+                                                            <button
                                                                 key={id}
-                                                                role="button"
+                                                                type="button"
                                                                 aria-pressed={selectedDevice === id}
                                                                 aria-label={`${t('sidebar.usb')}: ${id}`}
                                                                 className="tpx-seg"
@@ -264,15 +269,16 @@ export default function Sidebar({
                                                             >
                                                                 <Usb size={9.5} />
                                                                 {t('sidebar.usb')}
-                                                            </span>
+                                                            </button>
                                                         ))}
                                                     </div>
                                                 ) : ids.map(id => id.includes('.') ? (
-                                                    // One transport: informational badge; the
-                                                    // card click handles selection.
-                                                    <span
+                                                    // One transport: informational badge; chips and
+                                                    // card click both handle selection.
+                                                    <button
                                                         key={id}
-                                                        role="button"
+                                                        type="button"
+                                                        aria-pressed={selectedDevice === id}
                                                         aria-label={`${t('sidebar.wifi')}: ${id}`}
                                                         className="ds-badge cursor-pointer"
                                                         style={selectedDevice === id ? { borderColor: 'var(--primary)', color: 'var(--primary)' } : undefined}
@@ -280,11 +286,12 @@ export default function Sidebar({
                                                     >
                                                         <Wifi size={9.5} />
                                                         {t('sidebar.wifi')}
-                                                    </span>
+                                                    </button>
                                                 ) : (
-                                                    <span
+                                                    <button
                                                         key={id}
-                                                        role="button"
+                                                        type="button"
+                                                        aria-pressed={selectedDevice === id}
                                                         aria-label={`${t('sidebar.usb')}: ${id}`}
                                                         className="ds-badge cursor-pointer"
                                                         style={selectedDevice === id ? { borderColor: 'var(--primary)', color: 'var(--primary)' } : undefined}
@@ -292,7 +299,7 @@ export default function Sidebar({
                                                     >
                                                         <Usb size={9.5} />
                                                         {t('sidebar.usb')}
-                                                    </span>
+                                                    </button>
                                                 ))}
                                                 {usbId && !hasWireless && onGotoWireless && (
                                                     <button
@@ -308,7 +315,7 @@ export default function Sidebar({
                                                 )}
                                             </div>
                                         </div>
-                                    </button>
+                                    </div>
                                 );
                             })
                         )}
