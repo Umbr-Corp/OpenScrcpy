@@ -1838,6 +1838,7 @@ async fn unload_mic_sink(window: &Window) {
 async fn spawn_mic_route_watcher(window: Window, device: String, app_handle: tauri::AppHandle) {
     tokio::spawn(async move {
         let mut last: Option<(String, bool)> = None;
+        let mut attempts: u32 = 0;
         loop {
             let session_alive = app_handle
                 .state::<ScrcpyState>()
@@ -1848,13 +1849,21 @@ async fn spawn_mic_route_watcher(window: Window, device: String, app_handle: tau
             if !session_alive {
                 break;
             }
+            attempts += 1;
             if let Some((display, routed)) = poll_mic_route(&window).await {
                 if last.as_ref() != Some(&(display.clone(), routed)) {
                     let _ = window.emit("mic-route", (display.clone(), routed));
                     last = Some((display, routed));
                 }
             }
-            tokio::time::sleep(Duration::from_millis(2000)).await;
+            // Fast cadence while hunting the fresh stream (the handshake
+            // lands in ~1.3s), slow down once routed.
+            let steady = last.as_ref().map(|(_, routed)| *routed).unwrap_or(false);
+            if steady || attempts > 10 {
+                tokio::time::sleep(Duration::from_millis(2000)).await;
+            } else {
+                tokio::time::sleep(Duration::from_millis(500)).await;
+            }
         }
     });
 }
