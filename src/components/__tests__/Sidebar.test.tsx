@@ -1,4 +1,5 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import Sidebar from '../Sidebar';
 import { describe, it, expect, vi } from 'vitest';
 
@@ -36,6 +37,40 @@ describe('Sidebar Component', () => {
         render(<Sidebar {...mockProps} />);
         fireEvent.click(screen.getByText('device2'));
         expect(mockProps.onSelectDevice).toHaveBeenCalledWith('device2');
+    });
+
+    it('keeps the device card free of nested interactive elements', () => {
+        const { container } = render(<Sidebar {...mockProps} />);
+        // The card is a clickable div; the transport chips are real buttons,
+        // never a button inside a button (invalid HTML + broken a11y).
+        expect(container.querySelector('button button')).toBeNull();
+    });
+
+    it('selects the transport via keyboard on its chip', async () => {
+        const user = userEvent.setup();
+        const onSelectDevice = vi.fn();
+        render(
+            <Sidebar
+                {...mockProps}
+                devices={['device2']}
+                onSelectDevice={onSelectDevice}
+            />
+        );
+        const chip = screen.getByRole('button', { name: /USB: device2/ });
+        chip.focus();
+        await user.keyboard('{Enter}');
+        expect(onSelectDevice).toHaveBeenCalledWith('device2');
+        // One selection: the chip's stopPropagation keeps the card's
+        // onClick from selecting again.
+        expect(onSelectDevice).toHaveBeenCalledTimes(1);
+    });
+
+    it('marks the selected transport chip as pressed', () => {
+        render(<Sidebar {...mockProps} />);
+        const chip = screen.getByRole('button', { name: 'USB: device1' });
+        expect(chip).toHaveAttribute('aria-pressed', 'true');
+        const other = screen.getByRole('button', { name: 'USB: device2' });
+        expect(other).toHaveAttribute('aria-pressed', 'false');
     });
 
     it('calls onRefresh when refresh button is clicked', () => {

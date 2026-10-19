@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { open } from "@tauri-apps/plugin-dialog";
 import Sidebar from "./components/Sidebar";
@@ -91,36 +91,30 @@ function App() {
   } | null>(null);
   // Device being switched from USB to wireless (drives the card button state).
   const [wirelessSwitching, setWirelessSwitching] = useState<string | null>(null);
-  /** Live mic bridge level (dB) from the backend meter; null when idle. */
-  const [micLevel, setMicLevel] = useState<number | null>(null);
-  /** Current mic bridge destination: sink description + whether it is our
-   *  virtual microphone. */
-  const [micRoute, setMicRoute] = useState<{ sink: string; ok: boolean } | null>(null);
 
-  const showAlert = (
-    title: string,
-    message: string,
-    kind: 'warning' | 'error' | 'info' | 'success' = 'info',
-    actionLabel = t('common.ok'),
-    onAction?: () => void,
-    showCancel = false,
-    cancelLabel = t('common.cancel'),
-    onCancel?: () => void,
-    secondaryLabel?: string,
-    onSecondary?: () => void
-  ) => {
+  // Alerts moved from 10 positional parameters to an options object: one
+  // call site used to pass `undefined` mid-list just to reach a later
+  // argument. ThemedModal keeps its props unchanged.
+  interface AlertOptions {
+    title: string;
+    message: string;
+    kind?: 'warning' | 'error' | 'info' | 'success';
+    actionLabel?: string;
+    onAction?: () => void;
+    showCancel?: boolean;
+    cancelLabel?: string;
+    onCancel?: () => void;
+    secondaryLabel?: string;
+    onSecondary?: () => void;
+  }
+
+  const showAlert = (opts: AlertOptions) => {
     setAlertState({
       isOpen: true,
-      title,
-      message,
-      kind,
-      actionLabel,
-      onAction,
-      secondaryLabel,
-      onSecondary,
-      showCancel,
-      cancelLabel,
-      onCancel
+      ...opts,
+      kind: opts.kind ?? 'info',
+      actionLabel: opts.actionLabel ?? t('common.ok'),
+      cancelLabel: opts.cancelLabel ?? t('common.cancel')
     });
   };
 
@@ -158,23 +152,23 @@ function App() {
           const { invoke } = await import('@tauri-apps/api/core');
           const updateRes: any = await invoke('check_scrcpy_update', { customPath: config.scrcpyPath });
           if (updateRes && updateRes.update_available) {
-            showAlert(
-              t('alerts.updateAvailableTitle'),
-              t('alerts.updateAvailableMessage', {
+            showAlert({
+              title: t('alerts.updateAvailableTitle'),
+              message: t('alerts.updateAvailableMessage', {
                 local: updateRes.local_version || 'unknown',
                 latest: updateRes.latest_version || 'unknown'
               }),
-              'info',
-              t('alerts.updateBtn'),
-              async () => {
+              kind: 'info',
+              actionLabel: t('alerts.updateBtn'),
+              onAction: async () => {
                 if (config.scrcpyPath) {
                   setConfig(prev => ({ ...prev, scrcpyPath: undefined }));
                 }
                 await downloadScrcpy();
               },
-              true,
-              t('alerts.cancelBtn')
-            );
+              showCancel: true,
+              cancelLabel: t('alerts.cancelBtn')
+            });
           }
         } catch (e) {
           console.error("Failed to check for scrcpy updates:", e);
@@ -198,11 +192,15 @@ function App() {
       const { relaunch } = await import('@tauri-apps/plugin-process');
       const update = await check();
       if (!update) {
-        showAlert(t('alerts.appUpToDateTitle'), t('alerts.appUpToDateMsg', { v: appVersion }), 'info');
+        showAlert({ title: t('alerts.appUpToDateTitle'), message: t('alerts.appUpToDateMsg', { v: appVersion }), kind: 'info' });
         return;
       }
       let total = 0;
       let done = 0;
+      // Progress fires per chunk; without a gate each chunk re-renders the
+      // whole app through showAlert (a new alert object every call). Showing
+      // only on integer-percent change caps it at ~101 renders per download.
+      let lastShownPct = -1;
       await update.downloadAndInstall((event) => {
         if (event.event === 'Started') {
           total = event.data.contentLength ?? 0;
@@ -210,18 +208,21 @@ function App() {
           done += event.data.chunkLength;
           if (total > 0) {
             const p = Math.min(100, Math.round((done / total) * 100));
-            showAlert(t('about.autoDownloading'), t('about.autoProgress', { p }), 'info');
+            if (p !== lastShownPct) {
+              lastShownPct = p;
+              showAlert({ title: t('about.autoDownloading'), message: t('about.autoProgress', { p }), kind: 'info' });
+            }
           }
         }
       });
-      showAlert(t('about.autoInstalled'), t('about.autoRestarting'), 'success');
+      showAlert({ title: t('about.autoInstalled'), message: t('about.autoRestarting'), kind: 'success' });
       await relaunch();
     } catch (e) {
-      showAlert(
-        t('about.autoFailTitle'),
-        `${t('about.autoFailMsg')}\n\n${t('alerts.wirelessConsoleLabel')}: ${String(e)}`,
-        'warning'
-      );
+      showAlert({
+        title: t('about.autoFailTitle'),
+        message: `${t('about.autoFailMsg')}\n\n${t('alerts.wirelessConsoleLabel')}: ${String(e)}`,
+        kind: 'warning'
+      });
     }
   };
 
@@ -233,17 +234,16 @@ function App() {
       .replace(/^>\s?/gm, '')
       .replace(/[*`]/g, '')
       .trim();
-    showAlert(
-      t('alerts.newAppVersionTitle', { v: info.latest }),
-      notes || t('alerts.newAppVersionMsg'),
-      'info',
-      t('about.autoUpdateBtn'),
-      handleAutoUpdate,
-      true,
-      t('alerts.appCloseBtn'),
-      undefined,
-      t('alerts.updateOpenBtn'),
-      async () => {
+    showAlert({
+      title: t('alerts.newAppVersionTitle', { v: info.latest }),
+      message: notes || t('alerts.newAppVersionMsg'),
+      kind: 'info',
+      actionLabel: t('about.autoUpdateBtn'),
+      onAction: handleAutoUpdate,
+      showCancel: true,
+      cancelLabel: t('alerts.appCloseBtn'),
+      secondaryLabel: t('alerts.updateOpenBtn'),
+      onSecondary: async () => {
         try {
           const { invoke } = await import('@tauri-apps/api/core');
           await invoke('open_app_release');
@@ -251,7 +251,7 @@ function App() {
           window.open('https://github.com/Umbr-Corp/OpenScrcpy/releases/latest', '_blank');
         }
       }
-    );
+    });
   };
 
   const checkAppUpdate = async (silent: boolean) => {
@@ -262,11 +262,11 @@ function App() {
       if (res.update_available) setAppUpdateInfo(res);
       if (!silent) {
         if (res.update_available) openAppUpdateModal(res);
-        else showAlert(t('alerts.appUpToDateTitle'), t('alerts.appUpToDateMsg', { v: res.current }), 'info');
+        else showAlert({ title: t('alerts.appUpToDateTitle'), message: t('alerts.appUpToDateMsg', { v: res.current }), kind: 'info' });
       }
       return res;
     } catch {
-      if (!silent) showAlert(t('alerts.appCheckFailedTitle'), t('alerts.appCheckFailedMsg'), 'warning');
+      if (!silent) showAlert({ title: t('alerts.appCheckFailedTitle'), message: t('alerts.appCheckFailedMsg'), kind: 'warning' });
       return null;
     }
   };
@@ -298,23 +298,23 @@ function App() {
       const { invoke } = await import('@tauri-apps/api/core');
       const res = await invoke<{ success: boolean; message: string; ip?: string }>('goto_wireless', { device });
       if (res.success) {
-        showAlert(t('alerts.wirelessOkTitle'), t('alerts.wirelessOkMsg', { ip: res.ip ?? '' }), 'success');
+        showAlert({ title: t('alerts.wirelessOkTitle'), message: t('alerts.wirelessOkMsg', { ip: res.ip ?? '' }), kind: 'success' });
       } else {
         const detail = (res.message || '').trim();
         const hint = diagnoseWirelessFailure(detail);
-        showAlert(
-          t('alerts.wirelessFailTitle'),
-          detail ? `${hint}\n\n${t('alerts.wirelessConsoleLabel')}: ${detail}` : hint,
-          'warning'
-        );
+        showAlert({
+          title: t('alerts.wirelessFailTitle'),
+          message: detail ? `${hint}\n\n${t('alerts.wirelessConsoleLabel')}: ${detail}` : hint,
+          kind: 'warning'
+        });
       }
     } catch (e) {
       const detail = String(e).trim();
-      showAlert(
-        t('alerts.wirelessFailTitle'),
-        detail ? `${diagnoseWirelessFailure(detail)}\n\n${t('alerts.wirelessConsoleLabel')}: ${detail}` : t('alerts.wirelessHintGeneric'),
-        'warning'
-      );
+      showAlert({
+        title: t('alerts.wirelessFailTitle'),
+        message: detail ? `${diagnoseWirelessFailure(detail)}\n\n${t('alerts.wirelessConsoleLabel')}: ${detail}` : t('alerts.wirelessHintGeneric'),
+        kind: 'warning'
+      });
     } finally {
       setWirelessSwitching(null);
       refreshDevices().catch(() => { });
@@ -328,7 +328,7 @@ function App() {
     // Global Drag and Drop Listener (re-bind only if activeDevice changes)
     const unlisten = getCurrentWindow().listen<{ paths: string[] }>("tauri://drag-drop", (event) => {
       if (!activeDevice) {
-        setLogs(prev => appendLogs(prev, t('logs.noDeviceForDragDrop')));
+        setLogs(prev => appendLogs(prev, t('logs.noDeviceForDragDrop'), 'warn'));
         return;
       }
 
@@ -362,41 +362,55 @@ function App() {
     }
   }, [activeDevice]);
 
-  useEffect(() => {
-    // Live mic-bridge level (dB) and current destination emitted by the
-    // Rust sidecar (Linux only).
-    if (!isTauri()) return;
-    const unlistenLevel = getCurrentWindow().listen<number>("mic-level", (event) => {
-      const db = event.payload;
-      setMicLevel(typeof db === 'number' && Number.isFinite(db) ? Math.round(db) : null);
-    });
-    const unlistenRoute = getCurrentWindow().listen<[string, boolean]>("mic-route", (event) => {
-      const [sink, ok] = event.payload;
-      setMicRoute({ sink, ok });
-    });
-    return () => {
-      unlistenLevel.then(f => f());
-      unlistenRoute.then(f => f());
-    };
-  }, []);
+  // Session mode each device was started with, so a re-start on the same
+  // device can detect a tab switch (mirror/camera/desktop/mic share the
+  // session slot: the backend pre-kills the device's registered session,
+  // which used to be invisible to the user).
+  const startedModeByDeviceRef = useRef<Record<string, string>>({});
+  const sessionModeLabelKey: Record<string, string> = {
+    mirror: 'controlPanel.screen',
+    camera: 'controlPanel.camera',
+    desktop: 'controlPanel.desktop',
+    mic: 'controlPanel.microphone'
+  };
 
-  useEffect(() => {
-    if (!sessionRunning) {
-      setMicLevel(null);
-      setMicRoute(null);
-    }
-  }, [sessionRunning]);
-
-  const handleStart = async () => {
-    if (!activeDevice) {
-      showAlert(t('alerts.noDeviceSelectedTitle'), t('alerts.noDeviceSelectedMessage'), "warning");
-      return;
+  const performStart = async () => {
+    if (activeDevice) {
+      startedModeByDeviceRef.current[activeDevice] = config.sessionMode;
     }
     await runScrcpy(config);
   };
 
+  const handleStart = async () => {
+    if (!activeDevice) {
+      showAlert({ title: t('alerts.noDeviceSelectedTitle'), message: t('alerts.noDeviceSelectedMessage'), kind: 'warning' });
+      return;
+    }
+    // Only when THIS device has a live session running a different mode;
+    // sessions on other devices are never touched by the backend.
+    const runningMode = runningDevices.includes(activeDevice)
+      ? startedModeByDeviceRef.current[activeDevice]
+      : undefined;
+    if (runningMode && runningMode !== config.sessionMode) {
+      showAlert({
+        title: t('alerts.sessionReplaceTitle'),
+        message: t('alerts.sessionReplaceMsg', {
+          mode: t(sessionModeLabelKey[runningMode] ?? runningMode),
+          newMode: t(sessionModeLabelKey[config.sessionMode] ?? config.sessionMode)
+        }),
+        kind: 'warning',
+        actionLabel: t('alerts.sessionReplaceConfirm'),
+        onAction: performStart,
+        showCancel: true
+      });
+      return;
+    }
+    await performStart();
+  };
+
   const handleStop = async () => {
     if (!activeDevice) return;
+    delete startedModeByDeviceRef.current[activeDevice];
     await stopScrcpy(activeDevice);
   };
 
@@ -468,7 +482,7 @@ function App() {
       });
       if (selected && typeof selected === 'string') {
         setConfig(prev => ({ ...prev, scrcpyPath: selected }));
-        setLogs(prev => appendLogs(prev, t('logs.customScrcpyPathSet', { path: selected })));
+        setLogs(prev => appendLogs(prev, t('logs.customScrcpyPathSet', { path: selected }), 'system'));
         // Trigger a check with the new path
         setTimeout(() => checkScrcpy(selected), 100);
       }
@@ -479,7 +493,7 @@ function App() {
 
   const handleResetPath = async () => {
     setConfig(prev => ({ ...prev, scrcpyPath: undefined }));
-    setLogs(prev => appendLogs(prev, t('logs.customScrcpyPathCleared')));
+    setLogs(prev => appendLogs(prev, t('logs.customScrcpyPathCleared'), 'system'));
     // Trigger a check with no custom path
     setTimeout(() => checkScrcpy(undefined), 100);
   };
@@ -535,19 +549,17 @@ function App() {
                   onStart={handleStart}
                   onStop={handleStop}
                   isRunning={sessionRunning}
-                  micLevel={micLevel}
-                  micRoute={micRoute}
                   detectedCameras={detectedCameras}
                   renderDriverSupport={renderDriverSupport}
                   onListOptions={(arg) => {
                     if (activeDevice) {
                       listScrcpyOptions(activeDevice, arg);
                     } else {
-                      showAlert(
-                        t('alerts.noDeviceSelectedTitle'),
-                        t('alerts.noDeviceForListOptions'),
-                        'warning'
-                      );
+                      showAlert({
+                        title: t('alerts.noDeviceSelectedTitle'),
+                        message: t('alerts.noDeviceForListOptions'),
+                        kind: 'warning'
+                      });
                     }
                   }}
                 />

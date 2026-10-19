@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { appendLogs, LogEntry } from '../../logs';
+import { appendLogs, LogEntry, LogLevel } from '../../logs';
 
 /** The shared terminal log stream. Every subsystem (device discovery, mirror
  *  sessions, downloads, terminal commands) appends through `addLogs` so there
@@ -7,8 +7,8 @@ import { appendLogs, LogEntry } from '../../logs';
 export function useLogs() {
     const [logs, setLogs] = useState<LogEntry[]>([]);
 
-    const addLogs = (lines: string | string[]) => {
-        setLogs(prev => appendLogs(prev, lines));
+    const addLogs = (lines: string | string[], level?: LogLevel) => {
+        setLogs(prev => appendLogs(prev, lines, level));
     };
 
     const clearLogs = () => setLogs([]);

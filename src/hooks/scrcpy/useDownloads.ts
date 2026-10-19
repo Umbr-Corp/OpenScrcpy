@@ -3,13 +3,14 @@ import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { useI18n } from '../../i18n';
 import { isTauri } from '../../tauri';
+import { LogLevel } from '../../logs';
 import { RenderDriverSupport } from './types';
 
 interface UseDownloadsOptions {
     /** Saved scrcpy binary path, used as the fallback when checkScrcpy isn't
      *  given an explicit customPath. */
     scrcpyPath?: string;
-    addLogs: (lines: string | string[]) => void;
+    addLogs: (lines: string | string[], level?: LogLevel) => void;
     /** Called on download-complete with the backend message -- wired by the
      *  composition root to the device hub's settle-poll, since adb may only
      *  have appeared as a result of this download. */
@@ -74,7 +75,7 @@ export function useDownloads({ scrcpyPath, addLogs, onDownloadComplete }: UseDow
             await invoke('download_scrcpy');
         } catch (e: any) {
             setIsDownloading(false);
-            addLogs(t('logs.downloadError', { error: String(e) }));
+            addLogs(t('logs.downloadError', { error: String(e) }), 'err');
         }
     };
 
@@ -109,8 +110,12 @@ export function useDownloads({ scrcpyPath, addLogs, onDownloadComplete }: UseDow
                 });
             }
 
-            // Auto-trigger onboarding if not found
-            if (!res.found) {
+            // Auto-open onboarding only while setup hasn't been completed:
+            // completeOnboarding writes scrcpy_onboarding_done, and this used
+            // to ignore it, so a completed setup that lost its bundle got the
+            // setup modal back on every boot. A completed user still gets the
+            // missing-binary status in the header instead.
+            if (!res.found && localStorage.getItem('scrcpy_onboarding_done') !== 'true') {
                 setIsOnboardingOpen(true);
             }
 

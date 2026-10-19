@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { useI18n } from '../../i18n';
+import { LogLevel } from '../../logs';
 import { MdnsDevice } from './types';
 
 interface UseDevicesOptions {
@@ -9,7 +10,7 @@ interface UseDevicesOptions {
     scrcpyPath?: string;
     historyDevices: string[];
     addToHistory: (ip: string) => void;
-    addLogs: (lines: string | string[]) => void;
+    addLogs: (lines: string | string[], level?: LogLevel) => void;
 }
 
 /** The device hub: everything that watches the adb world and reports it back
@@ -61,25 +62,25 @@ export function useDevices({ scrcpyPath, historyDevices, addToHistory, addLogs }
                 const removed = prevDevices.filter(d => !newDevices.includes(d));
 
                 added.forEach(device => {
-                    addLogs(t('logs.newDeviceDiscovered', { device }));
+                    addLogs(t('logs.newDeviceDiscovered', { device }), 'ok');
                 });
 
                 removed.forEach(device => {
-                    addLogs(t('logs.deviceDisconnected', { device }));
+                    addLogs(t('logs.deviceDisconnected', { device }), 'warn');
                 });
 
                 setDevices(newDevices);
                 prevDevicesRef.current = newDevices;
 
                 if (!silent && added.length === 0 && removed.length === 0) {
-                    addLogs(t('logs.discoveryActive', { count: newDevices.length }));
+                    addLogs(t('logs.discoveryActive', { count: newDevices.length }), 'system');
                 }
 
                 if (newDevices.length > 0 && !activeDevice) {
                     setActiveDevice(newDevices[0]);
                 }
             } else if (!silent) {
-                addLogs(t('logs.discoveryError', { error: res.message }));
+                addLogs(t('logs.discoveryError', { error: res.message }), 'err');
             }
 
             // Fetch wireless devices broadcasting on the network via mDNS
@@ -111,7 +112,7 @@ export function useDevices({ scrcpyPath, historyDevices, addToHistory, addLogs }
             }
         } catch (e) {
             console.error(e);
-            addLogs(t('logs.errorRefreshingDevices', { error: String(e) }));
+            addLogs(t('logs.errorRefreshingDevices', { error: String(e) }), 'err');
         }
     };
 
@@ -275,7 +276,7 @@ export function useDevices({ scrcpyPath, historyDevices, addToHistory, addLogs }
         try {
             const res: any = await invoke('adb_pair', { ip, code, customPath: customPath || scrcpyPath });
             if (res.success) {
-                addLogs(t('logs.successfullyPaired', { ip }));
+                addLogs(t('logs.successfullyPaired', { ip }), 'ok');
                 await refreshDevicesUntilSettled(customPath);
             } else {
                 const msgs = [t('logs.pairingFailed', { message: String(res.message) })];
@@ -286,7 +287,7 @@ export function useDevices({ scrcpyPath, historyDevices, addToHistory, addLogs }
             }
             return res;
         } catch (e: any) {
-            addLogs(t('logs.pairingError', { error: String(e) }));
+            addLogs(t('logs.pairingError', { error: String(e) }), 'err');
             return { success: false, message: e };
         }
     };
@@ -305,7 +306,7 @@ export function useDevices({ scrcpyPath, historyDevices, addToHistory, addLogs }
 
             // Retry Logic: If failed, try to disconnect first then reconnect
             if (!res.success && typeof res.message === 'string' && (res.message.includes('failed to connect') || res.message.includes('cannot connect'))) {
-                addLogs(t('logs.connectionFailedRetrying'));
+                addLogs(t('logs.connectionFailedRetrying'), 'warn');
                 // Force disconnect to clear ghost state
                 await invoke('run_terminal_command', { cmd: `adb disconnect ${target}`, customPath: customPath || scrcpyPath });
                 // Small delay
@@ -315,7 +316,7 @@ export function useDevices({ scrcpyPath, historyDevices, addToHistory, addLogs }
             }
 
             if (res.success) {
-                addLogs(t('logs.connectedSuccessfully', { ip: target }));
+                addLogs(t('logs.connectedSuccessfully', { ip: target }), 'ok');
                 addToHistory(target);
 
                 // Allow ADB to settle and state to update
@@ -333,7 +334,7 @@ export function useDevices({ scrcpyPath, historyDevices, addToHistory, addLogs }
             }
             return res;
         } catch (e: any) {
-            addLogs(t('logs.connectionError', { error: String(e) }));
+            addLogs(t('logs.connectionError', { error: String(e) }), 'err');
             return { success: false, message: e };
         } finally {
             setIsRefreshing(false);

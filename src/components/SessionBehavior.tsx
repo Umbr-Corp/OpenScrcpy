@@ -1,8 +1,8 @@
 import { open } from '@tauri-apps/plugin-dialog';
-import { ScrcpyConfig } from '../hooks/useScrcpy';
+import { ConfigFieldSetter, ScrcpyConfig } from '../hooks/useScrcpy';
 import Tooltip from './Tooltip';
 import Select from './Select';
-import { Coffee, MonitorOff, Volume2, Layers, Maximize, Square, Circle, Folder, Settings2, ActivitySquare, Move } from 'lucide-react';
+import { Coffee, MonitorOff, Volume2, Layers, Maximize, Square, Circle, Folder, Settings2, ActivitySquare, Move, type LucideIcon } from 'lucide-react';
 import { useI18n } from '../i18n';
 
 const AUDIO_CODEC_VALUES = ['auto', 'opus', 'aac', 'flac', 'raw'] as const;
@@ -34,7 +34,7 @@ const dsHoverStyles = `
 // gets a new type on every config change (a toggle click re-renders the
 // parent), remounting the subtree -- killing the picker's open state and the
 // keyboard focus on the very switch the user just pressed.
-const Toggle = ({ checked, onChange, icon: Icon, label, tooltip }: { checked: boolean, onChange: (v: boolean) => void, icon: any, label: string, tooltip: string }) => (
+const Toggle = ({ checked, onChange, icon: Icon, label, tooltip }: { checked: boolean, onChange: (v: boolean) => void, icon: LucideIcon, label: string, tooltip: string }) => (
     <div
         role="switch"
         aria-checked={checked}
@@ -79,7 +79,7 @@ const AudioCodecSelect = ({ value, onChange, disabled }: { value: AudioCodec, on
                 <div className="relative ml-auto">
                     <Select
                         value={value}
-                        onChange={(v) => onChange(v as AudioCodec)}
+                        onChange={onChange}
                         options={AUDIO_CODEC_VALUES.map((opt) => ({ value: opt, label: t(AUDIO_CODEC_LABEL_KEY[opt]) }))}
                         ariaLabel={t('sessionBehavior.audioCodec')}
                         disabled={disabled}
@@ -95,11 +95,13 @@ const AudioCodecSelect = ({ value, onChange, disabled }: { value: AudioCodec, on
 export default function SessionBehavior({ config, setConfig }: SessionBehaviorProps) {
     const { t } = useI18n();
 
-    const handleChange = (field: keyof ScrcpyConfig, value: any) => {
+    const handleChange: ConfigFieldSetter = (field, value) => {
         // The full config (including recordPath) is persisted by useScrcpy's
         // config effect; this used to also duplicate one field into its own
         // localStorage key that nothing ever read back.
-        setConfig({ ...config, [field]: value });
+        const next = { ...config };
+        next[field] = value;
+        setConfig(next);
     };
 
     const handlePickFolder = async () => {

@@ -1837,8 +1837,11 @@ async fn unload_mic_sink(window: &Window) {
 #[cfg(unix)]
 async fn spawn_mic_route_watcher(window: Window, device: String, app_handle: tauri::AppHandle) {
     tokio::spawn(async move {
-        let mut last: Option<(String, bool)> = None;
         let mut attempts: u32 = 0;
+        // Route state of the latest poll we saw (None = nothing yet): drives
+        // the pacing exactly like the change-only version did, without
+        // gating the emit.
+        let mut last_routed: Option<bool> = None;
         loop {
             let session_alive = app_handle
                 .state::<ScrcpyState>()
@@ -1851,15 +1854,19 @@ async fn spawn_mic_route_watcher(window: Window, device: String, app_handle: tau
             }
             attempts += 1;
             if let Some((display, routed)) = poll_mic_route(&window).await {
-                if last.as_ref() != Some(&(display.clone(), routed)) {
-                    let _ = window.emit("mic-route", (display.clone(), routed));
-                    last = Some((display, routed));
-                }
+                last_routed = Some(routed);
+                // Emit every pass instead of only on change: the GUI only
+                // subscribes while the mic tab is mounted, so a remounted tab
+                // would otherwise stay without destination info until the
+                // route actually changes. Traffic stays ~2 events/s at worst,
+                // and the frontend just updates two display rows.
+                let _ = window.emit("mic-route", (display, routed));
             }
             // Fast cadence while hunting the fresh stream (the handshake
-            // lands in ~1.3s), slow down once routed.
-            let steady = last.as_ref().map(|(_, routed)| *routed).unwrap_or(false);
-            if steady || attempts > 10 {
+            // lands in ~1.3s) or while a routed stream is MIA (<10 attempts),
+            // slow down once healthy or after the hunt window closes.
+            let steady = last_routed == Some(true) || attempts > 10;
+            if steady {
                 tokio::time::sleep(Duration::from_millis(2000)).await;
             } else {
                 tokio::time::sleep(Duration::from_millis(500)).await;

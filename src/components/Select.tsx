@@ -1,15 +1,15 @@
 import React, { useEffect, useId, useRef, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 
-export interface SelectOption {
-    value: string | number;
+export interface SelectOption<V extends string | number = string> {
+    value: V;
     label: string;
 }
 
-interface SelectProps {
-    value: string | number | undefined;
-    onChange: (val: any) => void;
-    options: SelectOption[];
+interface SelectProps<V extends string | number = string> {
+    value: V | undefined;
+    onChange: (val: V) => void;
+    options: SelectOption<V>[];
     /** Visible label rendered above the trigger. */
     label?: string;
     /** Extra classes for the trigger button (e.g. "cp-select", "sb-select"). */
@@ -25,6 +25,8 @@ interface SelectProps {
 }
 
 /** Shared dropdown used by the ControlPanel and SessionBehavior forms.
+ *  Generic over the option value type so `onChange` carries the real type
+ *  (numbers stay numbers, unions stay unions) instead of `any`.
  *
  *  Defined at module scope on purpose: a dropdown component declared inside
  *  its parent's body gets a new component type on every parent render, which
@@ -34,7 +36,7 @@ interface SelectProps {
  *  Full listbox pattern: focus stays on the trigger (aria-activedescendant
  *  tracks the highlighted option), ArrowUp/Down/Home/End navigate, Enter or
  *  Space commits, Escape and Tab close, outside click closes. */
-export default function Select({
+export default function Select<V extends string | number = string>({
     value,
     onChange,
     options,
@@ -45,7 +47,7 @@ export default function Select({
     ariaLabel,
     disabled = false,
     className = ''
-}: SelectProps) {
+}: SelectProps<V>) {
     const [isOpen, setIsOpen] = useState(false);
     const [highlighted, setHighlighted] = useState(0);
     const containerRef = useRef<HTMLDivElement>(null);

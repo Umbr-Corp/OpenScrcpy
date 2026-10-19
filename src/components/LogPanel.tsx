@@ -2,7 +2,7 @@ import { useRef, useEffect, useState, memo } from 'react';
 import { Terminal, Trash2, Download } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/core';
 import { useI18n } from '../i18n';
-import { LogEntry } from '../logs';
+import { LogEntry, LogLevel } from '../logs';
 
 interface LogPanelProps {
     logs: LogEntry[];
@@ -11,15 +11,23 @@ interface LogPanelProps {
     onRunCommand?: (cmd: string) => void;
 }
 
-// Whole-line color by severity marker, so the terminal is scannable at a
-// glance: [SYSTEM] lines (device discovery etc.) read as system chatter,
-// warnings amber, failures red, confirmed progress green. Unknown lines
-// stay plain. Module scope so the regexes are built once.
-const logColor = (text: string): string => {
-    if (/\[SYSTEM\]|\[INFO\]/i.test(text)) return '#8FA6FF';
-    if (/\[ERR.+?\]|failed|falha|erro[ :]|error/i.test(text)) return '#F88686';
-    if (/\[WARN[ING]*\]|aviso/i.test(text)) return '#E0C559';
-    if (/\[OK\]|connected|descoberto|estabelecid|iniciad|concluíd|pronto|ready|success/i.test(text)) return '#57D06F';
+// Row color: the structured level set by the emitter wins (language-proof,
+// see logs.ts); the text scan below stays only for raw backend echo lines.
+// Module scope so the regexes are built once.
+const LEVEL_COLORS: Record<LogLevel, string> = {
+    system: '#8FA6FF',
+    warn: '#E0C559',
+    err: '#F88686',
+    ok: '#57D06F'
+};
+
+const logColor = (entry: LogEntry): string => {
+    if (entry.level) return LEVEL_COLORS[entry.level];
+    const text = entry.text;
+    if (/\[SYSTEM\]|\[INFO\]/i.test(text)) return LEVEL_COLORS.system;
+    if (/\[ERR.+?\]|failed|falha|erro[ :]|error/i.test(text)) return LEVEL_COLORS.err;
+    if (/\[WARN[ING]*\]|aviso/i.test(text)) return LEVEL_COLORS.warn;
+    if (/\[OK\]|connected|descoberto|estabelecid|iniciad|concluíd|pronto|ready|success/i.test(text)) return LEVEL_COLORS.ok;
     return '#FAFAFA';
 };
 
@@ -136,7 +144,7 @@ const LogPanel = memo(({ logs, onClear, onAddLog, onRunCommand }: LogPanelProps)
                                 <span className="shrink-0 tabular-nums" style={{ color: '#AEAEAE' }}>
                                     {entry.time}
                                 </span>
-                                <span className="break-all" style={{ color: logColor(entry.text) }}>{entry.text}</span>
+                                <span className="break-all" style={{ color: logColor(entry) }}>{entry.text}</span>
                             </div>
                         ))}
                     </div>
