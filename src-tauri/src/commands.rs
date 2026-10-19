@@ -2137,25 +2137,22 @@ pub async fn run_scrcpy(
     // scrcpy client to it through the libpulse default-sink env. Other
     // platforms get an honest console note for now.
     let pulse_sink: Option<String> = if config.session_mode == "mic" {
-        #[allow(unused_mut, unused_assignments)]
-        let mut routed = false;
+        #[allow(unused_mut, unused_variables)]
+        let mut pulse: Option<String> = None;
+
         #[cfg(unix)]
-        {
-            routed = ensure_mic_sink(&window, config.mic_denoise.unwrap_or(false)).await;
+        if ensure_mic_sink(&window, config.mic_denoise.unwrap_or(false)).await {
+            pulse = Some(MIC_SINK_NAME.to_string());
         }
+
         #[cfg(not(unix))]
         {
-            let _ = &routed;
             let _ = window.emit(
                 "scrcpy-log",
                 "[MIC] Virtual-microphone routing ships for Linux in this build; audio goes to the default output.".to_string(),
             );
         }
-        if routed {
-            Some(MIC_SINK_NAME.to_string())
-        } else {
-            None
-        }
+        pulse
     } else {
         None
     };
