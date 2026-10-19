@@ -1838,7 +1838,10 @@ async fn unload_mic_sink(window: &Window) {
 async fn spawn_mic_route_watcher(window: Window, device: String, app_handle: tauri::AppHandle) {
     tokio::spawn(async move {
         let mut attempts: u32 = 0;
-        let mut routed_seen = false;
+        // Route state of the latest poll we saw (None = nothing yet): drives
+        // the pacing exactly like the change-only version did, without
+        // gating the emit.
+        let mut last_routed: Option<bool> = None;
         loop {
             let session_alive = app_handle
                 .state::<ScrcpyState>()
@@ -1850,12 +1853,8 @@ async fn spawn_mic_route_watcher(window: Window, device: String, app_handle: tau
                 break;
             }
             attempts += 1;
-            let mut routed_now = false;
             if let Some((display, routed)) = poll_mic_route(&window).await {
-                routed_now = routed;
-                if routed_now {
-                    routed_seen = true;
-                }
+                last_routed = Some(routed);
                 // Emit every pass instead of only on change: the GUI only
                 // subscribes while the mic tab is mounted, so a remounted tab
                 // would otherwise stay without destination info until the
@@ -1864,8 +1863,10 @@ async fn spawn_mic_route_watcher(window: Window, device: String, app_handle: tau
                 let _ = window.emit("mic-route", (display, routed));
             }
             // Fast cadence while hunting the fresh stream (the handshake
-            // lands in ~1.3s), slow down once routed.
-            if routed_seen || attempts > 10 {
+            // lands in ~1.3s) or while a routed stream is MIA (<10 attempts),
+            // slow down once healthy or after the hunt window closes.
+            let steady = last_routed == Some(true) || attempts > 10;
+            if steady {
                 tokio::time::sleep(Duration::from_millis(2000)).await;
             } else {
                 tokio::time::sleep(Duration::from_millis(500)).await;
