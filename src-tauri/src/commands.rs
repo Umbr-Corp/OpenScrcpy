@@ -2,6 +2,7 @@ use crate::ScrcpyState;
 use flate2::read::GzDecoder;
 use serde::Deserialize;
 use serde_json::json;
+use std::collections::HashMap;
 #[cfg(target_os = "windows")]
 use std::os::windows::process::CommandExt;
 use std::path::Path;
@@ -1834,8 +1835,55 @@ async fn unload_mic_sink(window: &Window) {
 // whole session and reports the current destination to the GUI. PULSE_SINK
 // does not reach SDL3 clients and the stream shows up only after scrcpy's
 // server handshake (seconds later), so a one-shot check is not enough.
+/// Bump the logical session generation for a device. run_scrcpy calls this
+/// before replacing a previous process, so sidecars spawned for the old
+/// session can see they are stale even when the registry key is re-occupied
+/// by the replacement before their next liveness check.
+#[cfg_attr(not(unix), allow(dead_code))]
+fn bump_session_generation(generations: &mut HashMap<String, u64>, device: &str) -> u64 {
+    let generation = generations.entry(device.to_string()).or_insert(0);
+    *generation += 1;
+    *generation
+}
+
+#[cfg_attr(not(unix), allow(dead_code))]
+fn session_generation_is_current(
+    generations: &HashMap<String, u64>,
+    device: &str,
+    generation: u64,
+) -> bool {
+    generations.get(device) == Some(&generation)
+}
+
+/// Sidecar liveness: the device is still registered AND the generation this
+/// loop was spawned with is still the current one. Both locks are taken one
+/// after the other, never together, so this cannot deadlock with the
+/// run_scrcpy paths (which also never hold both at once).
+#[cfg_attr(not(unix), allow(dead_code))]
+fn session_alive(app_handle: &tauri::AppHandle, device: &str, generation: u64) -> bool {
+    let state = app_handle.state::<ScrcpyState>();
+    let in_registry = state
+        .processes
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .contains_key(device);
+    if !in_registry {
+        return false;
+    }
+    let generations = state
+        .session_generations
+        .lock()
+        .unwrap_or_else(|e| e.into_inner());
+    session_generation_is_current(&generations, device, generation)
+}
+
 #[cfg(unix)]
-async fn spawn_mic_route_watcher(window: Window, device: String, app_handle: tauri::AppHandle) {
+async fn spawn_mic_route_watcher(
+    window: Window,
+    device: String,
+    app_handle: tauri::AppHandle,
+    generation: u64,
+) {
     tokio::spawn(async move {
         let mut attempts: u32 = 0;
         // Route state of the latest poll we saw (None = nothing yet): drives
@@ -1843,13 +1891,7 @@ async fn spawn_mic_route_watcher(window: Window, device: String, app_handle: tau
         // gating the emit.
         let mut last_routed: Option<bool> = None;
         loop {
-            let session_alive = app_handle
-                .state::<ScrcpyState>()
-                .processes
-                .lock()
-                .unwrap_or_else(|e| e.into_inner())
-                .contains_key(&device);
-            if !session_alive {
+            if !session_alive(&app_handle, &device, generation) {
                 break;
             }
             attempts += 1;
@@ -1978,7 +2020,12 @@ async fn poll_mic_route(window: &Window) -> Option<(String, bool)> {
 // each 100 ms chunk is emitted to the GUI as dB. The loop ends when parec
 // exits or the owning scrcpy session leaves the process registry.
 #[cfg(unix)]
-async fn spawn_mic_level_meter(window: Window, device: String, app_handle: tauri::AppHandle) {
+async fn spawn_mic_level_meter(
+    window: Window,
+    device: String,
+    app_handle: tauri::AppHandle,
+    generation: u64,
+) {
     tokio::spawn(async move {
         use tokio::io::AsyncReadExt;
         let monitor = format!("{}.monitor", MIC_SINK_NAME);
@@ -2017,13 +2064,7 @@ async fn spawn_mic_level_meter(window: Window, device: String, app_handle: tauri
         let mut buf = vec![0u8; 8820];
         let mut chunks: u32 = 0;
         loop {
-            let session_alive = app_handle
-                .state::<ScrcpyState>()
-                .processes
-                .lock()
-                .unwrap_or_else(|e| e.into_inner())
-                .contains_key(&device);
-            if !session_alive {
+            if !session_alive(&app_handle, &device, generation) {
                 break;
             }
             // Generous timeout: chunks arrive ~every 100 ms while the stream
@@ -2164,6 +2205,20 @@ pub async fn run_scrcpy(
         None
     };
 
+    // Bump the logical session generation BEFORE replacing the previous
+    // process. Mic sidecars check this once per pass; without it, their next
+    // liveness check could already see the replacement session under the same
+    // registry key, and both the stale and the new watcher would keep running
+    // (duplicate [MIC] polls and level meters for one device).
+    #[cfg(unix)]
+    let session_generation = {
+        let mut generations = state
+            .session_generations
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
+        bump_session_generation(&mut generations, &config.device)
+    };
+
     // One session per device: launching with a live session for this device
     // would overwrite the registry entry and orphan the previous child
     // (Stop would then never see it — e.g. audio kept flowing). Replace it.
@@ -2224,11 +2279,13 @@ pub async fn run_scrcpy(
                 window.clone(),
                 config.device.clone(),
                 app_handle.clone(),
+                session_generation,
             ));
             tokio::spawn(spawn_mic_level_meter(
                 window.clone(),
                 config.device.clone(),
                 app_handle.clone(),
+                session_generation,
             ));
         }
         #[cfg(not(unix))]
@@ -2480,6 +2537,31 @@ pub async fn run_scrcpy(
 mod tests {
     use super::*;
 
+    #[test]
+    fn session_generation_bumps_per_run_and_rejects_stale_sidecars() {
+        let mut generations = HashMap::new();
+        let first = bump_session_generation(&mut generations, "device1");
+        assert_eq!(first, 1);
+        assert!(session_generation_is_current(&generations, "device1", first));
+
+        // A replacement bumps the generation: the previous session's sidecars
+        // are stale even though the registry key gets reused right away.
+        let second = bump_session_generation(&mut generations, "device1");
+        assert_eq!(second, 2);
+        assert!(!session_generation_is_current(&generations, "device1", first));
+        assert!(session_generation_is_current(&generations, "device1", second));
+
+        // Generations are per device.
+        assert_eq!(bump_session_generation(&mut generations, "device2"), 1);
+        assert!(session_generation_is_current(&generations, "device1", second));
+    }
+
+    #[test]
+    fn session_generation_rejects_unknown_devices() {
+        let generations = HashMap::new();
+        assert!(!session_generation_is_current(&generations, "device1", 1));
+    }
+
     fn base_config(session_mode: &str) -> ScrcpyConfig {
         ScrcpyConfig {
             device: "device1".to_string(),
@@ -2516,6 +2598,10 @@ mod tests {
             background_color: None,
             keep_active: None,
             vsync: None,
+            mic_source: None,
+            mic_codec: None,
+            mic_bitrate: None,
+            mic_denoise: None,
             window_x: None,
             window_y: None,
             ignore_video_encoder_constraints: None,
