@@ -297,6 +297,7 @@ export const ru: Translations = {
     binariesDescription: 'Нужно скачать движок Scrcpy для трансляции экрана.',
     downloadingProgress: 'Загрузка...\n{progress}%',
     downloadCoreBinaries: 'Скачать основные бинарные файлы',
+    downloadFailed: 'Не удалось скачать сейчас. Проверьте подключение и повторите попытку.',
     manualSetupFallback: 'Ручная настройка',
     manualSetupBefore: 'Если автозагрузка не удалась, попробуйте запустить приложение от имени',
     manualSetupAdministrator: 'администратора',

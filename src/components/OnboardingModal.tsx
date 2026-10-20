@@ -1,4 +1,4 @@
-import { CheckCircle2, Download, Cpu, ArrowRight, X, ExternalLink, HelpCircle } from 'lucide-react';
+import { CheckCircle2, Download, Cpu, ArrowRight, X, ExternalLink, HelpCircle, RefreshCcw, AlertTriangle } from 'lucide-react';
 import Modal from './Modal';
 import { useI18n } from '../i18n';
 
@@ -10,6 +10,8 @@ interface OnboardingModalProps {
     isDownloading: boolean;
     downloadProgress: number;
     onComplete: () => void;
+    /** Last download failure, already translated; cleared on retry. */
+    downloadError?: string | null;
 }
 
 export default function OnboardingModal({
@@ -19,7 +21,8 @@ export default function OnboardingModal({
     onDownload,
     isDownloading,
     downloadProgress,
-    onComplete
+    onComplete,
+    downloadError
 }: OnboardingModalProps) {
     const { t } = useI18n();
     if (!isOpen) return null;
@@ -32,6 +35,8 @@ export default function OnboardingModal({
             onClose={onClose}
             label={t('onboarding.setupCoreComponents')}
             zIndex={200}
+            // A stray backdrop click must not throw away a large setup form;
+            // X and Escape stay as the deliberate exits.
             closeOnBackdrop={false}
             overlayClassName="p-4"
             panelClassName="w-full max-w-2xl overflow-hidden"
@@ -88,7 +93,17 @@ export default function OnboardingModal({
 
                                     {!isReady && (
                                         <div className="space-y-4">
+                                            {downloadError && (
+                                                <div role="alert" className="ds-inset rounded-md p-3 flex items-start gap-2">
+                                                    <AlertTriangle size={14} className="flex-shrink-0" style={{ color: 'var(--primary)', marginTop: 1 }} />
+                                                    <p className="ds-caption" style={{ color: 'var(--text-base)' }}>
+                                                        {downloadError}
+                                                    </p>
+                                                </div>
+                                            )}
+
                                             <button
+                                                data-autofocus
                                                 onClick={onDownload}
                                                 disabled={isDownloading}
                                                 className="ds-btn ds-btn-primary"
@@ -102,7 +117,14 @@ export default function OnboardingModal({
 
                                             {isDownloading && (
                                                 <div className="w-full max-w-sm">
-                                                    <div className="ds-inset h-2 overflow-hidden p-0">
+                                                    <div
+                                                        role="progressbar"
+                                                        aria-label={t('onboarding.downloadCoreBinaries')}
+                                                        aria-valuemin={0}
+                                                        aria-valuemax={100}
+                                                        aria-valuenow={downloadProgress}
+                                                        className="ds-inset h-2 overflow-hidden p-0"
+                                                    >
                                                         <div className="h-full rounded-full" style={{ width: `${downloadProgress}%`, background: 'var(--primary)' }} />
                                                     </div>
                                                 </div>
@@ -140,6 +162,7 @@ export default function OnboardingModal({
 
                         <div className="mt-12 pt-8 flex justify-end items-center" style={{ borderTop: '1px solid var(--border-base)' }}>
                             <button
+                                data-autofocus
                                 onClick={onComplete}
                                 disabled={!isReady}
                                 className={isReady ? 'ds-btn ds-btn-primary' : 'ds-btn ds-btn-secondary'}
@@ -153,23 +176,3 @@ export default function OnboardingModal({
         </Modal>
     );
 }
-
-const RefreshCcw = ({ size, className }: { size: number, className: string }) => (
-    <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width={size}
-        height={size}
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="3"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className={className}
-    >
-        <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-        <path d="M3 3v5h5" />
-        <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
-        <path d="M16 16h5v5" />
-    </svg>
-);

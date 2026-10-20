@@ -288,6 +288,7 @@ export const zhCN: Translations = {
         binariesDescription: '下载 Scrcpy 引擎。',
         downloadingProgress: '下载中 {progress}%',
         downloadCoreBinaries: '下载核心组件',
+        downloadFailed: '暂时无法下载。请检查网络后重试。',
         manualSetupFallback: '手动安装',
         manualSetupBefore: '如果下载失败，请以',
         manualSetupAdministrator: '管理员',

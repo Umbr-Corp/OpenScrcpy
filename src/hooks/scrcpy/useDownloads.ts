@@ -24,6 +24,7 @@ export function useDownloads({ scrcpyPath, addLogs, onDownloadComplete }: UseDow
     const { t } = useI18n();
     const [status, setStatus] = useState<string>("");
     const [downloadProgress, setDownloadProgress] = useState<number>(0);
+    const [downloadError, setDownloadError] = useState<string | null>(null);
     const [isDownloading, setIsDownloading] = useState(false);
     const [scrcpyStatus, setScrcpyStatus] = useState<{ found: boolean, message: string }>({ found: false, message: t('common.loading') });
     const [renderDriverSupport, setRenderDriverSupport] = useState<RenderDriverSupport>({
@@ -46,11 +47,13 @@ export function useDownloads({ scrcpyPath, addLogs, onDownloadComplete }: UseDow
             const data = event.payload;
             if (data.type === 'downloading') {
                 setIsDownloading(true);
+                setDownloadError(null);
                 setStatus(data.message);
             } else if (data.type === 'download-progress') {
                 setDownloadProgress(data.percent);
             } else if (data.type === 'download-complete') {
                 setIsDownloading(false);
+                setDownloadError(null);
                 setStatus(t('logs.downloadComplete'));
                 // adb didn't exist at all until this just finished, so the
                 // settle-poll from mount had nothing to find yet and gave up
@@ -72,9 +75,13 @@ export function useDownloads({ scrcpyPath, addLogs, onDownloadComplete }: UseDow
     const downloadScrcpy = async () => {
         try {
             setIsDownloading(true);
+            setDownloadError(null);
             await invoke('download_scrcpy');
         } catch (e: any) {
             setIsDownloading(false);
+            // Surfaced inside the onboarding modal; the console still gets
+            // the raw error for diagnosis.
+            setDownloadError(t('onboarding.downloadFailed'));
             addLogs(t('logs.downloadError', { error: String(e) }), 'err');
         }
     };
@@ -139,6 +146,7 @@ export function useDownloads({ scrcpyPath, addLogs, onDownloadComplete }: UseDow
     return {
         status,
         downloadProgress,
+        downloadError,
         isDownloading,
         scrcpyStatus,
         renderDriverSupport,

@@ -288,6 +288,7 @@ languages: {
         binariesDescription: 'Kami perlu mengunduh mesin Scrcpy untuk mencerminkan layar Anda.',
         downloadingProgress: 'Mengunduh... {progress}%',
         downloadCoreBinaries: 'Unduh Binari Inti',
+        downloadFailed: 'Gagal mengunduh sekarang. Periksa koneksi lalu coba lagi.',
         manualSetupFallback: 'Fallback Pengaturan Manual',
         manualSetupBefore: 'Jika unduhan otomatis gagal, coba jalankan sebagai',
         manualSetupAdministrator: 'Administrator',

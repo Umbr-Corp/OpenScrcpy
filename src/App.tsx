@@ -37,6 +37,7 @@ function App() {
     setLogs,
     isDownloading,
     downloadProgress,
+    downloadError,
     pairDevice,
     connectDevice,
     listScrcpyOptions,
@@ -247,6 +248,9 @@ function App() {
         }
       });
       showAlert({ title: t('header.autoInstalled'), message: t('header.autoRestarting'), kind: 'success' });
+      // relaunch() tears the webview down immediately; without this beat the
+      // success screen never paints.
+      await new Promise((resolve) => setTimeout(resolve, 1200));
       await relaunch();
     } catch (e) {
       showAlert({
@@ -630,6 +634,7 @@ function App() {
           onDownload={downloadScrcpy}
           isDownloading={isDownloading}
           downloadProgress={downloadProgress}
+          downloadError={downloadError}
           onComplete={completeOnboarding}
         />
 

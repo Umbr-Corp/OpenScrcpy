@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import { X, AlertTriangle, AlertCircle, Info, CheckCircle2, type LucideIcon } from 'lucide-react';
 import Modal from './Modal';
 import { useI18n } from '../i18n';
@@ -59,6 +60,7 @@ export default function ThemedModal({
     icon
 }: ThemedModalProps) {
     const { t } = useI18n();
+    const messageId = useId();
 
     if (!isOpen) return null;
 
@@ -74,20 +76,28 @@ export default function ThemedModal({
             isOpen={isOpen}
             onClose={onClose}
             label={title}
+            describedById={messageId}
             overlayClassName="p-6"
             panelClassName="w-full max-w-md overflow-hidden flex flex-col"
             panelStyle={borderStyle}
+            // A download cannot be aborted: dismissing the dialog would hide
+            // the progress while the app still restarts at the end. Keep the
+            // screen up until it finishes.
+            closeOnBackdrop={!isProgress}
+            closeOnEscape={!isProgress}
         >
-            {/* Close Button */}
-            <div className="absolute top-4 right-4 z-10">
-                <button
-                    onClick={onClose}
-                    aria-label={resolvedCancelLabel}
-                    className="ds-btn ds-btn-tertiary"
-                >
-                    <X size={20} />
-                </button>
-            </div>
+            {/* Close Button (hidden mid-download: there is no safe exit) */}
+            {!isProgress && (
+                <div className="absolute top-4 right-4 z-10">
+                    <button
+                        onClick={onClose}
+                        aria-label={t('common.close')}
+                        className="ds-btn ds-btn-tertiary"
+                    >
+                        <X size={20} />
+                    </button>
+                </div>
+            )}
 
             <div className="p-8 pb-6 flex flex-col items-center text-center pt-12">
                 {/* Icon */}
@@ -110,6 +120,7 @@ export default function ThemedModal({
                     inside an inset box with its own scroll. Short alerts keep
                     the centered paragraph look. */}
                 <p
+                    id={messageId}
                     className={`ds-caption w-full overflow-y-auto whitespace-pre-line ${eyebrow
                         ? 'ds-inset rounded-md p-3 text-left max-h-[132px]'
                         : 'max-h-[180px]'}`}
@@ -124,6 +135,7 @@ export default function ThemedModal({
                     <div className="mt-5 w-full max-w-[280px]">
                         <div
                             role="progressbar"
+                            aria-label={title}
                             aria-valuemin={0}
                             aria-valuemax={100}
                             aria-valuenow={progress}
@@ -143,40 +155,44 @@ export default function ThemedModal({
                 )}
             </div>
 
-            {/* Footer Actions */}
+            {/* Footer Actions. The secondary path gets its own quiet row so
+                long labels (fr/ru/ar) never squeeze the primary button. */}
             {!isProgress && (
-            <div className="p-4 pt-0 flex gap-3">
-                {showCancel && (
-                    <button
-                        onClick={() => {
-                            if (onCancel) onCancel();
-                            onClose();
-                        }}
-                        className="ds-btn ds-btn-secondary flex-1"
-                    >
-                        {resolvedCancelLabel}
-                    </button>
-                )}
+            <div className="p-4 pt-0 flex flex-col gap-2">
                 {secondaryLabel && (
                     <button
                         onClick={() => {
                             if (onSecondary) onSecondary();
                             onClose();
                         }}
-                        className="ds-btn ds-btn-tertiary"
+                        className="ds-btn ds-btn-tertiary w-full"
                     >
                         {secondaryLabel}
                     </button>
                 )}
-                <button
-                    onClick={() => {
-                        if (onAction) onAction();
-                        onClose();
-                    }}
-                    className={showCancel ? 'ds-btn ds-btn-primary flex-1' : 'ds-btn ds-btn-primary w-full'}
-                >
-                    {resolvedActionLabel}
-                </button>
+                <div className="flex gap-3">
+                    {showCancel && (
+                        <button
+                            onClick={() => {
+                                if (onCancel) onCancel();
+                                onClose();
+                            }}
+                            className="ds-btn ds-btn-secondary flex-1"
+                        >
+                            {resolvedCancelLabel}
+                        </button>
+                    )}
+                    <button
+                        data-autofocus
+                        onClick={() => {
+                            if (onAction) onAction();
+                            onClose();
+                        }}
+                        className={showCancel ? 'ds-btn ds-btn-primary flex-1' : 'ds-btn ds-btn-primary w-full'}
+                    >
+                        {resolvedActionLabel}
+                    </button>
+                </div>
             </div>
             )}
         </Modal>

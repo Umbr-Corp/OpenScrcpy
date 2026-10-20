@@ -289,6 +289,7 @@ export const en = {
         binariesDescription: 'We need to download the Scrcpy engine to mirror your screen.',
         downloadingProgress: 'Downloading... {progress}%',
         downloadCoreBinaries: 'Download Core Binaries',
+        downloadFailed: 'Could not download right now. Check your connection and try again.',
         manualSetupFallback: 'Manual Setup Fallback',
         manualSetupBefore: 'If auto-download fails, try running as',
         manualSetupAdministrator: 'Administrator',

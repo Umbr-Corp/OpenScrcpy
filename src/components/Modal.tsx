@@ -8,6 +8,8 @@ interface ModalProps {
     /** Accessible dialog name (aria-label). */
     label?: string;
     labelledById?: string;
+    /** Id of the element that describes the dialog (message body). */
+    describedById?: string;
     /** z-index of the fixed overlay (the app stacks modals at 100/200/300). */
     zIndex?: number;
     /** Backdrop scrim; defaults to the rgba style shared by the app modals. */
@@ -21,6 +23,8 @@ interface ModalProps {
     initialFocusRef?: React.RefObject<HTMLElement | null>;
     /** Whether clicking the backdrop dismisses the dialog. Default true. */
     closeOnBackdrop?: boolean;
+    /** Whether Escape dismisses the dialog. Default true. */
+    closeOnEscape?: boolean;
     children: React.ReactNode;
 }
 
@@ -38,6 +42,7 @@ export default function Modal({
     onClose,
     label,
     labelledById,
+    describedById,
     zIndex = 300,
     backdropStyle,
     overlayClassName = '',
@@ -45,6 +50,7 @@ export default function Modal({
     panelStyle,
     initialFocusRef,
     closeOnBackdrop = true,
+    closeOnEscape = true,
     children
 }: ModalProps) {
     const dialogRef = useRef<HTMLDivElement>(null);
@@ -52,8 +58,11 @@ export default function Modal({
     useEffect(() => {
         if (!isOpen) return;
         const previouslyFocused = document.activeElement as HTMLElement | null;
+        // Callers can mark the intended landing spot with data-autofocus;
+        // otherwise fall back to the first focusable (usually the close X).
         const target =
             initialFocusRef?.current ??
+            dialogRef.current?.querySelector<HTMLElement>('[data-autofocus]:not([disabled])') ??
             dialogRef.current?.querySelector<HTMLElement>(FOCUSABLE) ??
             dialogRef.current;
         target?.focus();
@@ -68,7 +77,7 @@ export default function Modal({
         if (e.key === 'Escape') {
             e.preventDefault();
             e.stopPropagation();
-            onClose();
+            if (closeOnEscape) onClose();
             return;
         }
         if (e.key !== 'Tab') return;
@@ -90,13 +99,15 @@ export default function Modal({
     return (
         <div
             className={`fixed inset-0 flex items-center justify-center ${overlayClassName}`}
-            style={{ zIndex }}
             role="dialog"
             aria-modal="true"
             aria-label={label}
             aria-labelledby={labelledById}
+            aria-describedby={describedById}
+            tabIndex={-1}
             onKeyDown={handleKeyDown}
             ref={dialogRef}
+            style={{ zIndex, outline: 'none' }}
         >
             {/* Backdrop: covers the overlay behind the panel, so a click here
                 is by definition an outside click. */}
