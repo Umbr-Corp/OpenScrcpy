@@ -288,6 +288,7 @@ export const ptBR: Translations = {
         binariesDescription: 'Precisamos baixar o motor Scrcpy para espelhar sua tela.',
         downloadingProgress: 'Baixando... {progress}%',
         downloadCoreBinaries: 'Baixar Binários Principais',
+        downloadFailed: 'Não foi possível baixar agora. Verifique a conexão e tente de novo.',
         manualSetupFallback: 'Alternativa de Configuração Manual',
         manualSetupBefore: 'Se o download automático falhar, tente executar como',
         manualSetupAdministrator: 'Administrador',

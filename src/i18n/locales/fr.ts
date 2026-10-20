@@ -288,6 +288,7 @@ export const fr: Translations = {
         binariesDescription: 'Nous devons télécharger le moteur Scrcpy pour dupliquer votre écran.',
         downloadingProgress: 'Téléchargement... {progress}%',
         downloadCoreBinaries: 'Télécharger les Binaires Principaux',
+        downloadFailed: "Impossible de télécharger pour le moment. Vérifiez la connexion et réessayez.",
         manualSetupFallback: 'Solution de Repli Manuelle',
         manualSetupBefore: 'Si le téléchargement automatique échoue, essayez de l\'exécuter en tant qu\'',
         manualSetupAdministrator: 'Administrateur',

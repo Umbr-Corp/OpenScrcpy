@@ -288,6 +288,7 @@ export const zhTW: Translations = {
         binariesDescription: '下載 Scrcpy 引擎。',
         downloadingProgress: '下載中 {progress}%',
         downloadCoreBinaries: '下載核心元件',
+        downloadFailed: '暫時無法下載。請檢查網路後重試。',
         manualSetupFallback: '手動安裝',
         manualSetupBefore: '若下載失敗，請以',
         manualSetupAdministrator: '系統管理員',

@@ -550,7 +550,7 @@ export default function Sidebar({
             >
                     <button
                         onClick={() => setPairingTarget(null)}
-                        aria-label={t('common.cancel')}
+                        aria-label={t('common.close')}
                         className="ds-btn ds-btn-tertiary absolute top-4 right-4"
                     >
                         <X size={18} />

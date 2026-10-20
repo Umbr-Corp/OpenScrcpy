@@ -91,7 +91,7 @@ export default function Header({ colorMode, onColorModeChange, binaryStatus, onD
                             <button
                                 onClick={() => setShowHelp(false)}
                                 className="ds-btn ds-btn-tertiary"
-                                aria-label={t('header.gotIt')}
+                                aria-label={t('common.close')}
                             >
                                 <X size={16} />
                             </button>
@@ -124,6 +124,7 @@ export default function Header({ colorMode, onColorModeChange, binaryStatus, onD
                         </div>
 
                         <button
+                            data-autofocus
                             onClick={() => setShowHelp(false)}
                             className="ds-btn ds-btn-primary w-full mt-6"
                         >
@@ -150,7 +151,7 @@ export default function Header({ colorMode, onColorModeChange, binaryStatus, onD
                             <button
                                 onClick={() => setShowAbout(false)}
                                 className="ds-btn ds-btn-tertiary"
-                                aria-label={t('header.gotIt')}
+                                aria-label={t('common.close')}
                             >
                                 <X size={16} />
                             </button>
@@ -206,6 +207,7 @@ export default function Header({ colorMode, onColorModeChange, binaryStatus, onD
                         </div>
 
                         <button
+                            data-autofocus
                             onClick={() => setShowAbout(false)}
                             className="ds-btn ds-btn-primary w-full mt-6"
                         >

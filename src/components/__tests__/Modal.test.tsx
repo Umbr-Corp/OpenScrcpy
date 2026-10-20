@@ -30,6 +30,24 @@ describe('Modal', () => {
         expect(onClose).not.toHaveBeenCalled();
     });
 
+    it('keeps the dialog open on Escape when closeOnEscape is off', async () => {
+        const user = userEvent.setup();
+        const onClose = vi.fn();
+        render(<Modal isOpen onClose={onClose} closeOnEscape={false} label="Dialog"><button>Hi</button></Modal>);
+        await user.keyboard('{Escape}');
+        expect(onClose).not.toHaveBeenCalled();
+    });
+
+    it('focuses the data-autofocus target instead of the first focusable', () => {
+        render(
+            <Modal isOpen onClose={() => { }} label="Focus">
+                <button>Close</button>
+                <button data-autofocus>Primary</button>
+            </Modal>
+        );
+        expect(screen.getByText('Primary')).toHaveFocus();
+    });
+
     it('traps Tab focus inside the dialog', async () => {
         const user = userEvent.setup();
         render(

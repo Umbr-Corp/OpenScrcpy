@@ -291,6 +291,7 @@ export const ar: Translations = {
         binariesDescription: 'نحتاج إلى تنزيل محرك Scrcpy لعرض شاشة جهازك.',
         downloadingProgress: 'جارٍ التنزيل... {progress}%',
         downloadCoreBinaries: 'تنزيل المكونات الأساسية',
+        downloadFailed: 'تعذّر التنزيل الآن. تحقق من الاتصال وحاول مجددًا.',
         manualSetupFallback: 'الإعداد اليدوي',
         manualSetupBefore: 'إذا فشل التنزيل التلقائي، فحاول تشغيل البرنامج بصفة',
         manualSetupAdministrator: 'مسؤول',
