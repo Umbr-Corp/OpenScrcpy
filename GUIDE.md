@@ -28,7 +28,7 @@ Before using OpenScrcpy, ensure you have the following:
 ## 🚀 Installation Guide
 
 ### 🪟 Windows
-1. Download the latest `.exe` or `.msi` from the [Releases](https://github.com/Umbr-Corp/OpenScrcpy/releases) page.
+1. Download the latest `.exe` or `.msi` from the [Releases](https://v16.next.forgejo.org/UmbrCorp/OpenScrcpy/releases) page.
 2. Run the installer or standalone executable.
 3. **Smart Setup**: On the first launch, OpenScrcpy will detect if the core binary is installed. If not, it will offer a one-click download.
 4. **Automated Updates**: When launched, OpenScrcpy v1 beta will automatically check your installed version against the latest official release and prompt you with a beautiful one-click update modal if a new version is available.
@@ -141,4 +141,4 @@ Renderer choices are **capability-aware**:
 
 ---
 
-*Found a bug or have a suggestion? Open an issue on [GitHub](https://github.com/Umbr-Corp/OpenScrcpy/issues)!*
+*Found a bug or have a suggestion? Open an issue on [Forgejo](https://v16.next.forgejo.org/UmbrCorp/OpenScrcpy/issues)!*

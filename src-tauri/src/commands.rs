@@ -3541,8 +3541,7 @@ pub async fn check_app_update(app: tauri::AppHandle) -> serde_json::Value {
     };
 
     let release = match client
-        .get("https://api.github.com/repos/Umbr-Corp/OpenScrcpy/releases/latest")
-        .header("Accept", "application/vnd.github+json")
+        .get("https://v16.next.forgejo.org/api/v1/repos/UmbrCorp/OpenScrcpy/releases/latest")
         .send()
         .await
     {
@@ -3550,7 +3549,7 @@ pub async fn check_app_update(app: tauri::AppHandle) -> serde_json::Value {
         Err(e) => return no_update(e.to_string()),
     };
     if !release.status().is_success() {
-        return no_update(format!("GitHub responded with status {}", release.status()));
+        return no_update(format!("Forgejo responded with status {}", release.status()));
     }
     let body = match release.json::<serde_json::Value>().await {
         Ok(b) => b,
@@ -3570,7 +3569,7 @@ pub async fn check_app_update(app: tauri::AppHandle) -> serde_json::Value {
     })
 }
 
-// "Ver no GitHub" from the update modal: open the releases page in the
+// "Ver no Forgejo" from the update modal: open the releases page in the
 // user's browser. Rust-side open keeps it outside the webview popup rules;
 // the HTTPS check keeps the shell handler from being abused with anything
 // else even if a future caller passes this command a value.
@@ -3578,7 +3577,7 @@ pub async fn check_app_update(app: tauri::AppHandle) -> serde_json::Value {
 pub async fn open_app_release(app: tauri::AppHandle) -> Result<(), String> {
     tauri_plugin_shell::ShellExt::shell(&app)
         .open(
-            "https://github.com/Umbr-Corp/OpenScrcpy/releases/latest",
+            "https://v16.next.forgejo.org/UmbrCorp/OpenScrcpy/releases/latest",
             None,
         )
         .map_err(|e| e.to_string())

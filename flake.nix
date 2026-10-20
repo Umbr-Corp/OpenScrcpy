@@ -124,7 +124,7 @@
 
           meta = with pkgs.lib; {
             description = "A modern desktop GUI for controlling Android devices";
-            homepage = "https://github.com/Umbr-Corp/OpenScrcpy";
+            homepage = "https://v16.next.forgejo.org/UmbrCorp/OpenScrcpy";
             license = licenses.mit;
             maintainers = [ "yanhenrique-dev" ];
           };

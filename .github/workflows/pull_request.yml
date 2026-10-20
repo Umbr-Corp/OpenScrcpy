@@ -28,14 +28,21 @@ jobs:
         run: npm test
 
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          components: clippy
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain stable
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          source "$HOME/.cargo/env"
+          rustup component add clippy
 
-      - name: Rust Cache
-        uses: swatinem/rust-cache@v2
+      - name: Cache Rust
+        uses: actions/cache@v4
         with:
-          workspaces: src-tauri -> target
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            src-tauri/target
+          key: rust-ubuntu-22.04-${{ hashFiles('src-tauri/Cargo.lock') }}
+          restore-keys: rust-ubuntu-22.04-
 
       - name: Install Linux dependencies
         run: |
@@ -63,17 +70,25 @@ jobs:
         run: npm install
 
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain stable
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          source "$HOME/.cargo/env"
+
+      - name: Cache Rust
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            src-tauri/target
+          key: rust-ubuntu-22.04-${{ hashFiles('src-tauri/Cargo.lock') }}
+          restore-keys: rust-ubuntu-22.04-
 
       - name: Install Linux dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev libjavascriptcoregtk-4.1-dev libsoup-3.0-dev
-
-      - name: Rust Cache
-        uses: swatinem/rust-cache@v2
-        with:
-          workspaces: src-tauri -> target
 
       - name: Build Check
         run: npm run tauri build -- --no-bundle
