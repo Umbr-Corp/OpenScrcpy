@@ -75,6 +75,7 @@ export const ar: Translations = {
         autoInstalled: 'تم التثبيت — إعادة تشغيل التطبيق…',
         autoFailTitle: 'فشل التحديث',
         autoFailMsg: 'تعذّر التثبيت الآن. نزّل يدويًا من صفحة الإصدار.',
+        autoRestarting: 'سيُعاد تشغيل التطبيق لإكمال التحديث.',
         aboutDonate: 'تبرع'
     },
     sidebar: {
@@ -316,8 +317,7 @@ export const ar: Translations = {
         wirelessHintConn: 'تحقق من عنوان IP في الطرفية: إن لم يكن رقم الهاتف، فقد غيّر الشبكة أو استجاب جهاز آخر أولاً.',
         wirelessHintGeneric: 'انظر الخطوة التي فشلت في طرفية النظام.',
         wirelessConsoleLabel: 'الطرفية',
-        newAppVersionTitle: 'إصدار جديد متاح: v{v}',
-        newAppVersionFrom: 'الإصدار المثبَّت: v{old} → الجديد: v{v}',
+        newAppVersionTitle: 'إصدار جديد متاح',
         newAppVersionMsg: 'اطّلع على الجديد ونزّل الإصدار الجديد من صفحة الإصدارات على GitHub.',
         updateOpenBtn: 'فتح على GitHub',
         appCloseBtn: 'إغلاق',

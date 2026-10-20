@@ -1,4 +1,4 @@
-import { X, AlertTriangle, AlertCircle, Info, CheckCircle2 } from 'lucide-react';
+import { X, AlertTriangle, AlertCircle, Info, CheckCircle2, type LucideIcon } from 'lucide-react';
 import Modal from './Modal';
 import { useI18n } from '../i18n';
 
@@ -23,6 +23,10 @@ interface ThemedModalProps {
     // action footer goes away (buttons mean nothing mid-download).
     progress?: number;
     progressDetail?: string;
+    /** Replaces the kind chip (e.g. "v1.1.5 → v1.1.6" on the update dialog). */
+    eyebrow?: string;
+    /** Replaces the kind icon (the update dialog uses a download glyph). */
+    icon?: LucideIcon;
 }
 
 // Kind is signalled by border style (solid vs dashed) + a text label, never
@@ -50,7 +54,9 @@ export default function ThemedModal({
     cancelLabel,
     onCancel,
     progress,
-    progressDetail
+    progressDetail,
+    eyebrow,
+    icon
 }: ThemedModalProps) {
     const { t } = useI18n();
 
@@ -58,7 +64,7 @@ export default function ThemedModal({
 
     const resolvedActionLabel = actionLabel ?? t('common.ok');
     const resolvedCancelLabel = cancelLabel ?? t('common.cancel');
-    const Icon = KIND_ICON[kind];
+    const Icon = icon ?? KIND_ICON[kind];
     const dashed = DASHED_KINDS.has(kind);
     const borderStyle = dashed ? { borderStyle: 'dashed' as const } : undefined;
     const isProgress = typeof progress === 'number';
@@ -89,16 +95,26 @@ export default function ThemedModal({
                     {Icon && <Icon size={32} style={{ color: 'var(--primary)' }} />}
                 </div>
 
-                {/* Kind label: text + border style carry the meaning, not color */}
-                <span className="ds-badge mb-3" style={borderStyle}>
-                    {t(`common.kind${kind.charAt(0).toUpperCase()}${kind.slice(1)}`)}
+                {/* Kind label: text + border style carry the meaning, not color.
+                    A caller-provided eyebrow (e.g. the update version line)
+                    replaces it when present. */}
+                <span className="ds-badge mb-3" style={eyebrow ? { borderColor: 'var(--primary)', color: 'var(--primary)' } : borderStyle}>
+                    {eyebrow ?? t(`common.kind${kind.charAt(0).toUpperCase()}${kind.slice(1)}`)}
                 </span>
 
                 {/* Content */}
                 <h3 className="ds-body ds-strong mb-3">
                     {title}
                 </h3>
-                <p className="ds-caption max-w-[280px] whitespace-pre-line" style={{ color: 'var(--text-muted)' }}>
+                {/* Update dialogs (eyebrow set) carry release notes: left-aligned
+                    inside an inset box with its own scroll. Short alerts keep
+                    the centered paragraph look. */}
+                <p
+                    className={`ds-caption w-full overflow-y-auto whitespace-pre-line ${eyebrow
+                        ? 'ds-inset rounded-md p-3 text-left max-h-[132px]'
+                        : 'max-h-[180px]'}`}
+                    style={{ color: 'var(--text-muted)' }}
+                >
                     {message}
                 </p>
 

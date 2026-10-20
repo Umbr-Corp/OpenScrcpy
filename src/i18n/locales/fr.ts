@@ -72,6 +72,7 @@ export const fr: Translations = {
         autoInstalled: "Installé — relance de l'app en cours…",
         autoFailTitle: 'Échec de la mise à jour',
         autoFailMsg: "Impossible d'installer maintenant. Téléchargez manuellement sur la page de la release.",
+        autoRestarting: "L'application va redémarrer pour terminer la mise à jour.",
         aboutDonate: 'Faire un don'
     },
     sidebar: {
@@ -313,8 +314,7 @@ export const fr: Translations = {
         wirelessHintConn: "Vérifiez l'IP dans la console ; si le numéro n'est pas celui du téléphone, l'appareil a changé de réseau ou un autre a répondu d'abord.",
         wirelessHintGeneric: "Voyez l'étape en échec dans la console système.",
         wirelessConsoleLabel: 'Console',
-        newAppVersionTitle: 'Nouvelle version disponible : v{v}',
-        newAppVersionFrom: 'Version installée : v{old} → Nouvelle : v{v}',
+        newAppVersionTitle: 'Nouvelle version disponible',
         newAppVersionMsg: 'Consultez les nouveautés et téléchargez la nouvelle version sur la page des releases GitHub.',
         updateOpenBtn: 'Voir sur GitHub',
         appCloseBtn: 'Fermer',

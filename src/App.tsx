@@ -15,6 +15,7 @@ import { useScrcpy } from "./hooks/useScrcpy";
 import { isTauri } from "./tauri";
 import { appendLogs } from './logs';
 import { getVersion } from '@tauri-apps/api/app';
+import { DownloadCloud, type LucideIcon } from 'lucide-react';
 import { useI18n } from "./i18n";
 
 function App() {
@@ -74,6 +75,8 @@ function App() {
     onCancel?: () => void;
     progress?: number;
     progressDetail?: string;
+    eyebrow?: string;
+    icon?: LucideIcon;
   }>({
     isOpen: false,
     title: '',
@@ -111,6 +114,10 @@ function App() {
     // Download screen (ThemedModal renders a bar and hides its buttons).
     progress?: number;
     progressDetail?: string;
+    /** Replaces the kind chip with a short, informational label. */
+    eyebrow?: string;
+    /** Replaces the kind icon. */
+    icon?: LucideIcon;
   }
 
   const showAlert = (opts: AlertOptions) => {
@@ -215,8 +222,8 @@ function App() {
           if (total > 0) {
             lastShownPct = 0;
             showAlert({
-              title: t('about.autoDownloading'),
-              message: t('about.autoProgress', { p: 0 }),
+              title: t('header.autoDownloading'),
+              message: t('header.autoProgress', { p: 0 }),
               kind: 'info',
               progress: 0,
               progressDetail: `0/${fmtMb(total)} MB`
@@ -229,8 +236,8 @@ function App() {
             if (p !== lastShownPct) {
               lastShownPct = p;
               showAlert({
-                title: t('about.autoDownloading'),
-                message: t('about.autoProgress', { p }),
+                title: t('header.autoDownloading'),
+                message: t('header.autoProgress', { p }),
                 kind: 'info',
                 progress: p,
                 progressDetail: `${fmtMb(done)}/${fmtMb(total)} MB`
@@ -239,12 +246,12 @@ function App() {
           }
         }
       });
-      showAlert({ title: t('about.autoInstalled'), message: t('about.autoRestarting'), kind: 'success' });
+      showAlert({ title: t('header.autoInstalled'), message: t('header.autoRestarting'), kind: 'success' });
       await relaunch();
     } catch (e) {
       showAlert({
-        title: t('about.autoFailTitle'),
-        message: `${t('about.autoFailMsg')}\n\n${t('alerts.wirelessConsoleLabel')}: ${String(e)}`,
+        title: t('header.autoFailTitle'),
+        message: `${t('header.autoFailMsg')}\n\n${t('alerts.wirelessConsoleLabel')}: ${String(e)}`,
         kind: 'warning'
       });
     }
@@ -257,12 +264,25 @@ function App() {
       .replace(/^#{1,4}\s?/gm, '')
       .replace(/^>\s?/gm, '')
       .replace(/[*`]/g, '')
+      .split('\n')
+      .map((line) => line.trim())
+      // GitHub's generated template: the heading adds nothing, and the
+      // "Full Changelog" line is a long URL that wrecks the modal.
+      .filter((line) => line && !/^what'?s changed$/i.test(line) && !/^full changelog:/i.test(line))
+      .join('\n')
       .trim();
+    // The release workflow creates the draft with a placeholder body; never
+    // show that as if it were a changelog.
+    const isPlaceholder = /^see the assets below for the release\.?$/i.test(notes);
     showAlert({
-      title: t('alerts.newAppVersionTitle', { v: info.latest }),
-      message: `${t('alerts.newAppVersionFrom', { old: appVersion, v: info.latest })}\n\n${notes || t('alerts.newAppVersionMsg')}`,
+      title: t('alerts.newAppVersionTitle'),
+      // The version transition lives in the eyebrow chip; the body carries
+      // the actual release notes (or the generic hint when there are none).
+      message: notes && !isPlaceholder ? notes : t('alerts.newAppVersionMsg'),
       kind: 'info',
-      actionLabel: t('about.autoUpdateBtn'),
+      eyebrow: `v${appVersion} → v${info.latest}`,
+      icon: DownloadCloud,
+      actionLabel: t('header.autoUpdateBtn'),
       onAction: handleAutoUpdate,
       showCancel: true,
       cancelLabel: t('alerts.appCloseBtn'),
@@ -628,6 +648,8 @@ function App() {
           onCancel={alertState.onCancel}
           progress={alertState.progress}
           progressDetail={alertState.progressDetail}
+          eyebrow={alertState.eyebrow}
+          icon={alertState.icon}
         />
       </div>
     </ErrorBoundary>

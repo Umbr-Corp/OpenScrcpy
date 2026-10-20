@@ -72,6 +72,7 @@ export const zhCN: Translations = {
         autoInstalled: '已安装——正在重启应用…',
         autoFailTitle: '更新失败',
         autoFailMsg: '暂时无法安装。请到发布页手动下载。',
+        autoRestarting: '应用将重新启动以完成更新。',
         aboutDonate: '捐赠'
     },
     sidebar: {
@@ -313,8 +314,7 @@ export const zhCN: Translations = {
         wirelessHintConn: '在控制台核对 IP：如果不是手机的号码，说明设备换了网络或别的设备先应答了。',
         wirelessHintGeneric: '在系统控制台查看具体失败的步骤。',
         wirelessConsoleLabel: '控制台',
-        newAppVersionTitle: '有新版本：v{v}',
-        newAppVersionFrom: '已安装版本：v{old} → 新版本：v{v}',
+        newAppVersionTitle: '有新版本',
         newAppVersionMsg: '查看更新内容并从 GitHub 发布页下载新版本。',
         updateOpenBtn: '前往 GitHub',
         appCloseBtn: '关闭',
