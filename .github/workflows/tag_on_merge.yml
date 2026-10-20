@@ -29,8 +29,8 @@ jobs:
 
       - name: Git Config
         run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "forgejo-actions[bot]"
+          git config --global user.email "forgejo-actions[bot]@users.noreply.forgejo.org"
 
       - name: Create and Push Tag
         env:

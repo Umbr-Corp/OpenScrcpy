@@ -241,7 +241,7 @@ function App() {
           const { invoke } = await import('@tauri-apps/api/core');
           await invoke('open_app_release');
         } catch {
-          window.open('https://github.com/Umbr-Corp/OpenScrcpy/releases/latest', '_blank');
+          window.open('https://v16.next.forgejo.org/UmbrCorp/OpenScrcpy/releases/latest', '_blank');
         }
       }
     });

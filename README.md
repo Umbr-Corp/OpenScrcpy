@@ -30,7 +30,7 @@
 - **One-click core setup** — automatic core binary download and update checks, right from the header.
 - **Render driver selection** — capability-aware graphics backends, filtered by OS.
 - **Drag and drop files** — drop an APK to install it, or push any file to `/sdcard/Download/`.
-- **In-app update notices** — checks the GitHub releases for a newer app version and surfaces a one-click link in the header.
+- **In-app update notices** — checks the Forgejo releases for a newer app version and surfaces a one-click link in the header.
 
 ---
 
@@ -38,16 +38,16 @@
 
 ### Quick start
 
-1. Download the latest release from [Releases](https://github.com/Umbr-Corp/OpenScrcpy/releases).
+1. Download the latest release from [Releases](https://v16.next.forgejo.org/UmbrCorp/OpenScrcpy/releases).
 2. Enable **USB debugging** on your Android device (plus **Wireless debugging** for Wi-Fi connections).
-3. Follow the full walkthrough in [GUIDE.md](GUIDE.md) or the [Wiki](https://github.com/Umbr-Corp/OpenScrcpy/wiki).
+3. Follow the full walkthrough in [GUIDE.md](GUIDE.md) or the [Wiki](https://v16.next.forgejo.org/UmbrCorp/OpenScrcpy/wiki).
 
 ### NixOS (flakes)
 
 To install it permanently with a desktop launcher, add the flake to your system's `flake.nix`:
 
 ```nix
-inputs.openscrcpy.url = "github:Umbr-Corp/OpenScrcpy";
+inputs.openscrcpy.url = "git+https://v16.next.forgejo.org/UmbrCorp/OpenScrcpy";
 ```
 
 Then add it to your system packages:

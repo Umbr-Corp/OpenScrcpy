@@ -27,8 +27,15 @@ jobs:
       # current linker emits; skipping the strip step keeps the AppImage
       # bundling from failing. (Cost: a slightly larger binary.)
       NO_STRIP: 1
+      # The updater plugin refuses unsigned bundles: sign the artifacts
+      # so latest.json + .sig files land on the release (in-app updates).
+      TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+      # Key generated with an empty password; the env still must exist.
+      TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -37,14 +44,24 @@ jobs:
           cache: 'npm'
 
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain stable
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          source "$HOME/.cargo/env"
 
-      - name: Rust Cache
-        uses: swatinem/rust-cache@v2
+      - name: Add macOS targets
+        if: matrix.platform == 'macos-latest'
+        run: rustup target add aarch64-apple-darwin x86_64-apple-darwin
+
+      - name: Cache Rust
+        uses: actions/cache@v4
         with:
-          workspaces: src-tauri -> target
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            src-tauri/target
+          key: rust-${{ matrix.platform }}-${{ hashFiles('src-tauri/Cargo.lock') }}
+          restore-keys: rust-${{ matrix.platform }}-
 
       - name: Install Linux dependencies (ubuntu only)
         if: matrix.platform == 'ubuntu-22.04'
@@ -55,36 +72,37 @@ jobs:
       - name: Install frontend dependencies
         run: npm install
 
-      - uses: tauri-apps/tauri-action@v0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # The updater plugin refuses unsigned bundles: sign the artifacts
-          # so latest.json + .sig files land on the release (in-app updates).
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          # Key generated with an empty password; the env still must exist.
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-        with:
-          includeUpdaterJson: true
-          tagName: v__VERSION__ # tauri-action replaces this with the app version
-          releaseName: 'OpenScrcpy v__VERSION__'
-          releaseBody: 'See the assets below for the release.'
-          releaseDraft: true
-          prerelease: true
-          args: ${{ matrix.args }}
+      - name: Build
+        run: npm run tauri build -- ${{ matrix.args }}
 
-  # tauri-action creates the draft with a placeholder body. Replace it with
-  # notes generated from the merged PRs/commits since the previous tag, so the
-  # in-app update dialog has something real to show.
-  release-notes:
+      - name: Collect artifacts
+        run: node scripts/collect-artifacts.mjs
+
+      - name: Publish assets
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/publish-release.mjs upload artifacts
+
+  # The updater polls a file on the default branch, not the release assets:
+  # Forgejo has no "latest/download" alias the way GitHub does. This job
+  # rebuilds updater/latest.json from the published assets and pushes it.
+  manifest:
     needs: publish
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-      - name: Fill the draft body with generated release notes
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Publish updater manifest
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          TAG="${GITHUB_REF_NAME}"
-          notes=$(gh api -X POST "repos/${GITHUB_REPOSITORY}/releases/generate-notes" -f tag_name="$TAG" --jq .body)
-          gh release edit "$TAG" -R "$GITHUB_REPOSITORY" --notes "$notes"
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/publish-release.mjs manifest

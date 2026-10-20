@@ -1,0 +1,51 @@
+{
+  "version": "1.1.7",
+  "notes": "See the assets below for the release.",
+  "pub_date": "2026-10-20T05:05:49.929Z",
+  "platforms": {
+    "linux-x86_64-rpm": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSN1BOUXlqMW9uOG5zT3pwL2YrYXN0bUcwNE13ZTY1THhZL2IvOVpianJBd01BS2RGT2V1RVRGM2Q5TE9xWEZwU0FLL2VPeVNZSGI2RjhxaGVETXdqeUpPNkxQT3NqeHdBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNDcyNjI2CWZpbGU6T3BlblNjcmNweS0xLjEuNy0xLng4Nl82NC5ycG0KZHplT0VDdFg5enpWeStucSt5KzltWng1UVdPcEJVN3RSb1VGMEh1blNnRG9Nd0E4LzRNTnRlRGgzdnFibzFLTUtQQ204N2wxbkx0cVIwNVd5QXJrRFE9PQo=",
+      "url": "https://v16.next.forgejo.org/UmbrCorp/OpenScrcpy/releases/download/v1.1.7/OpenScrcpy-1.1.7-1.x86_64.rpm"
+    },
+    "linux-x86_64": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSN1BOUXlqMW9uOGk1THFuNm5mQkhUallUZGhjSldHUkcvTGg4VkhYcG1sbnY3OW1aSm16cTFQZTNVTXY4cUYzUnRkZlJHZFd5ZlNoWU9ORUk0SjRlQUc2RUVjeFpwd3cwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNDcyNjI2CWZpbGU6T3BlblNjcmNweV8xLjEuN19hbWQ2NC5BcHBJbWFnZQpQQXozM2JNTGFFN3lpcm9xZmluVmI1SWdVdmtmdDJkM0dRb0R6NE9QZ0IyVURjalVIRzdRMlBaaElFdEczL1JMVDEybXhuTW9tUzR4ZEwrNWkzZkRDZz09Cg==",
+      "url": "https://v16.next.forgejo.org/UmbrCorp/OpenScrcpy/releases/download/v1.1.7/OpenScrcpy_1.1.7_amd64.AppImage"
+    },
+    "linux-x86_64-appimage": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSN1BOUXlqMW9uOGk1THFuNm5mQkhUallUZGhjSldHUkcvTGg4VkhYcG1sbnY3OW1aSm16cTFQZTNVTXY4cUYzUnRkZlJHZFd5ZlNoWU9ORUk0SjRlQUc2RUVjeFpwd3cwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNDcyNjI2CWZpbGU6T3BlblNjcmNweV8xLjEuN19hbWQ2NC5BcHBJbWFnZQpQQXozM2JNTGFFN3lpcm9xZmluVmI1SWdVdmtmdDJkM0dRb0R6NE9QZ0IyVURjalVIRzdRMlBaaElFdEczL1JMVDEybXhuTW9tUzR4ZEwrNWkzZkRDZz09Cg==",
+      "url": "https://v16.next.forgejo.org/UmbrCorp/OpenScrcpy/releases/download/v1.1.7/OpenScrcpy_1.1.7_amd64.AppImage"
+    },
+    "linux-x86_64-deb": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSN1BOUXlqMW9uOGk4WVBVY2tiemRmM1NtOThuaE9Zbm5UYjlMSmx6Y1BMeTdRbnI2QWVINC83UW1TTkFJRGNKZzd4NDRpOEZzV3JaRmhFeDVxLzdnTTNndjBmSzNWSWdJPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNDcyNjI2CWZpbGU6T3BlblNjcmNweV8xLjEuN19hbWQ2NC5kZWIKSzBzdjhPdlFXUnFZc1p4bGJpNlptYU5yRUNqbkVyeStyM0NUemRyaVFBTisrUjB1NHB6M1BhSVk1RkFnc1g0UlRVc0prQ0l6WmdMa21rUlJKU0VMQVE9PQo=",
+      "url": "https://v16.next.forgejo.org/UmbrCorp/OpenScrcpy/releases/download/v1.1.7/OpenScrcpy_1.1.7_amd64.deb"
+    },
+    "windows-x86_64-nsis": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSN1BOUXlqMW9uOHY2NjZXUGFUWTdHSWtHWDJmMmgyOXhOMEcrSGNCU3I5L0RSYms3bDJjbllVY0FXZ25GQnFxdXJ4SWY5ZUQyaEM2WWdjY201Wm1EUk1BOHhtZjErUWdJPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNDcyNjQ4CWZpbGU6T3BlblNjcmNweV8xLjEuN194NjQtc2V0dXAuZXhlClFpYThlVDZMeTZxd3dUMGUzNDZYME4vZkl5SDBtR2hnc0ovb29MTVBldmxwclpkcEJMajA4RnVwZXRKdzNZV1ZUN0pmR09uWjhvSmpHaStvYXdoYkF3PT0K",
+      "url": "https://v16.next.forgejo.org/UmbrCorp/OpenScrcpy/releases/download/v1.1.7/OpenScrcpy_1.1.7_x64-setup.exe"
+    },
+    "windows-x86_64": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSN1BOUXlqMW9uOGloT2dIbVRQOTlTdmV0ZnBIWG8xaERUTXVZclJCMm52L0ZKYnpOYVZuM1FHY1pUK2xNQ3g2THBRWm5jOTQrVzd4Q1FlRWpnc3FKU0NvZFZFUTgwTlFFPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNDcyNjQ4CWZpbGU6T3BlblNjcmNweV8xLjEuN194NjRfZW4tVVMubXNpClJaTUttdTVoZXQ0SE5EbExRdUMwOUdGL1dkdCtNQVZ4TW5mNXB1SnpsMUpOd1U4aElhN3J2bFdmSitVZ1h3bUg2dFlUSHlNR1JEdHR1aVJuM1Z3OUFnPT0K",
+      "url": "https://v16.next.forgejo.org/UmbrCorp/OpenScrcpy/releases/download/v1.1.7/OpenScrcpy_1.1.7_x64_en-US.msi"
+    },
+    "windows-x86_64-msi": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSN1BOUXlqMW9uOGloT2dIbVRQOTlTdmV0ZnBIWG8xaERUTXVZclJCMm52L0ZKYnpOYVZuM1FHY1pUK2xNQ3g2THBRWm5jOTQrVzd4Q1FlRWpnc3FKU0NvZFZFUTgwTlFFPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNDcyNjQ4CWZpbGU6T3BlblNjcmNweV8xLjEuN194NjRfZW4tVVMubXNpClJaTUttdTVoZXQ0SE5EbExRdUMwOUdGL1dkdCtNQVZ4TW5mNXB1SnpsMUpOd1U4aElhN3J2bFdmSitVZ1h3bUg2dFlUSHlNR1JEdHR1aVJuM1Z3OUFnPT0K",
+      "url": "https://v16.next.forgejo.org/UmbrCorp/OpenScrcpy/releases/download/v1.1.7/OpenScrcpy_1.1.7_x64_en-US.msi"
+    },
+    "darwin-x86_64": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSN1BOUXlqMW9uOGtoWnNYZlNCVWt1ZERIOEVZSUZrSVdPNGVISUxUd0J5a1VobU5reXQrK0hNbjd4c3o5ZldpZW1UN2V4N3VTWGppK1hvc3FOaDRyRVk2MnVzeStwemdzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNDcyNzQ0CWZpbGU6T3BlblNjcmNweS5hcHAudGFyLmd6Cm5JcXkrV2hBVFFkRmZzaGVCaXZzS1A5MSt6TWxBdzc5OEZuVW5iRXl4VTlVRWF4azd5RXdjbmlqQkZycmJDeFJpOGRZZWh1bDAxWHJsdENpTGplSEJBPT0K",
+      "url": "https://v16.next.forgejo.org/UmbrCorp/OpenScrcpy/releases/download/v1.1.7/OpenScrcpy_universal.app.tar.gz"
+    },
+    "darwin-aarch64": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSN1BOUXlqMW9uOGtoWnNYZlNCVWt1ZERIOEVZSUZrSVdPNGVISUxUd0J5a1VobU5reXQrK0hNbjd4c3o5ZldpZW1UN2V4N3VTWGppK1hvc3FOaDRyRVk2MnVzeStwemdzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNDcyNzQ0CWZpbGU6T3BlblNjcmNweS5hcHAudGFyLmd6Cm5JcXkrV2hBVFFkRmZzaGVCaXZzS1A5MSt6TWxBdzc5OEZuVW5iRXl4VTlVRWF4azd5RXdjbmlqQkZycmJDeFJpOGRZZWh1bDAxWHJsdENpTGplSEJBPT0K",
+      "url": "https://v16.next.forgejo.org/UmbrCorp/OpenScrcpy/releases/download/v1.1.7/OpenScrcpy_universal.app.tar.gz"
+    },
+    "darwin-x86_64-app": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSN1BOUXlqMW9uOGtoWnNYZlNCVWt1ZERIOEVZSUZrSVdPNGVISUxUd0J5a1VobU5reXQrK0hNbjd4c3o5ZldpZW1UN2V4N3VTWGppK1hvc3FOaDRyRVk2MnVzeStwemdzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNDcyNzQ0CWZpbGU6T3BlblNjcmNweS5hcHAudGFyLmd6Cm5JcXkrV2hBVFFkRmZzaGVCaXZzS1A5MSt6TWxBdzc5OEZuVW5iRXl4VTlVRWF4azd5RXdjbmlqQkZycmJDeFJpOGRZZWh1bDAxWHJsdENpTGplSEJBPT0K",
+      "url": "https://v16.next.forgejo.org/UmbrCorp/OpenScrcpy/releases/download/v1.1.7/OpenScrcpy_universal.app.tar.gz"
+    },
+    "darwin-aarch64-app": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSN1BOUXlqMW9uOGtoWnNYZlNCVWt1ZERIOEVZSUZrSVdPNGVISUxUd0J5a1VobU5reXQrK0hNbjd4c3o5ZldpZW1UN2V4N3VTWGppK1hvc3FOaDRyRVk2MnVzeStwemdzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNDcyNzQ0CWZpbGU6T3BlblNjcmNweS5hcHAudGFyLmd6Cm5JcXkrV2hBVFFkRmZzaGVCaXZzS1A5MSt6TWxBdzc5OEZuVW5iRXl4VTlVRWF4azd5RXdjbmlqQkZycmJDeFJpOGRZZWh1bDAxWHJsdENpTGplSEJBPT0K",
+      "url": "https://v16.next.forgejo.org/UmbrCorp/OpenScrcpy/releases/download/v1.1.7/OpenScrcpy_universal.app.tar.gz"
+    }
+  }
+}
