@@ -30,8 +30,6 @@ jobs:
       # The updater plugin refuses unsigned bundles: sign the artifacts
       # so latest.json + .sig files land on the release (in-app updates).
       TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-      # Key generated with an empty password; the env still must exist.
-      TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -73,7 +71,12 @@ jobs:
         run: npm install
 
       - name: Build
-        run: npm run tauri build -- ${{ matrix.args }}
+        run: |
+          # The signing key has an empty password, but the variable still has
+          # to exist. Forgejo refuses to store an empty secret, so the value
+          # is guaranteed here instead of coming from the secret store.
+          export TAURI_SIGNING_PRIVATE_KEY_PASSWORD="${TAURI_SIGNING_PRIVATE_KEY_PASSWORD:-}"
+          npm run tauri build -- ${{ matrix.args }}
 
       - name: Collect artifacts
         run: node scripts/collect-artifacts.mjs
