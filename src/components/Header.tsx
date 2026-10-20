@@ -334,6 +334,7 @@ export default function Header({ colorMode, onColorModeChange, binaryStatus, onD
                             <div
                                 className="w-full rounded-full overflow-hidden mb-2"
                                 role="progressbar"
+                                aria-label={t('header.scrcpyEngine')}
                                 aria-valuenow={downloadProgress}
                                 aria-valuemin={0}
                                 aria-valuemax={100}

@@ -39,6 +39,15 @@ export function useDownloads({ scrcpyPath, addLogs, onDownloadComplete }: UseDow
     // though the listener itself only subscribes once on mount.
     const checkScrcpyRef = useRef<(customPath?: string) => Promise<boolean>>(async () => false);
 
+    // Same idea for the translator and the settle callback: the event
+    // listener stays mounted for the app's lifetime.
+    const tRef = useRef(t);
+    const onDownloadCompleteRef = useRef(onDownloadComplete);
+    useEffect(() => {
+        tRef.current = t;
+        onDownloadCompleteRef.current = onDownloadComplete;
+    });
+
     useEffect(() => {
         // No backend event source outside the Tauri WebView.
         if (!isTauri()) return;
@@ -54,13 +63,13 @@ export function useDownloads({ scrcpyPath, addLogs, onDownloadComplete }: UseDow
             } else if (data.type === 'download-complete') {
                 setIsDownloading(false);
                 setDownloadError(null);
-                setStatus(t('logs.downloadComplete'));
+                setStatus(tRef.current('logs.downloadComplete'));
                 // adb didn't exist at all until this just finished, so the
                 // settle-poll from mount had nothing to find yet and gave up
                 // early -- this is the first real chance to detect anything,
                 // and a single refresh can still miss a device that's mid
                 // reconnect, same as at mount or right after pairing.
-                onDownloadComplete(data.message);
+                onDownloadCompleteRef.current(data.message);
                 checkScrcpyRef.current(); // Re-check binary status
             }
         });
@@ -68,9 +77,11 @@ export function useDownloads({ scrcpyPath, addLogs, onDownloadComplete }: UseDow
         return () => {
             unlistenStatus.then(f => f());
         };
-        // [t] matches the original single-listener behavior: resubscribing on
-        // locale change keeps the status strings fresh after a language swap.
-    }, [t]);
+        // Stable listener: the refs above carry the latest translator and
+        // callback. Resubscribing on locale change left an async-cleanup gap
+        // where download-complete could be lost.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const downloadScrcpy = async () => {
         try {
