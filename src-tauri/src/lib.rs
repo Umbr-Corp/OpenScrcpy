@@ -16,6 +16,12 @@ use std::os::unix::process::CommandExt;
 
 pub struct ScrcpyState {
     pub processes: Mutex<HashMap<String, Child>>,
+    /// Logical session generation per device serial, bumped by every
+    /// run_scrcpy. Mic sidecar loops (route watcher, level meter) capture the
+    /// value at spawn and exit once it moves past theirs: a replaced session
+    /// reuses the same registry key, so the plain `contains_key` check alone
+    /// cannot tell the previous session's loops apart from the new one.
+    pub session_generations: Mutex<HashMap<String, u64>>,
     pub active_device: Mutex<Option<String>>,
     /// A raw window position captured by `stop_scrcpy` right before it kills
     /// the process (the window is still exactly where the user left it at
@@ -84,6 +90,7 @@ pub fn run() {
         .setup(|app| {
             app.manage(ScrcpyState {
                 processes: Mutex::new(HashMap::new()),
+                session_generations: Mutex::new(HashMap::new()),
                 active_device: Mutex::new(None),
                 final_capture_hint: Mutex::new(HashMap::new()),
             });
