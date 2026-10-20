@@ -75,6 +75,7 @@ export const ru: Translations = {
     autoInstalled: 'Установлено — приложение перезапускается…',
     autoFailTitle: 'Сбой обновления',
     autoFailMsg: 'Сейчас не удалось установить. Скачайте вручную со страницы релиза.',
+    autoRestarting: 'Приложение перезапустится, чтобы завершить обновление.',
     aboutDonate: 'Поддержать',
   },
 
@@ -324,8 +325,7 @@ export const ru: Translations = {
         wirelessHintConn: 'Проверьте IP в консоли: если это не адрес телефона, устройство сменило сеть или первым отозвался другой гаджет.',
         wirelessHintGeneric: 'Смотрите сбойный шаг в системной консоли.',
         wirelessConsoleLabel: 'Консоль',
-    newAppVersionTitle: 'Доступна новая версия: v{v}',
-    newAppVersionFrom: 'Установленная версия: v{old} → Новая: v{v}',
+    newAppVersionTitle: 'Доступна новая версия',
     newAppVersionMsg: 'Посмотрите изменения и скачайте новую версию на странице релизов GitHub.',
     updateOpenBtn: 'Открыть на GitHub',
     appCloseBtn: 'Закрыть',

@@ -72,6 +72,7 @@ export const zhTW: Translations = {
         autoInstalled: '已安裝——正在重新啟動應用…',
         autoFailTitle: '更新失敗',
         autoFailMsg: '暫時無法安裝。請到發布頁手動下載。',
+        autoRestarting: '應用程式將重新啟動以完成更新。',
         aboutDonate: '贊助'
     },
     sidebar: {
@@ -313,8 +314,7 @@ export const zhTW: Translations = {
         wirelessHintConn: '在控制台核對 IP：如果不是手機的號碼，代表裝置換了網路或別的裝置先回應。',
         wirelessHintGeneric: '在系統控制台查看失敗的步驟。',
         wirelessConsoleLabel: '控制台',
-        newAppVersionTitle: '有新版本：v{v}',
-        newAppVersionFrom: '已安裝版本：v{old} → 新版本：v{v}',
+        newAppVersionTitle: '有新版本',
         newAppVersionMsg: '查看更新內容並從 GitHub 發布頁下載新版本。',
         updateOpenBtn: '前往 GitHub',
         appCloseBtn: '關閉',

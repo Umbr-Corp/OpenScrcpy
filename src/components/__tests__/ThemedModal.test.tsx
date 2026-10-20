@@ -39,6 +39,20 @@ describe('ThemedModal', () => {
         expect(screen.getAllByRole('button', { name: 'Cancel' })).toHaveLength(1);
     });
 
+    it('replaces the kind chip with a caller-provided eyebrow', () => {
+        render(
+            <ThemedModal
+                isOpen
+                onClose={() => {}}
+                title="New Version Available"
+                message="Release notes"
+                eyebrow="v1.1.5 → v1.1.6"
+            />
+        );
+        expect(screen.getByText('v1.1.5 → v1.1.6')).toBeInTheDocument();
+        expect(screen.queryByText('Info')).toBeNull();
+    });
+
     it('keeps the action footer for regular alerts without progress', () => {
         render(
             <ThemedModal

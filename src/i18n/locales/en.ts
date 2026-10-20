@@ -73,6 +73,7 @@ export const en = {
         autoInstalled: 'Installed — restarting the app…',
         autoFailTitle: 'Update Failed',
         autoFailMsg: 'Could not install right now. Download manually from the release page.',
+        autoRestarting: 'The app will restart to finish the update.',
         aboutDonate: 'Donate'
     },
     sidebar: {
@@ -314,8 +315,7 @@ export const en = {
         wirelessHintConn: "Check the IP in the console. If it is not the phone's number, the device moved networks or another gadget answered first.",
         wirelessHintGeneric: 'See which step failed in the System Console.',
         wirelessConsoleLabel: 'Console',
-        newAppVersionTitle: 'New Version Available: v{v}',
-        newAppVersionFrom: 'Installed: v{old} → New: v{v}',
+        newAppVersionTitle: 'New Version Available',
         newAppVersionMsg: 'Check out the changelog and download the new version from the GitHub releases page.',
         updateOpenBtn: 'See on GitHub',
         appCloseBtn: 'Close',

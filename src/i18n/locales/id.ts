@@ -72,6 +72,7 @@ languages: {
         autoInstalled: 'Terpasang — aplikasi dimulai ulang…',
         autoFailTitle: 'Pembaruan Gagal',
         autoFailMsg: 'Tidak bisa memasang sekarang. Unduh manual dari halaman rilis.',
+        autoRestarting: 'Aplikasi akan dimulai ulang untuk menyelesaikan pembaruan.',
         aboutDonate: 'Donasi'
     },
     sidebar: {
@@ -313,8 +314,7 @@ languages: {
         wirelessHintConn: "Cek IP di konsol: jika angkanya bukan milik ponsel, perangkat pindah jaringan atau dibalas perangkat lain lebih dulu.",
         wirelessHintGeneric: 'Lihat langkah yang gagal di Konsol Sistem.',
         wirelessConsoleLabel: 'Konsol',
-        newAppVersionTitle: 'Versi Baru Tersedia: v{v}',
-        newAppVersionFrom: 'Versi terpasang: v{old} → Baru: v{v}',
+        newAppVersionTitle: 'Versi Baru Tersedia',
         newAppVersionMsg: 'Lihat perubahan dan unduh versi baru dari halaman rilis GitHub.',
         updateOpenBtn: 'Buka di GitHub',
         appCloseBtn: 'Tutup',

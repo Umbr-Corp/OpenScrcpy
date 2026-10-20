@@ -71,3 +71,20 @@ jobs:
           releaseDraft: true
           prerelease: true
           args: ${{ matrix.args }}
+
+  # tauri-action creates the draft with a placeholder body. Replace it with
+  # notes generated from the merged PRs/commits since the previous tag, so the
+  # in-app update dialog has something real to show.
+  release-notes:
+    needs: publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Fill the draft body with generated release notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          notes=$(gh api -X POST "repos/${GITHUB_REPOSITORY}/releases/generate-notes" -f tag_name="$TAG" --jq .body)
+          gh release edit "$TAG" --notes "$notes"

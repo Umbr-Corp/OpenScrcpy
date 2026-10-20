@@ -72,6 +72,7 @@ export const ptBR: Translations = {
         autoInstalled: 'Instalado — reiniciando o app…',
         autoFailTitle: 'Falha na Atualização',
         autoFailMsg: 'Não deu para instalar agora. Baixe manualmente na página da release.',
+        autoRestarting: 'O app vai reiniciar para concluir a atualização.',
         aboutDonate: 'Doar'
     },
     sidebar: {
@@ -313,8 +314,7 @@ export const ptBR: Translations = {
         wirelessHintConn: 'Confira no Console o IP usado. Se não for o número do telefone, ele trocou de rede ou outro aparelho da casa respondeu primeiro.',
         wirelessHintGeneric: 'Veja qual passo falhou no Console do Sistema.',
         wirelessConsoleLabel: 'Console',
-        newAppVersionTitle: 'Nova Versão Disponível: v{v}',
-        newAppVersionFrom: 'Versão instalada: v{old} → Nova: v{v}',
+        newAppVersionTitle: 'Nova Versão Disponível',
         newAppVersionMsg: 'Confira as novidades e baixe a nova versão na página de releases no GitHub.',
         updateOpenBtn: 'Ver no GitHub',
         appCloseBtn: 'Fechar',
