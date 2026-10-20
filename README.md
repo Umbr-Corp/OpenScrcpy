@@ -6,7 +6,7 @@
 
 **Control your Android from the desktop. Mirror the screen, use it as a webcam, or open a virtual display.**
 
-`v1.0.5` · `MIT` · `Linux / Windows / macOS`
+`v1.1.7` · `MIT` · `Linux / Windows / macOS`
 
 [![Donate on Liberapay](https://img.shields.io/liberapay/goal/mryofc.svg?logo=liberapay)](https://pt.liberapay.com/mryofc/)
 
