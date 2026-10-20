@@ -1,8 +1,8 @@
 import React from 'react';
-import { Smartphone, RefreshCw, Usb, Wifi, UploadCloud, Zap, X } from 'lucide-react';
+import { Smartphone, RefreshCw, Usb, Wifi, UploadCloud, Zap } from 'lucide-react';
 import { useI18n } from '../i18n';
 import { MdnsDevice, isMdnsDeviceConnected, mdnsHostIp } from '../hooks/useScrcpy';
-import Modal from './Modal';
+import SheetModal from './SheetModal';
 
 // mDNS wireless-debugging serials look like
 // "adb-<serial>-<random>._adb-tls-connect._tcp" (optionally with an mDNS
@@ -170,6 +170,11 @@ export default function Sidebar({
         );
         if (ready) setPairingTarget(ready);
     }, [uniqueMdnsDevices, pairingTarget]);
+
+    const isPairingModal = !!pairingTarget?.service.includes('_adb-tls-pairing');
+    const pairingModalTitle = isPairingModal
+        ? t('sidebar.pairModalTitle')
+        : t('sidebar.pairModalNotReadyTitle');
 
     return (
         <>
@@ -540,67 +545,66 @@ export default function Sidebar({
         </aside>
 
         {pairingTarget && (
-            <Modal
+            <SheetModal
                 isOpen
                 onClose={() => setPairingTarget(null)}
-                label={pairingTarget.service.includes('_adb-tls-pairing') ? t('sidebar.pairModalTitle') : t('sidebar.pairModalNotReadyTitle')}
+                title={pairingModalTitle}
                 overlayClassName="p-6"
                 panelClassName="w-full max-w-sm p-6"
                 initialFocusRef={modalCodeRef}
-            >
-                    <button
-                        onClick={() => setPairingTarget(null)}
-                        aria-label={t('common.close')}
-                        className="ds-btn ds-btn-tertiary absolute top-4 right-4"
-                    >
-                        <X size={18} />
-                    </button>
-                    {pairingTarget.service.includes('_adb-tls-pairing') ? (
-                        <>
-                            <h3 className="ds-body ds-strong mb-1 pr-6">{t('sidebar.pairModalTitle')}</h3>
-                            <p className="ds-caption truncate mb-4" style={{ color: 'var(--text-muted)' }}>{pairingTarget.address} ({formatMdnsName(pairingTarget.name)})</p>
-                            <label className="ds-label block mb-1" htmlFor="sidebar-modal-code">
-                                {t('sidebar.pairingCodePlaceholder')}
-                            </label>
-                            <input
-                                id="sidebar-modal-code"
-                                ref={modalCodeRef}
-                                type="text"
-                                placeholder={t('sidebar.pairingCodePlaceholder')}
-                                value={modalCode}
-                                onChange={(e) => { setModalCode(e.target.value); setModalError(false); }}
-                                onKeyDown={(e) => { if (e.key === 'Enter') submitPairingModal(); }}
-                                className="ds-input w-full mb-2"
-                            />
-                            {modalError && (
-                                <p className="ds-badge mb-2" style={{ borderStyle: 'dashed' }}>{t('sidebar.pairModalError')}</p>
-                            )}
-                            <button
-                                onClick={submitPairingModal}
-                                disabled={!modalCode || modalSubmitting}
-                                className="ds-btn ds-btn-primary w-full"
-                            >
-                                {modalSubmitting ? t('sidebar.synchronizing') : t('common.ok')}
-                            </button>
-                        </>
+                footer={
+                    isPairingModal ? (
+                        <button
+                            onClick={submitPairingModal}
+                            disabled={!modalCode || modalSubmitting}
+                            className="ds-btn ds-btn-primary w-full"
+                        >
+                            {modalSubmitting ? t('sidebar.synchronizing') : t('common.ok')}
+                        </button>
                     ) : (
-                        <>
-                            <h3 className="ds-body ds-strong mb-1 pr-6">{t('sidebar.pairModalNotReadyTitle')}</h3>
-                            <p className="ds-caption truncate mb-4" style={{ color: 'var(--text-muted)' }}>{pairingTarget.address} ({formatMdnsName(pairingTarget.name)})</p>
-                            <p className="ds-caption mb-4" style={{ color: 'var(--text-secondary)' }}>{t('sidebar.pairModalNotReadyBody')}</p>
-                            <div className="flex items-center justify-center gap-2 mb-4" style={{ color: 'var(--text-muted)' }}>
-                                <RefreshCw size={12} className="animate-spin" />
-                                <span className="ds-label">{t('sidebar.pairModalWaiting')}</span>
-                            </div>
-                            <button
-                                onClick={() => setPairingTarget(null)}
-                                className="ds-btn ds-btn-secondary w-full"
-                            >
-                                {t('common.cancel')}
-                            </button>
-                        </>
-                    )}
-            </Modal>
+                        <button
+                            onClick={() => setPairingTarget(null)}
+                            className="ds-btn ds-btn-secondary w-full"
+                        >
+                            {t('common.cancel')}
+                        </button>
+                    )
+                }
+            >
+                <p className="ds-caption truncate mb-4" style={{ color: 'var(--text-muted)' }}>
+                    {pairingTarget.address} ({formatMdnsName(pairingTarget.name)})
+                </p>
+                {isPairingModal ? (
+                    <>
+                        <label className="ds-label block mb-1" htmlFor="sidebar-modal-code">
+                            {t('sidebar.pairingCodePlaceholder')}
+                        </label>
+                        <input
+                            id="sidebar-modal-code"
+                            ref={modalCodeRef}
+                            type="text"
+                            placeholder={t('sidebar.pairingCodePlaceholder')}
+                            value={modalCode}
+                            onChange={(e) => { setModalCode(e.target.value); setModalError(false); }}
+                            onKeyDown={(e) => { if (e.key === 'Enter') submitPairingModal(); }}
+                            className="ds-input w-full mb-2"
+                        />
+                        {modalError && (
+                            <p className="ds-badge mb-2" style={{ borderStyle: 'dashed' }}>{t('sidebar.pairModalError')}</p>
+                        )}
+                    </>
+                ) : (
+                    <>
+                        <p className="ds-caption mb-4" style={{ color: 'var(--text-secondary)' }}>
+                            {t('sidebar.pairModalNotReadyBody')}
+                        </p>
+                        <div className="flex items-center justify-center gap-2" style={{ color: 'var(--text-muted)' }}>
+                            <RefreshCw size={12} className="animate-spin" />
+                            <span className="ds-label">{t('sidebar.pairModalWaiting')}</span>
+                        </div>
+                    </>
+                )}
+            </SheetModal>
         )}
         </>
     );

@@ -1,6 +1,7 @@
 import { useId } from 'react';
 import { X, AlertTriangle, AlertCircle, Info, CheckCircle2, type LucideIcon } from 'lucide-react';
 import Modal from './Modal';
+import ProgressBar from './ProgressBar';
 import { useI18n } from '../i18n';
 
 type ModalKind = 'warning' | 'error' | 'info' | 'success';
@@ -132,26 +133,12 @@ export default function ThemedModal({
                 {/* Determinate download bar; the text message carries the
                     percent for screen readers, the bar for everyone else. */}
                 {isProgress && (
-                    <div className="mt-5 w-full max-w-[280px]">
-                        <div
-                            role="progressbar"
-                            aria-label={title}
-                            aria-valuemin={0}
-                            aria-valuemax={100}
-                            aria-valuenow={progress}
-                            className="ds-inset h-2.5 w-full overflow-hidden rounded-sm"
-                        >
-                            <div
-                                className="h-full rounded-sm"
-                                style={{ width: `${progress}%`, background: 'var(--primary)', transition: 'width 150ms linear' }}
-                            />
-                        </div>
-                        {progressDetail && (
-                            <div className="ds-caption mt-2" style={{ color: 'var(--text-muted)' }}>
-                                {progressDetail}
-                            </div>
-                        )}
-                    </div>
+                    <ProgressBar
+                        value={progress ?? 0}
+                        label={title}
+                        detail={progressDetail}
+                        className="mt-5 w-full max-w-[280px]"
+                    />
                 )}
             </div>
 

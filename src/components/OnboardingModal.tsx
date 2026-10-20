@@ -1,5 +1,6 @@
 import { CheckCircle2, Download, Cpu, ArrowRight, X, ExternalLink, HelpCircle, RefreshCcw, AlertTriangle } from 'lucide-react';
 import Modal from './Modal';
+import ProgressBar from './ProgressBar';
 import { useI18n } from '../i18n';
 
 interface OnboardingModalProps {
@@ -116,18 +117,12 @@ export default function OnboardingModal({
                                             </button>
 
                                             {isDownloading && (
-                                                <div className="w-full max-w-sm">
-                                                    <div
-                                                        role="progressbar"
-                                                        aria-label={t('onboarding.downloadCoreBinaries')}
-                                                        aria-valuemin={0}
-                                                        aria-valuemax={100}
-                                                        aria-valuenow={downloadProgress}
-                                                        className="ds-inset h-2 overflow-hidden p-0"
-                                                    >
-                                                        <div className="h-full rounded-full" style={{ width: `${downloadProgress}%`, background: 'var(--primary)' }} />
-                                                    </div>
-                                                </div>
+                                                <ProgressBar
+                                                    value={downloadProgress}
+                                                    label={t('onboarding.downloadCoreBinaries')}
+                                                    variant="card"
+                                                    className="w-full max-w-sm"
+                                                />
                                             )}
 
                                             <div className="pt-6" style={{ borderTop: '1px solid var(--border-base)' }}>
