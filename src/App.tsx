@@ -10,12 +10,13 @@ import SessionBehavior from "./components/SessionBehavior";
 import ShortcutsPanel from "./components/ShortcutsPanel";
 import ErrorBoundary from "./components/ErrorBoundary";
 import OnboardingModal from "./components/OnboardingModal";
-import ThemedModal from "./components/ThemedModal";
+import AlertHost from "./components/AlertHost";
 import { useScrcpy } from "./hooks/useScrcpy";
+import { showAlert } from "./alerts";
 import { isTauri } from "./tauri";
 import { appendLogs } from './logs';
 import { getVersion } from '@tauri-apps/api/app';
-import { DownloadCloud, type LucideIcon } from 'lucide-react';
+import { DownloadCloud } from 'lucide-react';
 import { useI18n } from "./i18n";
 
 function App() {
@@ -62,29 +63,6 @@ function App() {
     completeOnboarding
   } = useScrcpy();
 
-  const [alertState, setAlertState] = useState<{
-    isOpen: boolean;
-    title: string;
-    message: string;
-    kind: 'warning' | 'error' | 'info' | 'success';
-    actionLabel?: string;
-    onAction?: () => void;
-    secondaryLabel?: string;
-    onSecondary?: () => void;
-    showCancel?: boolean;
-    cancelLabel?: string;
-    onCancel?: () => void;
-    progress?: number;
-    progressDetail?: string;
-    eyebrow?: string;
-    icon?: LucideIcon;
-  }>({
-    isOpen: false,
-    title: '',
-    message: '',
-    kind: 'info'
-  });
-
   const [appVersion, setAppVersion] = useState("1.0.0");
   const [lastCheckedPath, setLastCheckedPath] = useState<string | undefined>(undefined);
   const [hasCheckedUpdate, setHasCheckedUpdate] = useState(false);
@@ -97,39 +75,6 @@ function App() {
   } | null>(null);
   // Device being switched from USB to wireless (drives the card button state).
   const [wirelessSwitching, setWirelessSwitching] = useState<string | null>(null);
-
-  // Alerts moved from 10 positional parameters to an options object: one
-  // call site used to pass `undefined` mid-list just to reach a later
-  // argument. ThemedModal keeps its props unchanged.
-  interface AlertOptions {
-    title: string;
-    message: string;
-    kind?: 'warning' | 'error' | 'info' | 'success';
-    actionLabel?: string;
-    onAction?: () => void;
-    showCancel?: boolean;
-    cancelLabel?: string;
-    onCancel?: () => void;
-    secondaryLabel?: string;
-    onSecondary?: () => void;
-    // Download screen (ThemedModal renders a bar and hides its buttons).
-    progress?: number;
-    progressDetail?: string;
-    /** Replaces the kind chip with a short, informational label. */
-    eyebrow?: string;
-    /** Replaces the kind icon. */
-    icon?: LucideIcon;
-  }
-
-  const showAlert = (opts: AlertOptions) => {
-    setAlertState({
-      isOpen: true,
-      ...opts,
-      kind: opts.kind ?? 'info',
-      actionLabel: opts.actionLabel ?? t('common.ok'),
-      cancelLabel: opts.cancelLabel ?? t('common.cancel')
-    });
-  };
 
   useEffect(() => {
     // Initial setup: fetch version (no artificial delay -- getVersion works
@@ -638,24 +583,7 @@ function App() {
           onComplete={completeOnboarding}
         />
 
-        <ThemedModal
-          isOpen={alertState.isOpen}
-          onClose={() => setAlertState(prev => ({ ...prev, isOpen: false }))}
-          title={alertState.title}
-          message={alertState.message}
-          kind={alertState.kind}
-          actionLabel={alertState.actionLabel}
-          onAction={alertState.onAction}
-          secondaryLabel={alertState.secondaryLabel}
-          onSecondary={alertState.onSecondary}
-          showCancel={alertState.showCancel}
-          cancelLabel={alertState.cancelLabel}
-          onCancel={alertState.onCancel}
-          progress={alertState.progress}
-          progressDetail={alertState.progressDetail}
-          eyebrow={alertState.eyebrow}
-          icon={alertState.icon}
-        />
+        <AlertHost />
       </div>
     </ErrorBoundary>
   );

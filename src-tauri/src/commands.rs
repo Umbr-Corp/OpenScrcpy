@@ -3234,13 +3234,19 @@ pub async fn download_scrcpy(window: Window) -> Result<(), String> {
         );
 
         let mut downloaded: u64 = 0;
+        let mut last_percent: Option<u64> = None;
         while let Some(chunk) = download_resp.chunk().await.map_err(|e| e.to_string())? {
             file.write_all(&chunk)
                 .map_err(|e| format!("Failed to write chunk: {}", e))?;
             downloaded += chunk.len() as u64;
             if total_size > 0 {
                 let percent = (downloaded * 100) / total_size;
-                let _ = window.emit("download-progress", json!({ "percent": percent }));
+                // Chunks are a few KB: emitting on every one floods the
+                // webview with hundreds of identical percentages.
+                if last_percent != Some(percent) {
+                    last_percent = Some(percent);
+                    let _ = window.emit("download-progress", json!({ "percent": percent }));
+                }
             }
         }
     }
