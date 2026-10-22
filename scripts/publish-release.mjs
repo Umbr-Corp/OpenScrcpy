@@ -30,9 +30,6 @@ const UPLOAD_URL = API_URL.includes('api.github.com')
   ? 'https://uploads.github.com'
   : API_URL;
 
-/** GitHub serves asset metadata as JSON unless the client asks for the bytes. */
-const IS_GITHUB = API_URL.includes('api.github.com');
-
 function fail(message) {
   console.error(`release: ${message}`);
   process.exit(1);
@@ -159,21 +156,18 @@ async function collectAssets(release) {
   const assets = [];
 
   for (const asset of release.assets ?? []) {
-    const headers = { Authorization: `token ${TOKEN}` };
-    if (IS_GITHUB) headers.Accept = 'application/octet-stream';
+    // Only the `.sig` bytes matter to the manifest, and the public download
+    // URL serves them on both forges. The API route for asset content
+    // (`/releases/assets/{id}`) is not available on Forgejo 16 (router 404),
+    // so the download URL is the portable path.
+    let signature = null;
+    if (asset.name.endsWith('.sig')) {
+      const response = await fetch(asset.browser_download_url);
+      if (!response.ok) fail(`GET asset ${asset.name} -> ${response.status}`);
+      signature = (await response.text()).trim();
+    }
 
-    const response = await fetch(
-      `${API_URL}${repoPath(`/releases/assets/${asset.id}`)}`,
-      { headers },
-    );
-    if (!response.ok) fail(`GET asset ${asset.name} -> ${response.status}`);
-
-    assets.push({
-      name: asset.name,
-      signature: asset.name.endsWith('.sig')
-        ? (await response.text()).trim()
-        : null,
-    });
+    assets.push({ name: asset.name, signature });
   }
 
   return assets;

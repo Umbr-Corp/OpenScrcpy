@@ -51,6 +51,14 @@ jobs:
           # Use sed to update version in Cargo.toml [package] section
           sed -i "s/^version = \".*\"/version = \"${{ env.NEW_VERSION }}\"/" src-tauri/Cargo.toml
 
+      - name: Update Cargo.lock
+        run: |
+          # Keep the committed lock in sync with the bumped [package] version,
+          # otherwise every local build dirties the tree right after the merge.
+          sed -i '/^name = "openscrcpy"$/ { n; s/^version = ".*"/version = "${{ env.NEW_VERSION }}"/ }' src-tauri/Cargo.lock
+          grep -A1 '^name = "openscrcpy"$' src-tauri/Cargo.lock | grep -q "version = \"${{ env.NEW_VERSION }}\"" \
+            || { echo "Cargo.lock version not updated"; exit 1; }
+
       - name: Create Pull Request
         env:
           TOKEN: ${{ secrets.RELEASE_TOKEN }}
@@ -59,19 +67,20 @@ jobs:
         run: |
           BRANCH="chore/version-bump-v${NEW_VERSION}"
           git checkout -b "$BRANCH"
-          git add package.json package-lock.json src-tauri/tauri.conf.json src-tauri/Cargo.toml
+          git add package.json package-lock.json src-tauri/tauri.conf.json src-tauri/Cargo.toml src-tauri/Cargo.lock
           git commit -m "chore: bump version to v${NEW_VERSION}"
           git push origin "$BRANCH"
 
           # Both GitHub and Forgejo create a pull request through the same
-          # POST /repos/{owner}/{repo}/pulls route.
+          # POST /repos/{owner}/{repo}/pulls route. The body is built with
+          # printf on a single line: a multi-line shell string would put
+          # unindented lines inside `run: |` and break the YAML block scalar.
+          BODY=$(printf 'Bumping version to v%s\n- Bump type: %s\n- Updated: package.json, src-tauri/tauri.conf.json, src-tauri/Cargo.toml, src-tauri/Cargo.lock' "$NEW_VERSION" "$BUMP_TYPE")
           PAYLOAD=$(jq -n \
             --arg title "chore: bump version to v${NEW_VERSION}" \
             --arg head "$BRANCH" \
             --arg base "main" \
-            --arg body "Bumping version to v${NEW_VERSION}
-- Bump type: ${BUMP_TYPE}
-- Updated: package.json, src-tauri/tauri.conf.json, src-tauri/Cargo.toml" \
+            --arg body "$BODY" \
             '{title: $title, head: $head, base: $base, body: $body}')
 
           curl -sS -X POST \
