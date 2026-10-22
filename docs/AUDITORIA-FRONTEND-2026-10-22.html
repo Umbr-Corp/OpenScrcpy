@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Auditoria de Frontend — OpenScrcpy (v3, pós-migração Forgejo)</title>
+<style>
+  :root {
+    --bg-base: #16161a;
+    --bg-surface: #1e1e24;
+    --bg-inset: #26262d;
+    --border-base: #3a3a42;
+    --text-base: #fafafa;
+    --text-secondary: #b8b8c0;
+    --text-muted: #8a8a95;
+    --primary: #8fa6ff;
+    --success: #57d06f;
+    --warning: #e0c559;
+    --danger: #f88686;
+    --radius-md: 10px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg-base);
+    color: var(--text-base);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.55;
+    padding: 40px 24px 80px;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; }
+  header.meta { border-bottom: 1px solid var(--border-base); padding-bottom: 24px; margin-bottom: 32px; }
+  h1 { font-size: 26px; margin: 0 0 8px; }
+  h1 small { display: block; font-size: 14px; color: var(--text-muted); font-weight: 400; margin-top: 6px; }
+  .meta p { margin: 4px 0; color: var(--text-secondary); font-size: 14px; }
+  .badges { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+  .badge {
+    border: 1px solid var(--border-base);
+    border-radius: 999px;
+    padding: 4px 14px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    background: var(--bg-surface);
+  }
+  .badge strong { color: var(--text-base); }
+  .badge.b1 { border-style: dashed; border-color: var(--danger); }
+  .badge.b2 { border-style: dashed; border-color: var(--warning); }
+  .badge.ok-badge { border-color: var(--success); color: var(--success); }
+  .badge.adj { border-color: var(--warning); color: var(--warning); }
+  h2 { font-size: 18px; margin: 40px 0 4px; }
+  h2 + p.sub { margin: 0 0 16px; color: var(--text-muted); font-size: 13.5px; }
+  .card {
+    border: 1px solid var(--border-base);
+    border-radius: var(--radius-md);
+    background: var(--bg-surface);
+    padding: 16px 20px;
+    margin-bottom: 14px;
+  }
+  .card.p1 { border-style: dashed; border-color: var(--danger); }
+  .card.p2 { border-style: dashed; border-color: var(--warning); }
+  .card.p3 { border-left: 3px solid var(--text-muted); }
+  .card .title { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+  .card .num { color: var(--text-muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+  .card h3 { margin: 0; font-size: 15.5px; }
+  .verdict {
+    font-size: 12px;
+    letter-spacing: .03em;
+    border-radius: 999px;
+    padding: 2px 10px;
+    border: 1px dashed var(--border-base);
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+  .verdict.ok { border-color: var(--success); color: var(--success); }
+  .verdict.adj { border-color: var(--warning); color: var(--warning); }
+  .card p { margin: 6px 0 0; font-size: 14px; color: var(--text-secondary); }
+  .proof b { color: var(--text-base); font-weight: 600; }
+  .file {
+    font-family: ui-monospace, monospace;
+    font-size: 12.5px;
+    background: var(--bg-inset);
+    border: 1px solid var(--border-base);
+    border-radius: 6px;
+    padding: 1px 8px;
+    color: var(--primary);
+    white-space: nowrap;
+  }
+  .plan {
+    margin-top: 10px;
+    padding: 10px 14px;
+    background: var(--bg-inset);
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+  .plan b { color: var(--primary); font-weight: 600; }
+  .plan .eff { color: var(--text-muted); font-size: 12px; margin-top: 4px; }
+  .alt { margin-top: 6px; padding-top: 8px; border-top: 1px dashed var(--border-base); }
+  .alt::before { content: "Alternativa descartada: "; color: var(--danger); font-weight: 600; }
+  .good { border-left: 3px solid var(--success); }
+  .good ul { margin: 8px 0 0; padding-left: 20px; color: var(--text-secondary); font-size: 14px; }
+  .good li { margin-bottom: 6px; }
+  .good .h { color: var(--success); font-weight: 600; }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--border-base); vertical-align: top; }
+  th { color: var(--text-muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+  td .file { border: none; background: transparent; padding: 0; }
+  .next {
+    margin-top: 32px;
+    background: var(--bg-inset);
+    border: 1px solid var(--primary);
+    border-radius: var(--radius-md);
+    padding: 16px 20px;
+  }
+  .next h2 { margin: 0 0 6px; font-size: 15px; color: var(--primary); }
+  .next p { margin: 0; font-size: 14px; color: var(--text-secondary); }
+  footer { margin-top: 56px; padding-top: 20px; border-top: 1px solid var(--border-base); color: var(--text-muted); font-size: 12.5px; }
+  .deltas { background: var(--bg-surface); border: 1px dashed var(--border-base); border-radius: var(--radius-md); padding: 14px 20px; margin-bottom: 24px; font-size: 13.5px; color: var(--text-secondary); }
+  .deltas b { color: var(--text-base); }
+  .deltas li { margin-bottom: 4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="meta">
+  <h1>Auditoria de Frontend — OpenScrcpy <small>v3 · estado atual após PRs #17–#22 e migração para o Forgejo</small></h1>
+  <p>Escopo: diff <code>v1.1.2..HEAD</code> (28 commits, 42 arquivos, +1719/−591), os dois achados de infraestrutura novos da migração, o estado real dos P3 da auditoria de 19/10 e re-verificação das suítes. Evidências por requisição HTTP direta contra as duas instâncias (Forgejo e GitHub) e execução local das suítes.</p>
+  <div class="badges">
+    <span class="badge b1"><strong>2</strong> P1 (pipeline de release quebrado)</span>
+    <span class="badge b2"><strong>3</strong> P2</span>
+    <span class="badge adj"><strong>4</strong> P3 (limpeza)</span>
+    <span class="badge ok-badge">suítes verdes · i18n 8/8 · 3 P3 anteriores resolvidos</span>
+  </div>
+</header>
+
+<div class="deltas">
+  <b>Δ Desde a auditoria de 19/10:</b>
+  <ul style="margin:6px 0 0; padding-left:20px">
+    <li><b>Corrigados</b>: P1 1–4, P2 6, 7, 8 e P3 2 (flag <code>scrcpy_onboarding_done</code> agora é lido) e P3 12 (controles de janela em i18n) — todos via PRs #17–#20.</li>
+    <li><b>Novo desde então</b>: migração Forgejo (merge <code>1a03d54</code>), scripts de release <code>publish-release.mjs</code> / <code>collect-assets.mjs</code> / <code>updater-manifest.mjs</code> com testes, endpoint do updater trocado para <code>raw/branch/main/updater/latest.json</code>.</li>
+    <li><b>Testado</b>: 94 testes frontend / 16 arquivos (eram 87/15), 35 testes Rust, <code>tsc --noEmit</code> limpo, paridade i18n verificada nos 8 bundles (teste temporário, chaves idênticas).</li>
+    <li><b>Confirmado</b>: Forgejo serve a v1.1.7 completa (14 assets, tag e download direto respondem 200); <code>releases/latest</code> da API responde <code>v1.1.7</code> corretamente.</li>
+  </ul>
+</div>
+
+<h2>P1 · Pipeline de release</h2>
+<p class="sub">Os dois achados novos estão no fluxo de release pós-Forgejo. Nenhum deles aparece no build local — só no próximo tag.</p>
+
+<article class="card p1">
+  <div class="title"><span class="num">1</span><h3>Job <code>manifest</code> vai falhar: a rota de assets não existe no Forgejo</h3><span class="verdict ok">CONFIRMADO (sem token)</span><span class="file">scripts/publish-release.mjs · collectAssets()</span></div>
+  <p class="proof"><code>collectAssets()</code> chama <code>GET /repos/{owner}/{repo}/releases/assets/{id}</code> para ler cada <code>.sig</code>. Teste empírico contra <code>v16.next.forgejo.org</code> (Forgejo 16.0.6 / gitea 1.22): a rota responde <b>404 <code>page not found</code></b> — 404 do router Go, não o 404 JSON da API (comparado lado a lado com <code>/releases/{id}</code>, que devolve <code>{"message": ...}</code>). O mesmo <code>.sig</code> via <code>browser_download_url</code> responde <b>200</b> com o conteúdo de texto da assinatura, anônimo.</p>
+  <p class="proof"><b>Efeito no próximo release</b>: <code>fail('GET asset ... -&gt; 404')</b> aborta o job <code>manifest</code> → <code>updater/latest.json</code> nunca é regenerado no <code>main</code> → o in-app updater (que aponta para esse arquivo) anuncia 1.1.7 para sempre. Os artefatos são publicados (jobs <code>publish</code> ok), só o manifesto morre.</p>
+  <div class="plan">
+    <b>Melhor fix</b>: baixar o <code>.sig</code> direto de <code>asset.browser_download_url</code> (que o próprio JSON do release já traz). Funciona anônimo no Forgejo, funciona no GitHub para repo público, e elimina a dependência da rota de API. A autorização só é necessária para o <code>upload</code>, que continua como está.
+    <div class="eff">Esforço: ~15 min, ajuste pontual no loop de <code>collectAssets</code> + rodar os testes existentes de <code>updater-manifest</code>.</div>
+    <div class="alt">manter a rota de API e confiar que o <code>TOKEN</code> do CI resolve. Não foi possível testar com token; e o 404 é do router (rota ausente), o que token nenhum resolve. Deixa o próximo release como aposta.</div>
+  </div>
+</article>
+
+<article class="card p1">
+  <div class="title"><span class="num">2</span><h3>Quem tem a 1.1.7 instalada nunca verá a 1.1.8 — e o modal vai contradizer o updater</h3><span class="verdict ok">CONFIRMADO</span><span class="file">tauri.conf.json (tag v1.1.7 vs main) · src-tauri/src/commands.rs</span></div>
+  <p class="proof">O binário 1.1.7 compilado embute <code>https://github.com/Umbr-Corp/OpenScrcpy/releases/latest/download/latest.json</code>. Esse arquivo ainda existe no GitHub e diz <code>"version": "1.1.7"</code> — não vai mudar, porque releases novas só entram no Forgejo. Pior: o <code>check_app_update</code> (Rust) já aponta para o Forgejo, então quando a 1.1.8 sair, o <b>modal anuncia atualização disponível</b> (Forgejo diz 1.1.8) e, ao clicar em "Baixar e instalar", o <b>plugin updater diz "você está na última versão"</b> (GitHub diz 1.1.7). Dois endpoints, duas verdades, na mesma tela.</p>
+  <div class="plan">
+    <b>Melhor fix (ponte de um arquivo)</b>: subir um <code>latest.json</code> novo no release v1.1.7 do GitHub com as URLs de download apontando para o Forgejo. A assinatura do updater é sobre os <i>bytes</i> do artefato, independente do host — então o manifesto pode morar no GitHub e baixar do Forgejo. Usuário da 1.1.7 vê 1.1.8, baixa, assinatura confere, reinicia; a partir da 1.1.8 o endpoint é o Forgejo e a corrente fecha.
+    <div class="eff">Esforço: ~20 min manuais hoje (regenerar o manifesto com URLs do Forgejo, deletar+re-upload do asset <code>latest.json</code> na release v1.1.7 do GitHub) + ~10 min de decisão sobre se vira processo documentado.</div>
+    <div class="alt">espelhar releases inteiras nos dois hosts para sempre — infra duplicada e permanente para resolver um problema de uma fronteira de migração.</div>
+  </div>
+</article>
+
+<h2>P2 · Dívida remanescente e workflows</h2>
+
+<article class="card p2">
+  <div class="title"><span class="num">3</span><h3>Código morto e comentários obsoletos da auditoria anterior (P3 10, 11, 13, 14)</h3><span class="verdict adj">ABERTOS</span><span class="file">types.ts:56 · LogPanel.tsx:109 · ErrorBoundary.tsx:73 · App.tsx:143 · types.ts:95</span></div>
+  <p class="proof">Re-verificados um a um: <b>#10</b> <code>cameraFacing</code> continua no <code>ScrcpyConfig</code> sem nenhum uso (grep: 1 ocorrência, a própria declaração). <b>#11</b> a branch <code>if (!onAddLog)</code> do <code>LogPanel</code> é inalcançável (<code>App.tsx:562</code> sempre passa o callback) e o <code>ErrorBoundary.tsx:73</code> ainda usa <code>alert()</code> num path real. <b>#13</b> o comentário "Route 1, no updater plugin yet" em <code>App.tsx:143</code> ficou <i>pior</i>: logo abaixo o plugin updater é usado de verdade — o comentário contradiz o código adjacente. <b>#14</b> <code>types.ts:95</code> documenta "32..256" e a UI oferece 64/128/192/256 (<code>ControlPanel.tsx:643-647</code>); o backend aceita 32 (<code>commands.rs:1319</code>), então só falta a opção — ou o comentário deve dizer o que a UI escolheu.</p>
+  <div class="plan">
+    <b>Melhor fix</b>: lote único de limpeza — remover <code>cameraFacing</code>, remover a branch morta, trocar o <code>alert()</code> do ErrorBoundary por <code>console.error</code> (o painel de logs já cobre o usuário), apagar/reescrever os dois comentários, e decidir se 32 kbps entra na UI (é só um item de lista).
+    <div class="eff">Esforço: ~30 min, zero behavior change, compilador aponta os pontos.</div>
+    <div class="alt">seguir item por item em PRs separados — mesmo custo de review dividido por 4.</div>
+  </div>
+</article>
+
+<article class="card p2">
+  <div class="title"><span class="num">4</span><h3><code>bump_version.yml</code> não atualiza nem commita o <code>Cargo.lock</code></h3><span class="verdict ok">CONFIRMADO</span><span class="file">.github/workflows/bump_version.yml:55-62</span></div>
+  <p class="proof">O workflow faz <code>npm version</code> (package.json + package-lock.json), <code>jq</code> (tauri.conf.json) e <code>sed</code> (Cargo.toml) — e o <code>git add</code> lista esses quatro arquivos. O <code>Cargo.lock</code> fica com a versão antiga; cada build de dev re-escreve o lock e deixa a working tree suja, e o PR de bump sai desatualizado. O bump manual da 1.1.7 (PR #21) incluiu o lock; o automatizado não.</p>
+  <div class="plan">
+    <b>Melhor fix</b>: após o <code>sed</code> no Cargo.toml, rodar <code>cargo update -p openscrcpy --precise</code> não existe para versão própria — na prática: tocar a versão no <code>Cargo.lock</code> com <code>sed</code> também (a linha <code>name = "openscrcpy"</code>/<code>version</code>), e adicionar <code>src-tauri/Cargo.lock</code> ao <code>git add</code>.
+    <div class="eff">Esforço: ~10 min, duas linhas no workflow.</div>
+  </div>
+</article>
+
+<article class="card p2">
+  <div class="title"><span class="num">5</span><h3><code>tag_on_merge.yml</code> faz <code>git tag -f</code> + <code>push --force</code> sobre tags publicadas</h3><span class="verdict adj">CONFIRMADO — RISCO OPERACIONAL</span><span class="file">.github/workflows/tag_on_merge.yml:38-39</span></div>
+  <p class="proof">O job só dispara para branches <code>chore/version-bump-v*</code>, mas <i>re-executar</i> o workflow (retry manual do Actions, ou reabertura de PR antiga) sobrescreve a tag de uma release já publicada e re-dispara o build de release sobre assets existentes. O <code>uploadAsset</code> até apaga e re-upa assets homônimos, então o resultado é coerente — mas uma tag assinada não pode ser movida sem invalidar o release, e nada impede isso hoje.</p>
+  <div class="plan">
+    <b>Melhor fix</b>: antes de criar, checar <code>git rev-parse -q --verify refs/tags/v$VERSION</code> e abortar com mensagem clara se a tag já existe. Remove a força do <code>-f</code>/<code>--force</code> do caminho normal.
+    <div class="eff">Esforço: ~10 min, um step condicional.</div>
+    <div class="alt">remover o <code>--force</code> sem checagem — aí o retry legítimo (tag criada mas push falhou) passa a falhar em vez de sobrescrever. A checagem cobre os dois casos.</div>
+  </div>
+</article>
+
+<h2>P3 · Limpeza</h2>
+
+<article class="card p3">
+  <div class="title"><span class="num">6</span><h3>Relatório de diagnóstico exporta o <code>localStorage</code> inteiro, sem avisar</h3><span class="verdict adj">ABERTO (P3 15)</span><span class="file">LogPanel.tsx:82-99</span></div>
+  <p class="proof">O download de diagnóstico segue incluindo <i>todo</i> o <code>localStorage</code> (histórico de IPs, flag de onboarding, preferências) e o corpo do arquivo não diz o que foi coletado.</p>
+  <div class="plan"><b>Fix</b>: adicionar um cabeçalho no arquivo explicando as seções, ou exportar só <code>scrcpy_devices</code> + prefs relevantes. ~15 min.</div>
+</article>
+
+<article class="card p3">
+  <div class="title"><span class="num">7</span><h3>URL do Forgejo hardcoded em quatro pontos</h3><span class="verdict adj">NOVO</span><span class="file">tauri.conf.json · App.tsx:244 · commands.rs (check_app_update) · Header.tsx</span></div>
+  <p class="proof"><code>v16.next.forgejo.org/UmbrCorp/OpenScrcpy</code> aparece no endpoint do updater, no fallback de "abrir release no navegador", na API do <code>check_app_update</code> e nos links do Header. Próxima migração de host é um grep de quatro arquivos — como foi desta vez.</p>
+  <div class="plan"><b>Fix</b>: extrair para uma constante no frontend (o <code>tauri.conf.json</code> e o Rust continuam literais por natureza de plataforma). ~20 min. Deixa de ser P3 se houver mais uma mudança de host; hoje é higiene.</div>
+</article>
+
+<article class="card p3">
+  <div class="title"><span class="num">8</span><h3>Paridade de i18n dos 8 locales só foi testada com um teste temporário</h3><span class="verdict adj">NOVO</span><span class="file">src/i18n/ · src/__tests__/</span></div>
+  <p class="proof">A verificação (flatten + comparação dos 8 bundles) passou, mas o teste foi descartado depois. Cada PR com chave nova repete o risco de um locale ficar para trás sem CI pegar.</p>
+  <div class="plan"><b>Fix</b>: promover o flatten a teste permanente em <code>i18n.test.ts</code> — compara as chaves do pt-BR (referência) com os outros 7. ~20 min, protege todos os PRs futuros.</div>
+</article>
+
+<article class="card p3">
+  <div class="title"><span class="num">9</span><h3><code>updater/latest.json</code> versionado carrega as notes placeholder</h3><span class="verdict adj">NOVO — SE AUTOCORRIGE</span><span class="file">updater/latest.json</span></div>
+  <p class="proof">O manifesto commitado à mão na migração tem <code>"notes": "See the assets below for the release."</code> (placeholder do fluxo antigo). O app já filtra essa string e cai numa mensagem genérica, e o próximo job <code>manifest</code> a substitui pelas notas reais do git log. Nenhuma ação necessária — documentado aqui para não virar achado duplicado.</p>
+</article>
+
+<h2>Re-verificado e sólido</h2>
+
+<div class="card good">
+  <ul>
+    <li><span class="h">Suítes</span>: 94 testes frontend / 16 arquivos, 35 testes Rust, <code>tsc --noEmit</code> limpo — no estado atual do <code>main</code>.</li>
+    <li><span class="h">i18n</span>: paridade real dos 8 bundles (pt-BR, en, fr, ru, id, zh-CN, zh-TW, ar) — chaves idênticas após flatten.</li>
+    <li><span class="h">P3 anteriores resolvidos</span>: #2 (flag de onboarding lido em <code>useDownloads</code>), #12 (controles de janela via <code>t('common.winMinimize')</code> etc.), e o P2 #7 virou objeto (<code>showAlert({ title, message, kind })</code> nos 15 call sites).</li>
+    <li><span class="h">Rust</span>: <code>session_generations</code> corrige sidecars órfãos com testes dedicados; <code>compare_versions</code> ignora sufixos não-numéricos corretamente.</li>
+    <li><span class="h">Forgejo</span>: v1.1.7 espelhada com 14 assets, tag e downloads respondem 200, <code>releases/latest</code> da API devolve <code>v1.1.7</code> — o <code>check_app_update</code> funcionará no próximo release (o gargalo é o manifesto, item 1).</li>
+  </ul>
+</div>
+
+<div class="next">
+  <h2>Próximo passo — lote proposto</h2>
+  <p>1. Item 1 (<code>browser_download_url</code> no <code>collectAssets</code>) + item 4 (<code>Cargo.lock</code> no bump) num PR de pipeline — desbloqueia o próximo release. 2. Item 2 (ponte do <code>latest.json</code> no GitHub) como ação manual documentada. 3. Itens 3 + 6 a 8 num PR de limpeza, depois. Aprovar o lote 1 libera tudo o resto.</p>
+</div>
+
+<footer>
+  Auditoria v3 · 2026-10-22 · escopo: v1.1.2..HEAD (28 commits) + infraestrutura pós-migração Forgejo · testes executados localmente: npm 94/94, cargo 35/35, tsc limpo · requisições HTTP diretas contra v16.next.forgejo.org e api.github.com.
+</footer>
+
+</div>
+</body>
+</html>
