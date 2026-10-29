@@ -8,15 +8,32 @@ mod grab;
 // active mirror window), shared with grab.rs's Windows-only drag toggle.
 mod shortcuts;
 use std::collections::HashMap;
-use std::sync::Mutex;
+use std::sync::atomic::AtomicU32;
+use std::sync::{Arc, Mutex};
 use tauri::Manager;
-use tokio::process::Child;
+use tokio::sync::{oneshot, Notify};
 
 #[cfg(target_os = "linux")]
 use std::os::unix::process::CommandExt;
 
+/// One running session. The monitor task owns the `Child`; the registry keeps
+/// only what other commands need: the PID to target, a channel to ask the
+/// task to stop, and a notification that it finished.
+pub struct SessionHandle {
+    pub generation: u64,
+    pub pid: Arc<AtomicU32>,
+    pub stop: oneshot::Sender<StopRequest>,
+    pub done: Arc<Notify>,
+}
+
+#[derive(Debug)]
+pub struct StopRequest {
+    /// Position captured by `stop_scrcpy` while the window still exists.
+    pub position: Option<(i32, i32)>,
+}
+
 pub struct ScrcpyState {
-    pub processes: Mutex<HashMap<String, Child>>,
+    pub sessions: Mutex<HashMap<String, SessionHandle>>,
     /// Logical session generation per device serial, bumped by every
     /// run_scrcpy. Mic sidecar loops (route watcher, level meter) capture the
     /// value at spawn and exit once it moves past theirs: a replaced session
@@ -24,13 +41,6 @@ pub struct ScrcpyState {
     /// cannot tell the previous session's loops apart from the new one.
     pub session_generations: Mutex<HashMap<String, u64>>,
     pub active_device: Mutex<Option<String>>,
-    /// A raw window position captured by `stop_scrcpy` right before it kills
-    /// the process (the window is still exactly where the user left it at
-    /// that instant), handed off to the run_scrcpy monitor loop so it can
-    /// apply its already-learned decoration offset instead of persisting its
-    /// own periodic sample, which can be a few seconds stale. See
-    /// `resolve_window_pos_to_persist` in commands.rs.
-    pub final_capture_hint: Mutex<HashMap<String, (i32, i32)>>,
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -90,10 +100,9 @@ pub fn run() {
     let app = builder
         .setup(|app| {
             app.manage(ScrcpyState {
-                processes: Mutex::new(HashMap::new()),
+                sessions: Mutex::new(HashMap::new()),
                 session_generations: Mutex::new(HashMap::new()),
                 active_device: Mutex::new(None),
-                final_capture_hint: Mutex::new(HashMap::new()),
             });
 
             // Ctrl+Alt+Shift+C (recentre the active mirror window) on every

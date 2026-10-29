@@ -1,5 +1,5 @@
 use crate::process;
-use crate::ScrcpyState;
+use crate::{ScrcpyState, SessionHandle, StopRequest};
 use flate2::read::GzDecoder;
 use serde::Deserialize;
 use serde_json::json;
@@ -8,12 +8,13 @@ use std::collections::HashMap;
 use std::os::windows::process::CommandExt;
 use std::path::Path;
 use std::process::{Command as StdCommand, Stdio};
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::sync::Arc;
 use tar::Archive;
 use tauri::{Emitter, Manager, State, Window};
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::Command as TokioCommand;
+use tokio::sync::{oneshot, Notify};
 use tokio::time::{timeout, Duration};
 
 const AUDIO_FALLBACK_CHAIN: &[&str] = &["aac", "flac", "raw"];
@@ -1168,11 +1169,12 @@ fn recenter_window(pid: u32) {
 /// if `device` has no tracked process (e.g. nothing is running).
 pub fn recenter_device(state: &ScrcpyState, device: &str) {
     let pid = state
-        .processes
+        .sessions
         .lock()
         .unwrap_or_else(|e| e.into_inner())
         .get(device)
-        .and_then(|c| c.id());
+        .map(|s| s.pid.load(Ordering::Relaxed))
+        .filter(|pid| *pid != 0);
     if let Some(pid) = pid {
         recenter_window(pid);
     }
@@ -1639,7 +1641,52 @@ async fn spawn_scrcpy_streams(
 enum AttemptOutcome {
     Exited(String),
     WaitError(String),
-    UserStopped,
+}
+
+/// Asks the child to exit, waits `grace`, then forces it. Returns whether the
+/// graceful path was enough.
+async fn terminate_child(child: &mut tokio::process::Child, grace: Duration) -> bool {
+    #[cfg(target_os = "windows")]
+    if let Some(pid) = child.id() {
+        let _ = StdCommand::new("taskkill")
+            .args(["/PID", &pid.to_string(), "/T"])
+            .creation_flags(CREATE_NO_WINDOW)
+            .output();
+    }
+    #[cfg(not(target_os = "windows"))]
+    if let Some(pid) = child.id() {
+        let _ = StdCommand::new("kill").arg(pid.to_string()).output();
+    }
+
+    match tokio::time::timeout(grace, child.wait()).await {
+        Ok(Ok(_)) => true,
+        Ok(Err(_)) | Err(_) => {
+            let _ = child.start_kill();
+            let _ = child.wait().await;
+            false
+        }
+    }
+}
+
+/// Last-resort kill used when the monitor task cannot run or misses the
+/// deadline. SIGKILL/TerminateProcess cannot be ignored, so no wait is needed.
+fn force_kill_pid(pid: u32) {
+    if pid == 0 {
+        return;
+    }
+    #[cfg(target_os = "windows")]
+    {
+        let _ = StdCommand::new("taskkill")
+            .args(["/PID", &pid.to_string(), "/T", "/F"])
+            .creation_flags(CREATE_NO_WINDOW)
+            .output();
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        let _ = StdCommand::new("kill")
+            .args(["-9", &pid.to_string()])
+            .output();
+    }
 }
 
 // ── Microphone bridge helpers (Linux / PipeWire-PulseAudio) ─────────
@@ -1847,7 +1894,7 @@ fn session_generation_is_current(
 fn session_alive(app_handle: &tauri::AppHandle, device: &str, generation: u64) -> bool {
     let state = app_handle.state::<ScrcpyState>();
     let in_registry = state
-        .processes
+        .sessions
         .lock()
         .unwrap_or_else(|e| e.into_inner())
         .contains_key(device);
@@ -2187,11 +2234,8 @@ pub async fn run_scrcpy(
     };
 
     // Bump the logical session generation BEFORE replacing the previous
-    // process. Mic sidecars check this once per pass; without it, their next
-    // liveness check could already see the replacement session under the same
-    // registry key, and both the stale and the new watcher would keep running
-    // (duplicate [MIC] polls and level meters for one device).
-    #[cfg(unix)]
+    // process. Mic sidecars check this once per pass; the monitor task also
+    // uses it to avoid deleting a newer session's registry entry.
     let session_generation = {
         let mut generations = state
             .session_generations
@@ -2200,22 +2244,26 @@ pub async fn run_scrcpy(
         bump_session_generation(&mut generations, &config.device)
     };
 
-    // One session per device: launching with a live session for this device
-    // would overwrite the registry entry and orphan the previous child
-    // (Stop would then never see it — e.g. audio kept flowing). Replace it.
-    // The guard must be released before the await below, hence the binding.
+    // One session per device: stop the previous one before spawning the new
+    // child, so a fast double-start cannot leave an untracked process behind.
     let existing_to_replace = state
-        .processes
+        .sessions
         .lock()
         .unwrap_or_else(|e| e.into_inner())
         .remove(&config.device);
-    if let Some(mut existing) = existing_to_replace {
+    if let Some(existing) = existing_to_replace {
         let _ = window.emit(
             "scrcpy-log",
             "[SYSTEM] Replacing the previous session for this device.".to_string(),
         );
-        let _ = existing.kill().await;
-        tokio::time::sleep(Duration::from_millis(300)).await;
+        let notified = existing.done.notified();
+        let _ = existing.stop.send(StopRequest { position: None });
+        if tokio::time::timeout(Duration::from_secs(3), notified)
+            .await
+            .is_err()
+        {
+            force_kill_pid(existing.pid.load(Ordering::Relaxed));
+        }
     }
 
     // First attempt: honour the user's audio codec choice. In "auto" mode this
@@ -2239,12 +2287,23 @@ pub async fn run_scrcpy(
     let should_auto_fallback = audio_enabled
         && (audio_codec_mode.is_empty() || audio_codec_mode.eq_ignore_ascii_case("auto"));
 
-    let initial_scrcpy_pid = child.id();
+    let initial_scrcpy_pid = child.id().unwrap_or(0);
+    let session_pid = Arc::new(AtomicU32::new(initial_scrcpy_pid));
+    let session_done = Arc::new(Notify::new());
+    let (stop_tx, stop_rx) = oneshot::channel();
     state
-        .processes
+        .sessions
         .lock()
         .unwrap_or_else(|e| e.into_inner())
-        .insert(config.device.clone(), child);
+        .insert(
+            config.device.clone(),
+            SessionHandle {
+                generation: session_generation,
+                pid: session_pid.clone(),
+                stop: stop_tx,
+                done: session_done.clone(),
+            },
+        );
     let _ = window.emit(
         "scrcpy-status",
         json!({ "device": config.device, "running": true }),
@@ -2298,14 +2357,39 @@ pub async fn run_scrcpy(
     let track_pos = config_mon.session_mode == "mirror" && !config_mon.fullscreen.unwrap_or(false);
 
     tokio::spawn(async move {
+        let mut current_child = child;
         let mut current_audio_flag = audio_error_flag;
         let mut chain_index: usize = 0;
-        let mut current_scrcpy_pid = initial_scrcpy_pid;
         let mut first_window_pos: Option<(i32, i32)> = None;
         let mut last_window_pos: Option<(i32, i32)> = None;
+        let mut stop_rx = stop_rx;
 
         loop {
-            tokio::time::sleep(Duration::from_millis(500)).await;
+            tokio::select! {
+                _ = tokio::time::sleep(Duration::from_millis(500)) => {}
+                request = &mut stop_rx => {
+                    let position = match request {
+                        Ok(request) => request.position,
+                        Err(_) => None,
+                    };
+                    let graceful = terminate_child(&mut current_child, Duration::from_secs(2)).await;
+                    emit_window_pos_and_stop(
+                        &window_mon,
+                        &device_mon,
+                        requested_pos,
+                        first_window_pos,
+                        position.or(last_window_pos),
+                    );
+                    let _ = window_mon.emit(
+                        "scrcpy-log",
+                        format!(
+                            "[SYSTEM] Session stopped ({}).",
+                            if graceful { "graceful" } else { "forced" }
+                        ),
+                    );
+                    break;
+                }
+            }
 
             // Sample the live window position on every tick. This is the only
             // path that can catch a move made right before the user closes the
@@ -2317,7 +2401,7 @@ pub async fn run_scrcpy(
             // every few seconds keeps that worst case down to ~500ms stale
             // instead of several seconds.
             if track_pos {
-                if let Some(pid) = current_scrcpy_pid {
+                if let Some(pid) = current_child.id() {
                     if let Some(pos) = try_capture_window_pos(pid) {
                         if first_window_pos.is_none() {
                             first_window_pos = Some(pos);
@@ -2327,31 +2411,10 @@ pub async fn run_scrcpy(
                 }
             }
 
-            let outcome = {
-                let state_mon = app_handle_mon.state::<ScrcpyState>();
-                let mut processes = state_mon
-                    .processes
-                    .lock()
-                    .unwrap_or_else(|e| e.into_inner());
-                match processes.get_mut(&device_mon) {
-                    Some(child) => match child.try_wait() {
-                        Ok(Some(status)) => {
-                            processes.remove(&device_mon);
-                            Some(AttemptOutcome::Exited(status.to_string()))
-                        }
-                        Ok(None) => None,
-                        Err(e) => {
-                            processes.remove(&device_mon);
-                            Some(AttemptOutcome::WaitError(e.to_string()))
-                        }
-                    },
-                    None => Some(AttemptOutcome::UserStopped),
-                }
-            };
-
-            let outcome = match outcome {
-                Some(o) => o,
-                None => continue,
+            let outcome = match current_child.try_wait() {
+                Ok(Some(status)) => AttemptOutcome::Exited(status.to_string()),
+                Ok(None) => continue,
+                Err(e) => AttemptOutcome::WaitError(e.to_string()),
             };
 
             match outcome {
@@ -2369,51 +2432,11 @@ pub async fn run_scrcpy(
                     );
                     break;
                 }
-                AttemptOutcome::UserStopped => {
-                    // stop_scrcpy grabs one last, guaranteed-fresh sample right
-                    // before killing the process -- prefer it over our own
-                    // periodic sample, which can be up to ~3s stale if the
-                    // window was moved and closed in the same breath.
-                    let fresh_pos = app_handle_mon
-                        .state::<ScrcpyState>()
-                        .final_capture_hint
-                        .lock()
-                        .unwrap()
-                        .remove(&device_mon);
-                    let pos_to_persist = fresh_pos.or(last_window_pos);
-                    emit_window_pos_and_stop(
-                        &window_mon,
-                        &device_mon,
-                        requested_pos,
-                        first_window_pos,
-                        pos_to_persist,
-                    );
-                    break;
-                }
                 AttemptOutcome::Exited(status) => {
                     let _ = window_mon.emit(
                         "scrcpy-log",
                         format!("[SYSTEM] Scrcpy process exited with status: {}", status),
                     );
-
-                    // Mic bridge exited on its own: drop its registry entry,
-                    // then unload the shared virtual sink when no session
-                    // remains.
-                    let mic_cleanup = {
-                        let state_lock = app_handle_mon.state::<ScrcpyState>();
-                        let mut processes = state_lock
-                            .processes
-                            .lock()
-                            .unwrap_or_else(|e| e.into_inner());
-                        processes.remove(&device_mon);
-                        processes.is_empty()
-                    };
-                    if config_mon.session_mode == "mic" && mic_cleanup {
-                        #[cfg(unix)]
-                        unload_mic_sink(&window_mon).await;
-                        #[cfg(not(unix))]
-                        drop(&window_mon);
-                    }
 
                     // Give stream reader tasks a moment to flush remaining stderr
                     // lines (the audio error pattern may still be in flight).
@@ -2449,7 +2472,8 @@ pub async fn run_scrcpy(
                         .await
                         {
                             Ok((new_child, new_flag)) => {
-                                current_scrcpy_pid = new_child.id();
+                                session_pid.store(new_child.id().unwrap_or(0), Ordering::Relaxed);
+                                current_child = new_child;
                                 // New window: re-learn its decoration offset by
                                 // resampling this attempt from scratch. Clear the
                                 // last sample too, so we never persist the old
@@ -2458,12 +2482,6 @@ pub async fn run_scrcpy(
                                 // sample.
                                 first_window_pos = None;
                                 last_window_pos = None;
-                                let state_mon = app_handle_mon.state::<ScrcpyState>();
-                                state_mon
-                                    .processes
-                                    .lock()
-                                    .unwrap_or_else(|e| e.into_inner())
-                                    .insert(device_mon.clone(), new_child);
                                 current_audio_flag = new_flag;
                                 chain_index += 1;
                                 continue;
@@ -2509,6 +2527,29 @@ pub async fn run_scrcpy(
                 }
             }
         }
+
+        // Remove only this generation's entry: a newer session may already own
+        // the key after a replacement. Unload the shared mic sink only when no
+        // session remains.
+        let remaining = {
+            let state_lock = app_handle_mon.state::<ScrcpyState>();
+            let mut sessions = state_lock
+                .sessions
+                .lock()
+                .unwrap_or_else(|e| e.into_inner());
+            if sessions.get(&device_mon).map(|s| s.generation) == Some(session_generation) {
+                sessions.remove(&device_mon);
+            }
+            sessions.is_empty()
+        };
+        if config_mon.session_mode == "mic" && remaining {
+            #[cfg(unix)]
+            unload_mic_sink(&window_mon).await;
+            #[cfg(not(unix))]
+            drop(&window_mon);
+        }
+        session_pid.store(0, Ordering::Relaxed);
+        session_done.notify_one();
     });
 
     Ok(())
@@ -2557,6 +2598,63 @@ mod tests {
     fn session_generation_rejects_unknown_devices() {
         let generations = HashMap::new();
         assert!(!session_generation_is_current(&generations, "device1", 1));
+    }
+
+    #[cfg(unix)]
+    async fn pid_alive(pid: u32) -> bool {
+        StdCommand::new("kill")
+            .args(["-0", &pid.to_string()])
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .status()
+            .map(|s| s.success())
+            .unwrap_or(false)
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn terminate_child_escalates_when_sigterm_is_ignored() {
+        // `exec` keeps the ignored SIGTERM disposition, so only the forced
+        // kill can end this process. The readiness line proves the trap is
+        // installed before the test signals: killing too early can beat the
+        // shell's startup and make the test pass or fail by luck.
+        let mut child = TokioCommand::new("sh")
+            .args(["-c", "trap '' TERM; echo ready; exec sleep 30"])
+            .stdout(Stdio::piped())
+            .stderr(Stdio::null())
+            .spawn()
+            .expect("spawn");
+        let pid = child.id().expect("pid");
+        let stdout = child.stdout.take().expect("stdout");
+        let mut line = String::new();
+        BufReader::new(stdout)
+            .read_line(&mut line)
+            .await
+            .expect("readiness line");
+        assert_eq!(line.trim(), "ready");
+
+        let graceful = terminate_child(&mut child, Duration::from_millis(300)).await;
+
+        assert!(!graceful);
+        assert!(!pid_alive(pid).await);
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn force_kill_pid_terminates_the_process() {
+        let mut child = TokioCommand::new("sleep")
+            .arg("30")
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .spawn()
+            .expect("spawn");
+        let pid = child.id().expect("pid");
+
+        force_kill_pid(pid);
+
+        let status = child.wait().await.expect("wait");
+        assert!(!status.success());
+        assert!(!pid_alive(pid).await);
     }
 
     fn base_config(session_mode: &str) -> ScrcpyConfig {
@@ -2980,94 +3078,56 @@ mod tests {
 }
 
 #[tauri::command]
-pub async fn stop_scrcpy(
-    window: Window,
-    state: State<'_, ScrcpyState>,
-    device: String,
-) -> Result<(), String> {
-    let child = {
-        let mut processes = state.processes.lock().unwrap_or_else(|e| e.into_inner());
-        processes.remove(&device)
+pub async fn stop_scrcpy(state: State<'_, ScrcpyState>, device: String) -> Result<(), String> {
+    let handle = {
+        let mut sessions = state.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        sessions.remove(&device)
+    };
+    let Some(handle) = handle else {
+        return Ok(());
     };
 
-    if let Some(mut c) = child {
-        if let Some(pid) = c.id() {
-            // Grab the window's position now, one last time, before it's
-            // killed: this is the only moment it's guaranteed to still be
-            // exactly where the user left it. The run_scrcpy monitor loop
-            // only refreshes its own sample every ~3s, so stopping right
-            // after a move could otherwise persist a stale, pre-move spot.
-            if let Some(pos) = try_capture_window_pos(pid) {
-                state
-                    .final_capture_hint
-                    .lock()
-                    .unwrap_or_else(|e| e.into_inner())
-                    .insert(device.clone(), pos);
-            }
+    let SessionHandle {
+        pid, stop, done, ..
+    } = handle;
+    let pid_value = pid.load(Ordering::Relaxed);
 
-            #[cfg(target_os = "windows")]
-            {
-                let _ = StdCommand::new("taskkill")
-                    .args(&["/PID", &pid.to_string()])
-                    .creation_flags(CREATE_NO_WINDOW)
-                    .output();
-            }
+    // Grab the window's position now, one last time, before it is killed:
+    // this is the only moment it is guaranteed to still be exactly where the
+    // user left it. The monitor task refreshes its own sample every ~500ms,
+    // but a move right before Stop could still beat it.
+    let position = if pid_value != 0 {
+        try_capture_window_pos(pid_value)
+    } else {
+        None
+    };
 
-            #[cfg(not(target_os = "windows"))]
-            {
-                // Try graceful termination first via SIGTERM
-                let _ = StdCommand::new("kill").arg(pid.to_string()).output();
-            }
+    let notified = done.notified();
+    let _ = stop.send(StopRequest { position });
 
-            // Give it a moment to finalize, but don't block too long
-            tokio::time::sleep(std::time::Duration::from_millis(500)).await;
-        } else {
-            let _ = c.kill().await;
+    match tokio::time::timeout(Duration::from_secs(3), notified).await {
+        Ok(_) => Ok(()),
+        Err(_) => {
+            force_kill_pid(pid_value);
+            Err("session did not stop within 3s".to_string())
         }
     }
-
-    // Mic bridge cleanup: when the last session is gone, drop the shared
-    // virtual sink (other running sessions must keep it alive).
-    // Mic bridge cleanup: when the last session is gone, drop the shared
-    // virtual sink (other running sessions must keep it alive).
-    if state
-        .processes
-        .lock()
-        .unwrap_or_else(|e| e.into_inner())
-        .is_empty()
-    {
-        #[cfg(unix)]
-        unload_mic_sink(&window).await;
-        #[cfg(not(unix))]
-        drop(&window);
-    }
-    Ok(())
 }
 
 // App exit teardown: kill every registered child (mirror, camera, mic
 // bridge) and unload the mic sink, so closing the app cannot leave audio
-// or a mirror running in the background.
+// or a mirror running in the background. This handler is synchronous, so it
+// uses SIGKILL/TerminateProcess instead of waiting for a graceful stop.
 pub fn teardown_sessions(app_handle: &tauri::AppHandle) {
     let state = app_handle.state::<ScrcpyState>();
-    let children: Vec<_> = {
-        let mut processes = state.processes.lock().unwrap_or_else(|e| e.into_inner());
-        processes.drain().collect()
+    let handles: Vec<SessionHandle> = {
+        let mut sessions = state.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        sessions.drain().map(|(_, handle)| handle).collect()
     };
-    for (_, mut child) in children {
-        if let Some(pid) = child.id() {
-            #[cfg(target_os = "windows")]
-            {
-                let _ = StdCommand::new("taskkill")
-                    .args(&["/PID", &pid.to_string(), "/T", "/F"])
-                    .creation_flags(CREATE_NO_WINDOW)
-                    .output();
-            }
-            #[cfg(not(target_os = "windows"))]
-            {
-                let _ = StdCommand::new("kill").arg(pid.to_string()).output();
-            }
-        }
-        let _ = child.start_kill();
+    for handle in handles {
+        let pid = handle.pid.load(Ordering::Relaxed);
+        let _ = handle.stop.send(StopRequest { position: None });
+        force_kill_pid(pid);
     }
     #[cfg(unix)]
     teardown_mic_sink();

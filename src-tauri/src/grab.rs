@@ -208,11 +208,11 @@ fn pump_messages() {
 /// True if `pid` is one of the scrcpy processes we launched.
 fn pid_is_ours<R: Runtime>(app: &AppHandle<R>, pid: u32) -> bool {
     app.state::<ScrcpyState>()
-        .processes
+        .sessions
         .lock()
-        .unwrap()
+        .unwrap_or_else(|e| e.into_inner())
         .values()
-        .any(|child| child.id() == Some(pid))
+        .any(|session| session.pid.load(Ordering::Relaxed) == pid)
 }
 
 fn cursor_pos() -> Option<(i32, i32)> {
