@@ -1,4 +1,5 @@
 mod commands;
+mod process;
 // Windows-only: drag the borderless scrcpy window with the mouse
 // (Ctrl+Alt+Shift+W).
 #[cfg(target_os = "windows")]

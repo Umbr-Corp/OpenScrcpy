@@ -1,3 +1,4 @@
+use crate::process;
 use crate::ScrcpyState;
 use flate2::read::GzDecoder;
 use serde::Deserialize;
@@ -154,7 +155,9 @@ pub async fn check_scrcpy(custom_path: Option<String>) -> serde_json::Value {
     let exe_path = get_binary_path("scrcpy", custom_path);
 
     // Check version to verify it exists and is runnable
-    let output = create_command(&exe_path).arg("--version").output().await;
+    let mut cmd = create_command(&exe_path);
+    cmd.arg("--version");
+    let output = process::output_with_timeout(cmd, Duration::from_secs(5)).await;
 
     match output {
         Ok(o) if o.status.success() => {
@@ -323,19 +326,12 @@ pub async fn adb_connect(
         );
     }
 
-    let child = create_command(&adb_path)
-        .arg("connect")
-        .arg(&ip)
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
-        .map_err(|e| format!("Failed to start adb connect: {}", e))?;
-
-    // Implement 5s timeout
-    let output_res = timeout(Duration::from_secs(5), child.wait_with_output()).await;
+    let mut cmd = create_command(&adb_path);
+    cmd.arg("connect").arg(&ip);
+    let output_res = process::output_with_timeout(cmd, Duration::from_secs(5)).await;
 
     match output_res {
-        Ok(Ok(output)) => {
+        Ok(output) => {
             let out_text = String::from_utf8_lossy(&output.stdout).trim().to_string();
             let err_text = String::from_utf8_lossy(&output.stderr).trim().to_string();
 
@@ -356,15 +352,14 @@ pub async fn adb_connect(
                 json!({ "success": success, "message": if out_text.is_empty() { err_text } else { out_text } }),
             )
         }
-        Ok(Err(e)) => Err(e.to_string()),
-        Err(_) => {
+        Err(e) => {
             if !silent {
                 let _ = window.emit(
                     "scrcpy-log",
-                    format!("[SYSTEM] Connection to {} timed out after 5s.", ip),
+                    format!("[SYSTEM] Connection to {} failed: {}.", ip, e),
                 );
             }
-            Ok(json!({ "success": false, "message": "connection timed out" }))
+            Ok(json!({ "success": false, "message": e }))
         }
     }
 }
@@ -379,13 +374,9 @@ pub async fn adb_pair(
     let adb_path = get_binary_path("adb", custom_path);
     let _ = window.emit("scrcpy-log", format!("[SYSTEM] Pairing with {}...", ip));
 
-    let output = create_command(&adb_path)
-        .arg("pair")
-        .arg(&ip)
-        .arg(&code)
-        .output()
-        .await
-        .map_err(|e| e.to_string())?;
+    let mut cmd = create_command(&adb_path);
+    cmd.arg("pair").arg(&ip).arg(&code);
+    let output = process::output_with_timeout(cmd, Duration::from_secs(10)).await?;
 
     let out_text = String::from_utf8_lossy(&output.stdout).trim().to_string();
     let err_text = String::from_utf8_lossy(&output.stderr).trim().to_string();
@@ -435,8 +426,10 @@ pub async fn run_terminal_command(
     cmd: String,
     custom_path: Option<String>,
 ) -> serde_json::Value {
-    let mut parts = split_args(&cmd)
-        .unwrap_or_else(|_| cmd.split_whitespace().map(|s| s.to_string()).collect());
+    let mut parts = match split_args(&cmd) {
+        Ok(parts) => parts,
+        Err(e) => return json!({ "success": false, "message": e }),
+    };
     if parts.is_empty() {
         return json!({ "success": false, "message": "No command provided" });
     }
@@ -635,30 +628,25 @@ pub async fn kill_adb(
         "[SYSTEM] Terminating ADB stack...".to_string(),
     );
 
-    let mut child = create_command(&adb_path)
-        .arg("kill-server")
-        .spawn()
-        .map_err(|e| e.to_string())?;
-
-    let _ = child.wait().await;
-
-    // Force kill adb process via OS specifics
-    #[cfg(target_os = "windows")]
-    {
-        let _ = TokioCommand::new("taskkill")
-            .args(&["/F", "/IM", "adb.exe", "/T"])
-            .creation_flags(CREATE_NO_WINDOW)
-            .output()
-            .await;
+    let mut cmd = create_command(&adb_path);
+    cmd.arg("kill-server");
+    match process::output_with_timeout(cmd, Duration::from_secs(5)).await {
+        Ok(output) if output.status.success() => {
+            let _ = window.emit("scrcpy-log", "[SYSTEM] ADB Stack Terminated.".to_string());
+            Ok(json!({ "success": true, "message": "ADB Stack Terminated" }))
+        }
+        Ok(output) => {
+            let err = String::from_utf8_lossy(&output.stderr).trim().to_string();
+            let message = if err.is_empty() {
+                "adb kill-server failed".to_string()
+            } else {
+                err
+            };
+            let _ = window.emit("scrcpy-log", format!("[ADB ERROR] {message}"));
+            Ok(json!({ "success": false, "message": message }))
+        }
+        Err(e) => Ok(json!({ "success": false, "message": e })),
     }
-
-    #[cfg(not(target_os = "windows"))]
-    {
-        let _ = TokioCommand::new("pkill").arg("adb").output().await;
-    }
-
-    let _ = window.emit("scrcpy-log", "[SYSTEM] ADB Stack Terminated.".to_string());
-    Ok(json!({ "success": true, "message": "ADB Stack Terminated" }))
 }
 
 #[tauri::command]
@@ -672,7 +660,7 @@ pub async fn list_scrcpy_options(
     let mut command = create_command(&exe_path);
     command.arg("-s").arg(&device).arg(&arg);
 
-    let output = command.output().await;
+    let output = process::output_with_timeout(command, Duration::from_secs(15)).await;
 
     match output {
         Ok(o) => {
@@ -754,7 +742,9 @@ pub async fn get_render_drivers(custom_path: Option<String>) -> serde_json::Valu
     let exe_path = get_binary_path("scrcpy", custom_path);
     let host_os = detect_host_os();
 
-    let output = create_command(&exe_path).arg("--help").output().await;
+    let mut cmd = create_command(&exe_path);
+    cmd.arg("--help");
+    let output = process::output_with_timeout(cmd, Duration::from_secs(5)).await;
 
     match output {
         Ok(o) => {
@@ -1671,22 +1661,16 @@ struct PactlOut {
 
 #[cfg(unix)]
 async fn pactl_run(args: &[&str]) -> Option<PactlOut> {
-    let child = create_command("pactl")
-        .args(args)
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn();
-    match child {
-        Ok(c) => match timeout(Duration::from_secs(4), c.wait_with_output()).await {
-            Ok(Ok(o)) => Some(PactlOut {
-                ok: o.status.success(),
-                stdout: String::from_utf8_lossy(&o.stdout).trim().to_string(),
-                stderr: String::from_utf8_lossy(&o.stderr).trim().to_string(),
-            }),
-            _ => None,
-        },
-        Err(_) => None,
-    }
+    let mut cmd = create_command("pactl");
+    cmd.args(args);
+    let output = process::output_with_timeout(cmd, Duration::from_secs(4))
+        .await
+        .ok()?;
+    Some(PactlOut {
+        ok: output.status.success(),
+        stdout: String::from_utf8_lossy(&output.stdout).trim().to_string(),
+        stderr: String::from_utf8_lossy(&output.stderr).trim().to_string(),
+    })
 }
 
 // Returns true when the virtual sink exists (created now, if absent).
@@ -3622,16 +3606,9 @@ pub async fn goto_wireless(
     //    stays as fallback (a few OEMs rename the interface).
     let mut ip = String::new();
     for probe in ["ip -f inet addr show wlan0", "ip route get 1.1.1.1"] {
-        let child = create_command(&adb_path)
-            .args(["-s", &device, "shell", probe])
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .spawn()
-            .map_err(|e| format!("Failed to start adb shell: {}", e))?;
-        let output = timeout(Duration::from_secs(5), child.wait_with_output())
-            .await
-            .map_err(|_| "Timeout querying device IP".to_string())?
-            .map_err(|e| e.to_string())?;
+        let mut cmd = create_command(&adb_path);
+        cmd.args(["-s", &device, "shell", probe]);
+        let output = process::output_with_timeout(cmd, Duration::from_secs(5)).await?;
         if let Some(found) = find_wlan_ipv4(&String::from_utf8_lossy(&output.stdout)) {
             ip = found;
             break;
@@ -3650,16 +3627,9 @@ pub async fn goto_wireless(
         "scrcpy-log",
         format!("[SYSTEM] adbd restarting in TCP mode (Wi-Fi IP {}).", ip),
     );
-    let child = create_command(&adb_path)
-        .args(["-s", &device, "tcpip", "5555"])
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
-        .map_err(|e| format!("Failed to start adb tcpip: {}", e))?;
-    let output = timeout(Duration::from_secs(5), child.wait_with_output())
-        .await
-        .map_err(|_| "adb tcpip timed out".to_string())?
-        .map_err(|e| e.to_string())?;
+    let mut cmd = create_command(&adb_path);
+    cmd.args(["-s", &device, "tcpip", "5555"]);
+    let output = process::output_with_timeout(cmd, Duration::from_secs(5)).await?;
     if !output.status.success() {
         let err = String::from_utf8_lossy(&output.stderr).trim().to_string();
         let _ = window.emit("scrcpy-log", format!("[ADB ERROR] {}", err));
@@ -3673,16 +3643,9 @@ pub async fn goto_wireless(
     tokio::time::sleep(Duration::from_millis(1500)).await;
 
     let target = format!("{}:5555", ip);
-    let child = create_command(&adb_path)
-        .args(["connect", &target])
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
-        .map_err(|e| format!("Failed to start adb connect: {}", e))?;
-    let output = timeout(Duration::from_secs(7), child.wait_with_output())
-        .await
-        .map_err(|_| "adb connect timed out".to_string())?
-        .map_err(|e| e.to_string())?;
+    let mut cmd = create_command(&adb_path);
+    cmd.args(["connect", &target]);
+    let output = process::output_with_timeout(cmd, Duration::from_secs(7)).await?;
     let out_text = String::from_utf8_lossy(&output.stdout).trim().to_string();
     if !out_text.is_empty() {
         let _ = window.emit("scrcpy-log", format!("[ADB] {}", out_text));
