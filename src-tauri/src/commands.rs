@@ -1946,17 +1946,12 @@ async fn poll_mic_route(window: &Window) -> Option<(String, bool)> {
             sink_map.insert(idx, (name, desc.unwrap_or_default()));
         }
     }
-    let Some((target_idx, _)) = sink_map
+    let (target_idx, _) = sink_map
         .iter()
         .find(|(_, (name, _))| name == MIC_SINK_NAME)
-        .map(|(k, v)| (k.clone(), v.1.clone()))
-    else {
-        return None;
-    };
+        .map(|(k, v)| (k.clone(), v.1.clone()))?;
 
-    let Some(inputs) = pactl_run(&["list", "sink-inputs"]).await else {
-        return None;
-    };
+    let inputs = pactl_run(&["list", "sink-inputs"]).await?;
     for block in inputs.stdout.split("\n\n") {
         let is_scrcpy = block
             .lines()
@@ -2050,7 +2045,7 @@ async fn spawn_mic_level_meter(
         };
         let _ = window.emit(
             "scrcpy-log",
-            format!("[MIC] Level meter started (parec on {}).", &monitor),
+            format!("[MIC] Level meter started (parec on {}).", monitor),
         );
         let Some(mut stdout) = child.stdout.take() else {
             let _ = child.kill().await;
@@ -2077,9 +2072,11 @@ async fn spawn_mic_level_meter(
             };
             chunks += 1;
             let samples: Vec<f64> = buf[..(n / 2) * 2]
-                .chunks_exact(2)
+                .as_chunks::<2>()
+                .0
+                .iter()
                 .map(|c| {
-                    let v = i16::from_le_bytes([c[0], c[1]]) as f64 / 32768.0;
+                    let v = i16::from_le_bytes(*c) as f64 / 32768.0;
                     v * v
                 })
                 .collect();
@@ -2092,7 +2089,7 @@ async fn spawn_mic_level_meter(
             let db = if rms < 0.0016 {
                 -60.0
             } else {
-                (20.0 * rms.log10()).floor().max(-60.0).min(0.0)
+                (20.0 * rms.log10()).floor().clamp(-60.0, 0.0)
             };
             let _ = window.emit("mic-level", db);
         }
@@ -2542,18 +2539,34 @@ mod tests {
         let mut generations = HashMap::new();
         let first = bump_session_generation(&mut generations, "device1");
         assert_eq!(first, 1);
-        assert!(session_generation_is_current(&generations, "device1", first));
+        assert!(session_generation_is_current(
+            &generations,
+            "device1",
+            first
+        ));
 
         // A replacement bumps the generation: the previous session's sidecars
         // are stale even though the registry key gets reused right away.
         let second = bump_session_generation(&mut generations, "device1");
         assert_eq!(second, 2);
-        assert!(!session_generation_is_current(&generations, "device1", first));
-        assert!(session_generation_is_current(&generations, "device1", second));
+        assert!(!session_generation_is_current(
+            &generations,
+            "device1",
+            first
+        ));
+        assert!(session_generation_is_current(
+            &generations,
+            "device1",
+            second
+        ));
 
         // Generations are per device.
         assert_eq!(bump_session_generation(&mut generations, "device2"), 1);
-        assert!(session_generation_is_current(&generations, "device1", second));
+        assert!(session_generation_is_current(
+            &generations,
+            "device1",
+            second
+        ));
     }
 
     #[test]
@@ -3092,7 +3105,9 @@ fn teardown_mic_sink() {
         .find(|l| l.contains(&format!("sink_name={}", MIC_SINK_NAME)))
         .and_then(|l| l.split('\t').next().map(str::to_string));
     if let Some(idx) = module_idx {
-        let _ = StdCommand::new("pactl").args(["unload-module", &idx]).output();
+        let _ = StdCommand::new("pactl")
+            .args(["unload-module", &idx])
+            .output();
     }
 }
 
@@ -3239,8 +3254,7 @@ pub async fn download_scrcpy(window: Window) -> Result<(), String> {
             file.write_all(&chunk)
                 .map_err(|e| format!("Failed to write chunk: {}", e))?;
             downloaded += chunk.len() as u64;
-            if total_size > 0 {
-                let percent = (downloaded * 100) / total_size;
+            if let Some(percent) = (downloaded * 100).checked_div(total_size) {
                 // Chunks are a few KB: emitting on every one floods the
                 // webview with hundreds of identical percentages.
                 if last_percent != Some(percent) {
@@ -3443,7 +3457,7 @@ pub async fn get_latest_scrcpy_version() -> Result<String, String> {
 
         let final_url = redirect_res.url().as_str();
         if let Some(tag) = final_url.split('/').next_back() {
-            if tag.starts_with('v') || tag.chars().next().map_or(false, |c| c.is_ascii_digit()) {
+            if tag.starts_with('v') || tag.chars().next().is_some_and(|c| c.is_ascii_digit()) {
                 tag_name = tag.trim_start_matches('v').to_string();
             }
         }
@@ -3549,7 +3563,10 @@ pub async fn check_app_update(app: tauri::AppHandle) -> serde_json::Value {
         Err(e) => return no_update(e.to_string()),
     };
     if !release.status().is_success() {
-        return no_update(format!("Forgejo responded with status {}", release.status()));
+        return no_update(format!(
+            "Forgejo responded with status {}",
+            release.status()
+        ));
     }
     let body = match release.json::<serde_json::Value>().await {
         Ok(b) => b,
@@ -3575,10 +3592,10 @@ pub async fn check_app_update(app: tauri::AppHandle) -> serde_json::Value {
 // else even if a future caller passes this command a value.
 #[tauri::command]
 pub async fn open_app_release(app: tauri::AppHandle) -> Result<(), String> {
-    tauri_plugin_shell::ShellExt::shell(&app)
-        .open(
+    tauri_plugin_opener::OpenerExt::opener(&app)
+        .open_url(
             "https://v16.next.forgejo.org/UmbrCorp/OpenScrcpy/releases/latest",
-            None,
+            None::<&str>,
         )
         .map_err(|e| e.to_string())
 }
