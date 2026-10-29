@@ -1,6 +1,6 @@
+use crate::download;
 use crate::process;
 use crate::{ScrcpyState, SessionHandle, StopRequest};
-use flate2::read::GzDecoder;
 use serde::Deserialize;
 use serde_json::json;
 use std::collections::HashMap;
@@ -10,7 +10,6 @@ use std::path::Path;
 use std::process::{Command as StdCommand, Stdio};
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::sync::Arc;
-use tar::Archive;
 use tauri::{Emitter, Manager, State, Window};
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::Command as TokioCommand;
@@ -68,7 +67,16 @@ fn get_binary_path(binary_name: &str, custom_folder: Option<String>) -> String {
         }
     }
 
-    // 3. Fallback to current working directory scrcpy-bin
+    // 3. Check the directory resolved at startup (app data when the exe
+    // directory is read-only, e.g. /usr/bin or Program Files).
+    if let Some(dir) = download::install_dir() {
+        let installed = dir.join(&binary_filename);
+        if installed.exists() && installed.is_file() {
+            return installed.to_string_lossy().to_string();
+        }
+    }
+
+    // 4. Fallback to current working directory scrcpy-bin
     if let Ok(current_dir) = std::env::current_dir() {
         let local_bin = current_dir.join("scrcpy-bin").join(&binary_filename);
         if local_bin.exists() && local_bin.is_file() {
@@ -76,64 +84,8 @@ fn get_binary_path(binary_name: &str, custom_folder: Option<String>) -> String {
         }
     }
 
-    // 4. Return simple name to rely on system PATH
+    // 5. Return simple name to rely on system PATH
     binary_name.to_string()
-}
-
-fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> std::io::Result<()> {
-    let src_ref = src.as_ref();
-    let dst_ref = dst.as_ref();
-
-    // Canonicalize dst path if it exists to get absolute base path
-    let canonical_dst = if dst_ref.exists() {
-        dst_ref.canonicalize()?
-    } else {
-        std::fs::create_dir_all(dst_ref)?;
-        dst_ref.canonicalize()?
-    };
-
-    for entry in std::fs::read_dir(src_ref)? {
-        let entry = entry?;
-        let entry_path = entry.path();
-        let file_name = entry.file_name();
-
-        // Prevent directory traversal elements in entry name
-        let file_name_str = file_name.to_string_lossy();
-        if file_name_str.contains("..")
-            || file_name_str.contains('/')
-            || file_name_str.contains('\\')
-        {
-            return Err(std::io::Error::new(
-                std::io::ErrorKind::InvalidInput,
-                "Directory entry contains directory traversal components",
-            ));
-        }
-
-        let target_path = dst_ref.join(&file_name);
-
-        // Ensure destination path is strictly within the target base directory
-        if let Some(parent_dir) = target_path.parent() {
-            if parent_dir.exists() {
-                let canonical_parent = parent_dir.canonicalize()?;
-                if !canonical_parent.starts_with(&canonical_dst)
-                    && canonical_parent != canonical_dst
-                {
-                    return Err(std::io::Error::new(
-                        std::io::ErrorKind::PermissionDenied,
-                        "Path traversal attempt detected during directory copy",
-                    ));
-                }
-            }
-        }
-
-        let ty = entry.file_type()?;
-        if ty.is_dir() {
-            copy_dir_all(&entry_path, &target_path)?;
-        } else {
-            std::fs::copy(&entry_path, &target_path)?;
-        }
-    }
-    Ok(())
 }
 
 #[cfg(target_os = "windows")]
@@ -3156,32 +3108,19 @@ fn teardown_mic_sink() {
 }
 
 #[tauri::command]
-pub async fn download_scrcpy(window: Window) -> Result<(), String> {
+pub async fn download_scrcpy(window: Window, app_handle: tauri::AppHandle) -> Result<(), String> {
     use std::io::Write;
 
-    let (os_tag, arch_tag, extension) = if cfg!(target_os = "windows") {
-        let arch = if cfg!(target_arch = "x86_64") {
-            "win64"
-        } else {
-            "win32"
-        };
-        (arch, arch, ".zip")
-    } else if cfg!(target_os = "linux") {
-        ("linux", "linux-x86_64", ".tar.gz")
-    } else if cfg!(target_os = "macos") {
-        let arch = if cfg!(target_arch = "aarch64") {
-            "macos-aarch64"
-        } else {
-            "macos-x86_64"
-        };
-        ("macos", arch, ".tar.gz")
-    } else {
-        return Err("Unsupported OS for auto-download".to_string());
-    };
+    let (arch_tag, extension) =
+        download::resolve_asset(std::env::consts::OS, std::env::consts::ARCH)?;
 
     let _ = window.emit(
         "scrcpy-log",
-        format!("[SYSTEM] Detecting platform: {} ({})", os_tag, arch_tag),
+        format!(
+            "[SYSTEM] Detecting platform: {} ({})",
+            std::env::consts::OS,
+            arch_tag
+        ),
     );
     let _ = window.emit("scrcpy-status", json!({ "type": "downloading", "success": true, "message": format!("Fetching latest {} release...", arch_tag) }));
 
@@ -3193,6 +3132,7 @@ pub async fn download_scrcpy(window: Window) -> Result<(), String> {
     // Attempt to get the latest release via API, but fallback to redirect scraping if rate limited
     let mut download_url = String::new();
     let mut filename = String::new();
+    let mut release_tag: Option<String> = None;
 
     let api_url = "https://api.github.com/repos/Genymobile/scrcpy/releases/latest";
     let api_resp = client.get(api_url).send().await;
@@ -3202,6 +3142,7 @@ pub async fn download_scrcpy(window: Window) -> Result<(), String> {
     if let Ok(resp) = api_resp {
         if resp.status().is_success() {
             if let Ok(json) = resp.json::<serde_json::Value>().await {
+                release_tag = json["tag_name"].as_str().map(str::to_string);
                 if let Some(assets) = json["assets"].as_array() {
                     for asset in assets {
                         let name = asset["name"].as_str().unwrap_or("");
@@ -3244,6 +3185,7 @@ pub async fn download_scrcpy(window: Window) -> Result<(), String> {
                     "https://github.com/Genymobile/scrcpy/releases/download/{}/{}",
                     tag, filename
                 );
+                release_tag = Some(tag.to_string());
                 let _ = window.emit(
                     "scrcpy-log",
                     format!("[SYSTEM] Discovered latest tag via fallback: {}", tag),
@@ -3268,14 +3210,52 @@ pub async fn download_scrcpy(window: Window) -> Result<(), String> {
 
     let _ = window.emit("scrcpy-log", format!("[SYSTEM] Found asset: {}", filename));
 
-    let current_dir = std::env::current_exe()
-        .ok()
-        .and_then(|p| p.parent().map(|p| p.to_path_buf()))
-        .or_else(|| std::env::current_dir().ok())
-        .ok_or_else(|| "Could not determine application directory".to_string())?;
+    let release_tag = release_tag
+        .ok_or_else(|| format!("Could not determine the release tag for {}", filename))?;
 
-    let temp_archive_path = current_dir.join(format!("scrcpy_temp{}", extension));
-    let extract_path = current_dir.join("scrcpy-bin");
+    // Checksums are published next to the archive; verify before extraction.
+    let sums_url = format!(
+        "https://github.com/Genymobile/scrcpy/releases/download/{}/SHA256SUMS.txt",
+        release_tag
+    );
+    let sums_resp = client
+        .get(&sums_url)
+        .send()
+        .await
+        .map_err(|e| format!("Failed to fetch SHA256SUMS.txt: {}", e))?;
+    if !sums_resp.status().is_success() {
+        return Err(format!(
+            "Release {} does not publish SHA256SUMS.txt; aborting download",
+            release_tag
+        ));
+    }
+    let sums_text = sums_resp
+        .text()
+        .await
+        .map_err(|e| format!("Failed to read SHA256SUMS.txt: {}", e))?;
+    let expected_hash = download::parse_sha256sums(&sums_text, &filename)?;
+
+    let install_path = match download::install_dir() {
+        Some(dir) => dir.to_path_buf(),
+        None => download::init_install_dir(&app_handle),
+    };
+    let install_parent = install_path
+        .parent()
+        .ok_or_else(|| "Invalid install directory".to_string())?
+        .to_path_buf();
+    std::fs::create_dir_all(&install_parent)
+        .map_err(|e| format!("Failed to create install directory: {}", e))?;
+
+    let pid = std::process::id();
+    let temp_archive_path = install_parent.join(format!("scrcpy-bin.tmp-{}{}", pid, extension));
+    let temp_extract_dir = install_parent.join(format!("scrcpy-bin.extract-{}", pid));
+    let new_dir = install_path.with_file_name("scrcpy-bin.new");
+    let old_dir = install_path.with_file_name("scrcpy-bin.old");
+    let mut cleanup = download::TempCleanup::new(vec![
+        temp_archive_path.clone(),
+        temp_extract_dir.clone(),
+        new_dir.clone(),
+    ]);
 
     {
         let mut file = std::fs::File::create(&temp_archive_path)
@@ -3285,6 +3265,12 @@ pub async fn download_scrcpy(window: Window) -> Result<(), String> {
             .send()
             .await
             .map_err(|e| format!("Failed to connect to download URL: {}", e))?;
+        if !download_resp.status().is_success() {
+            return Err(format!(
+                "Download failed with HTTP {}",
+                download_resp.status()
+            ));
+        }
         let total_size = download_resp.content_length().unwrap_or(0);
 
         let _ = window.emit(
@@ -3303,10 +3289,21 @@ pub async fn download_scrcpy(window: Window) -> Result<(), String> {
                 // webview with hundreds of identical percentages.
                 if last_percent != Some(percent) {
                     last_percent = Some(percent);
-                    let _ = window.emit("download-progress", json!({ "percent": percent }));
+                    let _ = window.emit(
+                        "scrcpy-status",
+                        json!({ "type": "download-progress", "percent": percent }),
+                    );
                 }
             }
         }
+    }
+
+    let actual_hash = download::sha256_file(&temp_archive_path)?;
+    if actual_hash != expected_hash {
+        return Err(format!(
+            "Checksum mismatch for {}: expected {}, got {}",
+            filename, expected_hash, actual_hash
+        ));
     }
 
     let _ = window.emit(
@@ -3318,76 +3315,52 @@ pub async fn download_scrcpy(window: Window) -> Result<(), String> {
         json!({ "type": "downloading", "success": true, "message": "Extracting binaries..." }),
     );
 
-    if extract_path.exists() {
-        let _ = std::fs::remove_dir_all(&extract_path);
-    }
+    let _ = window.emit(
+        "scrcpy-log",
+        format!(
+            "[SYSTEM] Decompressing {} archive...",
+            if extension == ".zip" { "ZIP" } else { "TAR.GZ" }
+        ),
+    );
+    download::extract_archive(&temp_archive_path, &temp_extract_dir, extension)?;
 
-    let temp_extract_dir = current_dir.join("temp_extract");
-    if temp_extract_dir.exists() {
-        let _ = std::fs::remove_dir_all(&temp_extract_dir);
-    }
-    std::fs::create_dir_all(&temp_extract_dir).map_err(|e| e.to_string())?;
+    let source_root = download::single_root(&temp_extract_dir)?;
+    let needs_adb = source_root.join(download::exe_name("adb")).is_file();
 
-    if extension == ".zip" {
-        let _ = window.emit("scrcpy-log", "[SYSTEM] Decompressing ZIP archive...");
-        let file = std::fs::File::open(&temp_archive_path)
-            .map_err(|e| format!("Failed to open zip: {}", e))?;
-        let mut archive =
-            zip::ZipArchive::new(file).map_err(|e| format!("Failed to read zip archive: {}", e))?;
-        archive
-            .extract(&temp_extract_dir)
-            .map_err(|e| format!("Failed to extract: {}", e))?;
+    if std::fs::rename(&source_root, &new_dir).is_err() {
+        download::copy_dir_all(&source_root, &new_dir)
+            .map_err(|e| format!("Failed to stage extracted files: {}", e))?;
+    }
+    download::validate_extracted(&new_dir, needs_adb)?;
+
+    // Swap the staged tree into place, restoring the previous install if the
+    // final rename fails.
+    if old_dir.exists() {
+        std::fs::remove_dir_all(&old_dir)
+            .map_err(|e| format!("Failed to clear previous backup: {}", e))?;
+    }
+    let backup = if install_path.exists() {
+        std::fs::rename(&install_path, &old_dir)
+            .map_err(|e| format!("Failed to move previous install aside: {}", e))?;
+        true
     } else {
-        let _ = window.emit("scrcpy-log", "[SYSTEM] Decompressing TAR.GZ archive...");
-        let file = std::fs::File::open(&temp_archive_path)
-            .map_err(|e| format!("Failed to open tar.gz: {}", e))?;
-        let tar = GzDecoder::new(file);
-        let mut archive = Archive::new(tar);
-        archive
-            .unpack(&temp_extract_dir)
-            .map_err(|e| format!("Failed to extract tar: {}", e))?;
-    }
-
-    // Verify entries and move to scrcpy-bin
-    let mut entries = std::fs::read_dir(&temp_extract_dir).map_err(|e| e.to_string())?;
-    if let Some(entry) = entries.next() {
-        let entry = entry.map_err(|e| e.to_string())?;
-        let path = entry.path();
-
-        if path.is_dir() {
-            // Usually scrcpy archives contain a single root folder
-            let _ = std::fs::rename(&path, &extract_path)
-                .or_else(|_| copy_dir_all(&path, &extract_path));
-        } else {
-            // If files are in root, rename the whole temp dir
-            let _ = std::fs::rename(&temp_extract_dir, &extract_path)
-                .or_else(|_| copy_dir_all(&temp_extract_dir, &extract_path));
-        }
-    }
-
-    // Confirm the extracted tree actually contains the scrcpy binary before
-    // trusting it. The release feed publishes no checksum, so this is a
-    // best-effort check against a wrong or tampered archive.
-    let exe_ext = std::env::consts::EXE_EXTENSION;
-    let expected_bin = if exe_ext.is_empty() {
-        "scrcpy".to_string()
-    } else {
-        format!("scrcpy.{}", exe_ext)
+        false
     };
-    if !extract_path.join(&expected_bin).is_file() {
-        let _ = std::fs::remove_dir_all(&extract_path);
-        return Err("Downloaded archive did not contain the expected scrcpy binary".to_string());
+    if let Err(e) = std::fs::rename(&new_dir, &install_path) {
+        if backup {
+            let _ = std::fs::rename(&old_dir, &install_path);
+        }
+        return Err(format!("Failed to install scrcpy binaries: {}", e));
+    }
+    if backup {
+        let _ = std::fs::remove_dir_all(&old_dir);
     }
 
-    // Cleanup
-    if temp_extract_dir.exists() {
-        let _ = std::fs::remove_dir_all(&temp_extract_dir);
-    }
-    if temp_archive_path.exists() {
-        let _ = std::fs::remove_file(&temp_archive_path);
-    }
+    let _ = std::fs::remove_file(&temp_archive_path);
+    let _ = std::fs::remove_dir_all(&temp_extract_dir);
+    cleanup.disarm();
 
-    let _ = window.emit("scrcpy-status", json!({ "type": "download-complete", "success": true, "message": extract_path.to_string_lossy() }));
+    let _ = window.emit("scrcpy-status", json!({ "type": "download-complete", "success": true, "message": install_path.to_string_lossy() }));
     Ok(())
 }
 
@@ -3426,6 +3399,12 @@ pub async fn save_report(
 
 #[tauri::command]
 pub async fn get_scrcpy_bin_dir() -> Result<String, String> {
+    if let Some(dir) = download::install_dir() {
+        if dir.exists() {
+            return Ok(dir.to_string_lossy().to_string());
+        }
+    }
+
     let current_dir = std::env::current_exe()
         .ok()
         .and_then(|p| p.parent().map(|p| p.to_path_buf()))

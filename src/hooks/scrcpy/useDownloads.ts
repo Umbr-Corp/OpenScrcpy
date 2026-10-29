@@ -39,6 +39,10 @@ export function useDownloads({ scrcpyPath, addLogs, onDownloadComplete }: UseDow
     // though the listener itself only subscribes once on mount.
     const checkScrcpyRef = useRef<(customPath?: string) => Promise<boolean>>(async () => false);
 
+    // The button is disabled while downloading, but a fast double click can
+    // still queue two invokes before React re-renders.
+    const downloadingRef = useRef(false);
+
     // Same idea for the translator and the settle callback: the event
     // listener stays mounted for the app's lifetime.
     const tRef = useRef(t);
@@ -84,6 +88,8 @@ export function useDownloads({ scrcpyPath, addLogs, onDownloadComplete }: UseDow
     }, []);
 
     const downloadScrcpy = async () => {
+        if (downloadingRef.current) return;
+        downloadingRef.current = true;
         try {
             setIsDownloading(true);
             setDownloadError(null);
@@ -94,6 +100,8 @@ export function useDownloads({ scrcpyPath, addLogs, onDownloadComplete }: UseDow
             // the raw error for diagnosis.
             setDownloadError(t('onboarding.downloadFailed'));
             addLogs(t('logs.downloadError', { error: String(e) }), 'err');
+        } finally {
+            downloadingRef.current = false;
         }
     };
 

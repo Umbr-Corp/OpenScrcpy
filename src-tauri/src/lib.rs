@@ -1,4 +1,5 @@
 mod commands;
+mod download;
 mod process;
 // Windows-only: drag the borderless scrcpy window with the mouse
 // (Ctrl+Alt+Shift+W).
@@ -99,6 +100,10 @@ pub fn run() {
 
     let app = builder
         .setup(|app| {
+            // Resolve once: portable installs keep scrcpy next to the exe;
+            // read-only locations (/usr/bin, Program Files) use app data.
+            download::init_install_dir(app.handle());
+
             app.manage(ScrcpyState {
                 sessions: Mutex::new(HashMap::new()),
                 session_generations: Mutex::new(HashMap::new()),
