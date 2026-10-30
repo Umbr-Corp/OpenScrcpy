@@ -44,7 +44,9 @@ mod tests {
         let mut cmd = Command::new("sh");
         cmd.args(["-c", &script]);
 
-        let err = output_with_timeout(cmd, Duration::from_millis(100))
+        // Long enough for `sh` to write the pid even on a loaded runner: at
+        // 100ms the kill could win the race and the file never appeared.
+        let err = output_with_timeout(cmd, Duration::from_secs(1))
             .await
             .expect_err("the command should time out");
         assert!(err.contains("timed out"));
