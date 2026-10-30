@@ -4,7 +4,7 @@ import { listen } from '@tauri-apps/api/event';
 import { useI18n } from '../../i18n';
 import { isTauri } from '../../tauri';
 import { LogLevel } from '../../logs';
-import { RenderDriverSupport } from './types';
+import { DownloadStatus, RenderDriverSupport } from './types';
 
 interface UseDownloadsOptions {
     /** Saved scrcpy binary path, used as the fallback when checkScrcpy isn't
@@ -110,12 +110,12 @@ export function useDownloads({ scrcpyPath, addLogs, onDownloadComplete }: UseDow
             // If customPath is explicitly provided (even as undefined/null for reset), use it.
             // Otherwise, use the saved path from config.
             const pathToCheck = customPath !== undefined ? customPath : scrcpyPath;
-            const res: any = await invoke('check_scrcpy', { customPath: pathToCheck });
+            const res = await invoke<DownloadStatus>('check_scrcpy', { customPath: pathToCheck });
             setScrcpyStatus(res);
 
             if (res.found) {
                 try {
-                    const renderRes: any = await invoke('get_render_drivers', { customPath: pathToCheck });
+                    const renderRes = await invoke<Partial<RenderDriverSupport>>('get_render_drivers', { customPath: pathToCheck });
                     setRenderDriverSupport({
                         hostOs: renderRes?.hostOs || 'unknown',
                         supportsRenderDriver: !!renderRes?.supportsRenderDriver,

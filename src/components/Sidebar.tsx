@@ -2,6 +2,7 @@ import React from 'react';
 import { Smartphone, RefreshCw, Usb, Wifi, UploadCloud, Zap } from 'lucide-react';
 import { useI18n } from '../i18n';
 import { MdnsDevice, isMdnsDeviceConnected, mdnsHostIp } from '../hooks/useScrcpy';
+import { usePairingRefresh } from '../hooks/scrcpy/usePairingRefresh';
 import SheetModal from './SheetModal';
 
 // mDNS wireless-debugging serials look like
@@ -153,11 +154,7 @@ export default function Sidebar({
     // refreshing in the background so it can pick up the "_adb-tls-pairing"
     // broadcast the moment it appears, without the user needing to close the
     // modal, do the manual step, then reopen it.
-    React.useEffect(() => {
-        if (!pairingTarget || pairingTarget.service.includes('_adb-tls-pairing')) return;
-        const interval = setInterval(onRefresh, 2000);
-        return () => clearInterval(interval);
-    }, [pairingTarget, onRefresh]);
+    usePairingRefresh(pairingTarget, onRefresh);
 
     // The instant a matching pairing broadcast shows up, swap the modal
     // straight to the code field -- same modal, no reopening needed. Match by

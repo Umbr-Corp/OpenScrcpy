@@ -24,7 +24,44 @@ export interface MdnsDevice {
  *  keeps an already-connected device from being listed a second time under
  *  "Discovered Devices", or auto-(re)connected by IP. */
 export function isMdnsDeviceConnected(dev: MdnsDevice, devices: string[]): boolean {
-    return devices.includes(dev.address) || devices.some(d => d.includes(dev.name));
+    const serials = [
+        `${dev.name}._adb-tls-connect._tcp`,
+        `${dev.name}._adb-tls-connect._tcp (2)`,
+        `${dev.name}._adb-tls-connect._udp`,
+        `${dev.name}._adb-tls-connect._udp (2)`,
+    ];
+    return devices.includes(dev.address) || devices.some(d => serials.includes(d));
+}
+
+/** Shape shared by the adb/scrcpy commands that report success or failure. */
+export interface CommandResult {
+    success: boolean;
+    message?: string;
+    output?: string;
+    stdout?: string;
+    stderr?: string;
+    binary?: string;
+}
+
+/** `get_devices`: the device hub's polling response. */
+export interface DeviceListResult {
+    error?: boolean;
+    message?: string;
+    devices?: string[];
+    deviceModels?: Record<string, string>;
+}
+
+/** `get_mdns_devices`: wireless-debugging service records. */
+export interface MdnsDevicesResult {
+    error?: boolean;
+    message?: string;
+    services?: MdnsDevice[];
+}
+
+/** `check_scrcpy`: whether the bundled binaries are usable. */
+export interface DownloadStatus {
+    found: boolean;
+    message: string;
 }
 
 /** The "adb-<serial>-<suffix>" mDNS instance name has a random suffix that is

@@ -3,9 +3,10 @@ import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { useI18n } from '../../i18n';
 import { isTauri } from '../../tauri';
+import { showAlert } from '../../alerts';
 import { LogLevel } from '../../logs';
 import { loadStoredJSON } from './storage';
-import { ScrcpyConfig } from './types';
+import { CommandResult, ScrcpyConfig } from './types';
 
 /** Last known screen position of the scrcpy window, per device serial. Keyed
  *  by device because different devices (e.g. a phone vs. a tablet) produce
@@ -114,7 +115,16 @@ export function useSession({ scrcpyPath, activeDevice, rememberWindowPosition, a
         try {
             await invoke('stop_scrcpy', { device });
         } catch (e) {
-            console.error(e);
+            // runningDevices follows the backend's scrcpy-status events, so it
+            // is not faked here: the monitor emits the real outcome after a
+            // force-kill too.
+            const message = String(e);
+            addLogs(t('logs.failedToStopScrcpy', { error: message }), 'err');
+            showAlert({
+                title: t('alerts.stopFailedTitle'),
+                message: t('alerts.stopFailedMsg', { error: message }),
+                kind: 'error',
+            });
         }
     };
 
@@ -131,10 +141,10 @@ export function useSession({ scrcpyPath, activeDevice, rememberWindowPosition, a
         }
     };
 
-    const listScrcpyOptions = async (device: string, arg: string, customPath?: string) => {
+    const listScrcpyOptions = async (device: string, arg: string, customPath?: string): Promise<CommandResult> => {
         try {
             addLogs(t('logs.runningScrcpyArg', { arg }), 'system');
-            const res: any = await invoke('list_scrcpy_options', { device, arg, customPath: customPath || scrcpyPath });
+            const res = await invoke<CommandResult>('list_scrcpy_options', { device, arg, customPath: customPath || scrcpyPath });
             if (res.output) {
                 const lines = res.output.split('\n');
                 addLogs(lines);
@@ -176,42 +186,42 @@ export function useSession({ scrcpyPath, activeDevice, rememberWindowPosition, a
             return res;
         } catch (e: any) {
             addLogs(t('logs.genericError', { error: String(e) }), 'err');
-            return { success: false, message: e };
+            return { success: false, message: String(e) };
         }
     };
 
-    const pushFile = async (device: string, filePath: string, customPath?: string) => {
+    const pushFile = async (device: string, filePath: string, customPath?: string): Promise<CommandResult> => {
         try {
             addLogs(t('logs.pushingFile', { device, filePath }), 'system');
-            const res: any = await invoke('push_file', { device, filePath, customPath: customPath || scrcpyPath });
+            const res = await invoke<CommandResult>('push_file', { device, filePath, customPath: customPath || scrcpyPath });
             addLogs(t('logs.adbPrefix', { message: String(res.message) }));
             return res;
         } catch (e: any) {
             addLogs(t('logs.genericError', { error: String(e) }), 'err');
-            return { success: false, message: e };
+            return { success: false, message: String(e) };
         }
     };
 
-    const installApk = async (device: string, filePath: string, customPath?: string) => {
+    const installApk = async (device: string, filePath: string, customPath?: string): Promise<CommandResult> => {
         try {
             addLogs(t('logs.installingApk', { device, filePath }), 'system');
-            const res: any = await invoke('install_apk', { device, filePath, customPath: customPath || scrcpyPath });
+            const res = await invoke<CommandResult>('install_apk', { device, filePath, customPath: customPath || scrcpyPath });
             addLogs(t('logs.adbPrefix', { message: String(res.message) }));
             return res;
         } catch (e: any) {
             addLogs(t('logs.genericError', { error: String(e) }), 'err');
-            return { success: false, message: e };
+            return { success: false, message: String(e) };
         }
     };
 
-    const runTerminalCommand = async (command: string, customPath?: string) => {
+    const runTerminalCommand = async (command: string, customPath?: string): Promise<CommandResult> => {
         try {
             // Check if user specifically typed scrcpy or adb to format log nicely
             const lower = command.trim().toLowerCase();
             const prefix = (lower.startsWith('scrcpy') || lower.startsWith('adb')) ? '' : 'adb ';
             addLogs(`> ${prefix}${command}`, 'system');
 
-            const res: any = await invoke('run_terminal_command', {
+            const res = await invoke<CommandResult>('run_terminal_command', {
                 device: activeDevice,
                 cmd: command,
                 customPath: customPath || scrcpyPath
@@ -228,7 +238,7 @@ export function useSession({ scrcpyPath, activeDevice, rememberWindowPosition, a
             return res;
         } catch (e: any) {
             addLogs(t('logs.commandFailed', { error: String(e) }), 'err');
-            return { success: false, message: e };
+            return { success: false, message: String(e) };
         }
     };
 

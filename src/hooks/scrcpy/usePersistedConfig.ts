@@ -3,6 +3,40 @@ import { invoke } from '@tauri-apps/api/core';
 import { loadStoredJSON } from './storage';
 import { ScrcpyConfig } from './types';
 
+/** localStorage can throw on write (quota, private mode, disabled storage).
+ *  Keep the in-memory state usable and warn once instead of failing render. */
+let storageWarned = false;
+function warnStorageOnce(e: unknown) {
+    if (storageWarned) return;
+    storageWarned = true;
+    console.warn('localStorage unavailable; changes stay in memory for this session.', e);
+}
+
+export function safeGetItem(key: string): string | null {
+    try {
+        return localStorage.getItem(key);
+    } catch (e) {
+        warnStorageOnce(e);
+        return null;
+    }
+}
+
+export function safeSetItem(key: string, value: string) {
+    try {
+        localStorage.setItem(key, value);
+    } catch (e) {
+        warnStorageOnce(e);
+    }
+}
+
+export function safeRemoveItem(key: string) {
+    try {
+        localStorage.removeItem(key);
+    } catch (e) {
+        warnStorageOnce(e);
+    }
+}
+
 const DEFAULT_CONFIG: ScrcpyConfig = {
     device: "",
     sessionMode: "mirror",
@@ -44,11 +78,7 @@ export function usePersistedConfig() {
     });
 
     const [colorMode, setColorModeState] = useState<'light' | 'dark' | 'system'>(() => {
-        try {
-            return (localStorage.getItem('scrcpy_color_mode') as 'light' | 'dark' | 'system') || 'system';
-        } catch {
-            return 'system';
-        }
+        return (safeGetItem('scrcpy_color_mode') as 'light' | 'dark' | 'system') || 'system';
     });
 
     const [historyDevices, setHistoryDevices] = useState<string[]>(() => loadStoredJSON<string[]>('scrcpy_history', []));
@@ -70,7 +100,7 @@ export function usePersistedConfig() {
 
     // Persist changes
     useEffect(() => {
-        localStorage.setItem('scrcpy_config', JSON.stringify(config));
+        safeSetItem('scrcpy_config', JSON.stringify(config));
     }, [config]);
 
     useEffect(() => {
@@ -90,21 +120,21 @@ export function usePersistedConfig() {
 
     const setColorMode = (mode: 'light' | 'dark' | 'system') => {
         setColorModeState(mode);
-        localStorage.setItem('scrcpy_color_mode', mode);
+        safeSetItem('scrcpy_color_mode', mode);
     };
 
     const addToHistory = (ip: string) => {
         if (!ip.includes(':')) return; // Only add valid IP:Port combos
         setHistoryDevices(prev => {
             const next = [ip, ...prev.filter(d => d !== ip)].slice(0, 10); // Keep last 10 unique
-            localStorage.setItem('scrcpy_history', JSON.stringify(next));
+            safeSetItem('scrcpy_history', JSON.stringify(next));
             return next;
         });
     };
 
     const clearHistory = () => {
         setHistoryDevices([]);
-        localStorage.removeItem('scrcpy_history');
+        safeRemoveItem('scrcpy_history');
     };
 
     return { config, setConfig, defaultRecordPath, colorMode, setColorMode, historyDevices, addToHistory, clearHistory };

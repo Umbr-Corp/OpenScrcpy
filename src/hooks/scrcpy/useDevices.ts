@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { useI18n } from '../../i18n';
 import { LogLevel } from '../../logs';
-import { MdnsDevice } from './types';
+import { CommandResult, DeviceListResult, MdnsDevicesResult, MdnsDevice } from './types';
 
 interface UseDevicesOptions {
     /** Saved scrcpy binary path, used as the fallback for every adb/scrcpy
@@ -40,20 +40,37 @@ export function useDevices({ scrcpyPath, historyDevices, addToHistory, addLogs }
     // the display falls back to deviceModels/the serial in the meantime.
     const fetchedFriendlyNamesRef = useRef<Set<string>>(new Set());
 
+    const mountedRef = useRef(true);
+    useEffect(() => {
+        mountedRef.current = true;
+        return () => {
+            mountedRef.current = false;
+        };
+    }, []);
+
+    // One get_devices/get_mdns_devices pair at a time: the 5s poll, the manual
+    // refresh and the settle-poll must not stack adb calls.
+    const fetchInFlightRef = useRef<Promise<void> | null>(null);
+
+    // History reconnects: never two adb_connect calls for the same IP, and a
+    // failing address backs off instead of retrying every 25s forever.
+    const reconnectInFlightRef = useRef<Set<string>>(new Set());
+    const reconnectBackoffRef = useRef<Record<string, { attempts: number; nextAt: number }>>({});
+
     // Does the actual device + mDNS fetch. Split out from `refreshDevices` so
     // `refreshDevicesUntilSettled` can drive several of these back to back
     // under one continuous "syncing" state, instead of the isRefreshing flag
     // (and the "Syncing..." label bound to it) flickering off and back on
     // between each poll.
-    const fetchDevicesOnce = async (customPath?: string, silent: boolean = false) => {
+    const fetchDevicesOnceUnlocked = async (customPath?: string, silent: boolean = false) => {
         try {
-            const res: any = await invoke('get_devices', { customPath: customPath || scrcpyPath });
+            const res = await invoke<DeviceListResult>('get_devices', { customPath: customPath || scrcpyPath });
             let newDevices: string[] = [];
 
             if (!res.error) {
-                newDevices = res.devices as string[];
+                newDevices = res.devices ?? [];
                 if (res.deviceModels) {
-                    setDeviceModels(res.deviceModels as Record<string, string>);
+                    setDeviceModels(res.deviceModels);
                 }
                 const prevDevices = prevDevicesRef.current;
 
@@ -71,6 +88,7 @@ export function useDevices({ scrcpyPath, historyDevices, addToHistory, addLogs }
 
                 setDevices(newDevices);
                 prevDevicesRef.current = newDevices;
+                newDevices.forEach(device => delete reconnectBackoffRef.current[device]);
 
                 if (!silent && added.length === 0 && removed.length === 0) {
                     addLogs(t('logs.discoveryActive', { count: newDevices.length }), 'system');
@@ -80,18 +98,18 @@ export function useDevices({ scrcpyPath, historyDevices, addToHistory, addLogs }
                     setActiveDevice(newDevices[0]);
                 }
             } else if (!silent) {
-                addLogs(t('logs.discoveryError', { error: res.message }), 'err');
+                addLogs(t('logs.discoveryError', { error: res.message ?? 'unknown error' }), 'err');
             }
 
             // Fetch wireless devices broadcasting on the network via mDNS
             try {
-                const mdnsRes: any = await invoke('get_mdns_devices', { customPath: customPath || scrcpyPath });
+                const mdnsRes = await invoke<MdnsDevicesResult>('get_mdns_devices', { customPath: customPath || scrcpyPath });
                 if (mdnsRes && !mdnsRes.error && mdnsRes.services) {
                     // Keep both service kinds: "_adb-tls-connect" (ready to
                     // connect) and "_adb-tls-pairing" (a device sitting on the
                     // "Pair device with pairing code" screen). The UI routes a
                     // click on either into the pairing modal, code-ready or not.
-                    const parsedMdns = (mdnsRes.services as any[]).filter(s => s.service && (s.service.includes('_adb-tls-connect') || s.service.includes('_adb-tls-pairing')));
+                    const parsedMdns = mdnsRes.services.filter(s => s.service && (s.service.includes('_adb-tls-connect') || s.service.includes('_adb-tls-pairing')));
                     setMdnsDevices(parsedMdns);
                     mdnsDevicesRef.current = parsedMdns;
 
@@ -114,6 +132,19 @@ export function useDevices({ scrcpyPath, historyDevices, addToHistory, addLogs }
             console.error(e);
             addLogs(t('logs.errorRefreshingDevices', { error: String(e) }), 'err');
         }
+    };
+
+    /** Single-flight wrapper: a second caller joins the request already in
+     *  flight instead of starting another adb round-trip. */
+    const fetchDevicesOnce = (customPath?: string, silent: boolean = false): Promise<void> => {
+        if (fetchInFlightRef.current) return fetchInFlightRef.current;
+        const run = fetchDevicesOnceUnlocked(customPath, silent);
+        let tracked: Promise<void>;
+        tracked = run.finally(() => {
+            if (fetchInFlightRef.current === tracked) fetchInFlightRef.current = null;
+        });
+        fetchInFlightRef.current = tracked;
+        return tracked;
     };
 
     const refreshDevices = async (customPath?: string, silent: boolean = false) => {
@@ -148,14 +179,16 @@ export function useDevices({ scrcpyPath, historyDevices, addToHistory, addLogs }
         try {
             let prevSnapshot = '';
             for (let i = 0; i <= attempts; i++) {
+                if (!mountedRef.current) return;
                 await fetchDevicesOnce(customPath, true);
+                if (!mountedRef.current) return;
                 const snapshot = JSON.stringify([prevDevicesRef.current, mdnsDevicesRef.current]);
                 if (snapshot === prevSnapshot) return;
                 prevSnapshot = snapshot;
                 if (i < attempts) await new Promise(r => setTimeout(r, delayMs));
             }
         } finally {
-            setIsRefreshing(false);
+            if (mountedRef.current) setIsRefreshing(false);
         }
     };
 
@@ -205,11 +238,11 @@ export function useDevices({ scrcpyPath, historyDevices, addToHistory, addLogs }
                 const command = isEmulator
                     ? 'getprop ro.boot.qemu.avd_name; getprop ro.kernel.qemu.avd_name'
                     : 'getprop ro.product.marketname; getprop ro.product.manufacturer; getprop ro.product.model';
-                const res: any = await invoke('adb_shell', { device: serial, command, customPath: scrcpyPath });
+                const res = await invoke<CommandResult>('adb_shell', { device: serial, command, customPath: scrcpyPath });
 
                 if (isEmulator) {
                     const avdName = res?.success
-                        ? (res.output as string).split('\n').map(line => line.trim()).find(line => line.length > 0)
+                        ? (res.output ?? '').split('\n').map(line => line.trim()).find(line => line.length > 0)
                         : undefined;
                     // Keep the serial visible alongside the AVD name: several
                     // emulator instances of the same AVD image running at
@@ -223,7 +256,7 @@ export function useDevices({ scrcpyPath, historyDevices, addToHistory, addLogs }
                 }
 
                 if (res?.success) {
-                    const [marketname, manufacturer, model] = (res.output as string)
+                    const [marketname, manufacturer, model] = (res.output ?? '')
                         .split('\n')
                         .map(line => line.trim());
                     // Most devices never set marketname (it's not a universal
@@ -259,12 +292,35 @@ export function useDevices({ scrcpyPath, historyDevices, addToHistory, addLogs }
     // doesn't spam the log with a failure every 25 seconds; a successful
     // reconnect still surfaces normally through the next device-list poll.
     useEffect(() => {
+        const RECONNECT_BASE_MS = 25_000;
+        const RECONNECT_MAX_MS = 5 * 60_000;
+
+        const scheduleRetry = (ip: string) => {
+            const attempts = (reconnectBackoffRef.current[ip]?.attempts ?? 0) + 1;
+            const delay = Math.min(RECONNECT_BASE_MS * 2 ** (attempts - 1), RECONNECT_MAX_MS);
+            reconnectBackoffRef.current[ip] = { attempts, nextAt: Date.now() + delay };
+        };
+
         const tryReconnectHistory = () => {
             if (document.visibilityState === 'hidden') return;
+            const now = Date.now();
             historyDevices.forEach(ip => {
-                if (!prevDevicesRef.current.includes(ip)) {
-                    invoke('adb_connect', { ip, customPath: scrcpyPath, silent: true }).catch(() => { });
-                }
+                if (prevDevicesRef.current.includes(ip)) return;
+                if (reconnectInFlightRef.current.has(ip)) return;
+                const backoff = reconnectBackoffRef.current[ip];
+                if (backoff && now < backoff.nextAt) return;
+
+                reconnectInFlightRef.current.add(ip);
+                invoke<CommandResult>('adb_connect', { ip, customPath: scrcpyPath, silent: true })
+                    .then(res => {
+                        if (res?.success) {
+                            delete reconnectBackoffRef.current[ip];
+                        } else {
+                            scheduleRetry(ip);
+                        }
+                    })
+                    .catch(() => scheduleRetry(ip))
+                    .finally(() => reconnectInFlightRef.current.delete(ip));
             });
         };
         tryReconnectHistory();
@@ -272,9 +328,9 @@ export function useDevices({ scrcpyPath, historyDevices, addToHistory, addLogs }
         return () => clearInterval(interval);
     }, [historyDevices, scrcpyPath]);
 
-    const pairDevice = async (ip: string, code: string, customPath?: string) => {
+    const pairDevice = async (ip: string, code: string, customPath?: string): Promise<CommandResult> => {
         try {
-            const res: any = await invoke('adb_pair', { ip, code, customPath: customPath || scrcpyPath });
+            const res = await invoke<CommandResult>('adb_pair', { ip, code, customPath: customPath || scrcpyPath });
             if (res.success) {
                 addLogs(t('logs.successfullyPaired', { ip }), 'ok');
                 await refreshDevicesUntilSettled(customPath);
@@ -288,11 +344,11 @@ export function useDevices({ scrcpyPath, historyDevices, addToHistory, addLogs }
             return res;
         } catch (e: any) {
             addLogs(t('logs.pairingError', { error: String(e) }), 'err');
-            return { success: false, message: e };
+            return { success: false, message: String(e) };
         }
     };
 
-    const connectDevice = async (ip: string, customPath?: string) => {
+    const connectDevice = async (ip: string, customPath?: string): Promise<CommandResult> => {
         setIsRefreshing(true);
         try {
             // Normalize a bare IP ("192.168.0.12"): adb falls back to port 5555
@@ -302,22 +358,23 @@ export function useDevices({ scrcpyPath, historyDevices, addToHistory, addLogs }
             const target = ip.includes(':') ? ip : `${ip}:5555`;
 
             // Attempt 1: Connect
-            let res: any = await invoke('adb_connect', { ip: target, customPath: customPath || scrcpyPath });
+            let res = await invoke<CommandResult>('adb_connect', { ip: target, customPath: customPath || scrcpyPath });
 
             // Retry Logic: If failed, try to disconnect first then reconnect
             if (!res.success && typeof res.message === 'string' && (res.message.includes('failed to connect') || res.message.includes('cannot connect'))) {
                 addLogs(t('logs.connectionFailedRetrying'), 'warn');
                 // Force disconnect to clear ghost state
-                await invoke('run_terminal_command', { cmd: `adb disconnect ${target}`, customPath: customPath || scrcpyPath });
+                await invoke<CommandResult>('run_terminal_command', { cmd: `adb disconnect ${target}`, customPath: customPath || scrcpyPath });
                 // Small delay
                 await new Promise(r => setTimeout(r, 500));
                 // Attempt 2
-                res = await invoke('adb_connect', { ip: target, customPath: customPath || scrcpyPath });
+                res = await invoke<CommandResult>('adb_connect', { ip: target, customPath: customPath || scrcpyPath });
             }
 
             if (res.success) {
                 addLogs(t('logs.connectedSuccessfully', { ip: target }), 'ok');
                 addToHistory(target);
+                delete reconnectBackoffRef.current[target];
 
                 // Allow ADB to settle and state to update
                 await new Promise(r => setTimeout(r, 1000));
@@ -335,7 +392,7 @@ export function useDevices({ scrcpyPath, historyDevices, addToHistory, addLogs }
             return res;
         } catch (e: any) {
             addLogs(t('logs.connectionError', { error: String(e) }), 'err');
-            return { success: false, message: e };
+            return { success: false, message: String(e) };
         } finally {
             setIsRefreshing(false);
         }
