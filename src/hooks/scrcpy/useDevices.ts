@@ -101,8 +101,13 @@ export function useDevices({ scrcpyPath, historyDevices, addToHistory, addLogs }
                 if (newDevices.length > 0 && !activeDevice) {
                     setActiveDevice(newDevices[0]);
                 }
-            } else if (!silent) {
-                addLogs(t('logs.discoveryError', { error: res.message ?? 'unknown error' }), 'err');
+            } else {
+                // A failed poll says nothing about the transports; keeping the
+                // previous list would leave unauthorized/offline ghosts in the UI.
+                setUnavailableDevices([]);
+                if (!silent) {
+                    addLogs(t('logs.discoveryError', { error: res.message ?? 'unknown error' }), 'err');
+                }
             }
 
             // Fetch wireless devices broadcasting on the network via mDNS
