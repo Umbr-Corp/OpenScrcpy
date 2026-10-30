@@ -199,12 +199,21 @@ pub async fn get_devices(custom_path: Option<String>) -> serde_json::Value {
                 let out_str = String::from_utf8_lossy(&o.stdout);
                 let mut devices: Vec<String> = Vec::new();
                 let mut device_models = serde_json::Map::new();
+                let mut unavailable = Vec::new();
                 for line in out_str.lines().skip(1) {
                     // Skip "List of devices attached"
                     let Some((serial, state)) = parse_adb_device_line(line) else {
                         continue;
                     };
                     if state != "device" {
+                        // An unauthorized phone is physically connected and
+                        // showing the "Allow USB debugging?" prompt; dropping
+                        // it here made a first run look like no device at all.
+                        unavailable.push(json!({
+                            "serial": serial,
+                            "state": state,
+                            "model": extract_device_model(line),
+                        }));
                         continue;
                     }
                     if let Some(model) = extract_device_model(line) {
@@ -213,7 +222,12 @@ pub async fn get_devices(custom_path: Option<String>) -> serde_json::Value {
                     devices.push(serial);
                 }
 
-                json!({ "error": false, "devices": devices, "deviceModels": device_models })
+                json!({
+                    "error": false,
+                    "devices": devices,
+                    "deviceModels": device_models,
+                    "unavailable": unavailable,
+                })
             } else {
                 json!({ "error": true, "message": "ADB returned error" })
             }
