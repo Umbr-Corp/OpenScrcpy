@@ -311,6 +311,7 @@ export const ar: Translations = {
         diagnosticSavedAlert: 'تم حفظ تقرير التشخيص في مجلد التنزيلات باسم: {fileName}'
     },
     alerts: {
+        downloadFailedTitle: 'فشل التنزيل',
         wirelessOkTitle: 'تم الاتصال لاسلكيًا',
         wirelessOkMsg: 'جاهز على {ip}:5555 — يمكنك فصل الكابل.',
         wirelessFailTitle: 'فشل التبديل إلى واي فاي',

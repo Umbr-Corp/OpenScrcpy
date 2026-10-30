@@ -562,7 +562,22 @@ pub async fn push_file(
             if o.status.success() {
                 json!({ "success": true, "message": "File pushed to Downloads" })
             } else {
-                json!({ "success": false, "message": "Transfer failed" })
+                // adb reports the real cause on stderr ("device offline",
+                // "No space left"); collapsing every failure to one string
+                // left the log unable to tell them apart.
+                let stderr = String::from_utf8_lossy(&o.stderr);
+                let stdout = String::from_utf8_lossy(&o.stdout);
+                let detail = if stderr.trim().is_empty() {
+                    stdout.trim()
+                } else {
+                    stderr.trim()
+                };
+                let message = if detail.is_empty() {
+                    format!("Transfer failed (exit code {:?})", o.status.code())
+                } else {
+                    format!("Transfer failed: {}", detail)
+                };
+                json!({ "success": false, "message": message })
             }
         }
         Err(e) => json!({ "success": false, "message": e.to_string() }),

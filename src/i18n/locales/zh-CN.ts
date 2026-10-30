@@ -308,6 +308,7 @@ export const zhCN: Translations = {
         diagnosticSavedAlert: '诊断报告已保存到“下载”文件夹：{fileName}'
     },
     alerts: {
+        downloadFailedTitle: '下载失败',
         wirelessOkTitle: '已连接无线',
         wirelessOkMsg: '已在 {ip}:5555 就绪 — 可以拔掉数据线。',
         wirelessFailTitle: '切换到无线失败',

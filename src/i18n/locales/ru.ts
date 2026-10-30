@@ -319,6 +319,7 @@ export const ru: Translations = {
   },
 
   alerts: {
+    downloadFailedTitle: 'Ошибка загрузки',
     wirelessOkTitle: 'Подключено по Wi-Fi',
     wirelessOkMsg: 'Готово на {ip}:5555 — кабель можно отключать.',
     wirelessFailTitle: 'Переход на Wi-Fi не удался',

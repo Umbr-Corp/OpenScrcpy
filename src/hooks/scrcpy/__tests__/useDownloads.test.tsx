@@ -1,6 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useDownloads } from '../useDownloads';
+import { closeAlert, getAlertSnapshot } from '../../../alerts';
 
 const mockInvoke = vi.hoisted(() => vi.fn());
 const mockIsTauri = vi.hoisted(() => vi.fn(() => true));
@@ -115,6 +116,7 @@ describe('useDownloads — download events', () => {
         mockListen.mockReset();
         mockListen.mockImplementation(() => Promise.resolve(() => {}));
         localStorage.clear();
+        closeAlert();
     });
 
     it('updates progress from a scrcpy-status download-progress event', () => {
@@ -169,6 +171,25 @@ describe('useDownloads — download events', () => {
 
         await act(async () => {
             finishDownload(null);
+        });
+    });
+
+    it('shows an app alert when a download fails outside onboarding', async () => {
+        mockInvoke.mockImplementation((cmd: string) => {
+            if (cmd === 'download_scrcpy') return Promise.reject(new Error('offline'));
+            return Promise.resolve(null);
+        });
+        const { result } = renderDownloads();
+
+        await act(async () => {
+            await result.current.downloadScrcpy();
+        });
+
+        expect(result.current.downloadError).toBe('onboarding.downloadFailed');
+        expect(getAlertSnapshot()).toMatchObject({
+            isOpen: true,
+            title: 'alerts.downloadFailedTitle',
+            message: 'onboarding.downloadFailed',
         });
     });
 });
