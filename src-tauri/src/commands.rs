@@ -447,26 +447,40 @@ pub async fn run_terminal_command(
 fn split_args(s: &str) -> Result<Vec<String>, String> {
     let mut args = Vec::new();
     let mut current = String::new();
-    let mut in_quotes = false;
-    let chars = s.chars();
+    let mut quote: Option<char> = None;
+    let mut chars = s.chars();
 
-    for c in chars {
-        if c == '"' {
-            in_quotes = !in_quotes;
-        } else if c.is_whitespace() && !in_quotes {
-            if !current.is_empty() {
-                args.push(current.clone());
-                current.clear();
+    while let Some(c) = chars.next() {
+        match quote {
+            Some(q) if c == q => quote = None,
+            Some('"') if c == '\\' && matches!(chars.clone().next(), Some('"' | '\\')) => {
+                current.push(chars.next().unwrap());
             }
-        } else {
-            current.push(c);
+            // Inside single quotes is POSIX-style literal: no escapes, so a
+            // Windows path keeps every backslash.
+            Some(_) => current.push(c),
+            None if c == '"' || c == '\'' => quote = Some(c),
+            None if c == '\\'
+                && matches!(
+                    chars.clone().next(),
+                    Some(n) if n.is_whitespace() || n == '\\' || n == '"' || n == '\''
+                ) =>
+            {
+                current.push(chars.next().unwrap());
+            }
+            None if c.is_whitespace() => {
+                if !current.is_empty() {
+                    args.push(std::mem::take(&mut current));
+                }
+            }
+            None => current.push(c),
         }
+    }
+    if let Some(q) = quote {
+        return Err(format!("Unclosed {} quote", q));
     }
     if !current.is_empty() {
         args.push(current);
-    }
-    if in_quotes {
-        return Err("Unclosed quotes".to_string());
     }
     Ok(args)
 }
@@ -2346,7 +2360,7 @@ pub async fn run_scrcpy(
 
         loop {
             tokio::select! {
-                _ = tokio::time::sleep(Duration::from_millis(500)) => {}
+                _ = tokio::time::sleep(Duration::from_millis(2000)) => {}
                 request = &mut stop_rx => {
                     let position = match request {
                         Ok(request) => request.position,
@@ -2377,9 +2391,9 @@ pub async fn run_scrcpy(
             // grabs its own guaranteed-fresh sample): SDL destroys the window
             // before the process exits, so by the time that exit is detected
             // below the position is unreadable, and this periodic sample is
-            // all that is left to persist. Sampling every tick instead of
-            // every few seconds keeps that worst case down to ~500ms stale
-            // instead of several seconds.
+            // all that is left to persist. Two seconds is a good trade: on
+            // Linux the sample spawns xdotool, on macOS an osascript call,
+            // and the stop path takes its own fresh sample anyway.
             if track_pos {
                 if let Some(pid) = current_child.id() {
                     if let Some(pos) = try_capture_window_pos(pid) {
@@ -3029,6 +3043,50 @@ mod tests {
     }
 
     #[test]
+    fn test_split_args_supports_single_quotes() {
+        let args = split_args("push 'Minha Foto.jpg' /sdcard/").unwrap();
+        assert_eq!(
+            args,
+            vec![
+                "push".to_string(),
+                "Minha Foto.jpg".to_string(),
+                "/sdcard/".to_string()
+            ]
+        );
+    }
+
+    #[test]
+    fn test_split_args_supports_escaped_spaces() {
+        let args = split_args(r"push Minha\ Foto.jpg /sdcard/").unwrap();
+        assert_eq!(
+            args,
+            vec![
+                "push".to_string(),
+                "Minha Foto.jpg".to_string(),
+                "/sdcard/".to_string()
+            ]
+        );
+    }
+
+    #[test]
+    fn test_split_args_keeps_windows_paths_inside_quotes() {
+        let args = split_args(r#"push "C:\Users\me\foto.jpg" /sdcard/"#).unwrap();
+        assert_eq!(
+            args,
+            vec![
+                "push".to_string(),
+                r"C:\Users\me\foto.jpg".to_string(),
+                "/sdcard/".to_string()
+            ]
+        );
+    }
+
+    #[test]
+    fn test_split_args_rejects_unclosed_single_quote() {
+        assert!(split_args("push 'Minha Foto.jpg").is_err());
+    }
+
+    #[test]
     fn test_is_expected_asset_name_accepts_real_releases() {
         assert!(is_expected_asset_name("scrcpy-win64-v3.3.3.zip", ".zip"));
         assert!(is_expected_asset_name(
@@ -3132,7 +3190,7 @@ pub async fn stop_scrcpy(state: State<'_, ScrcpyState>, device: String) -> Resul
 
     // Grab the window's position now, one last time, before it is killed:
     // this is the only moment it is guaranteed to still be exactly where the
-    // user left it. The monitor task refreshes its own sample every ~500ms,
+    // user left it. The monitor task refreshes its own sample every ~2s,
     // but a move right before Stop could still beat it.
     let position = if pid_value != 0 {
         try_capture_window_pos(pid_value)
