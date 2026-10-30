@@ -99,6 +99,17 @@ fn create_command<S: AsRef<std::ffi::OsStr>>(program: S) -> TokioCommand {
     cmd
 }
 
+/// Client for the GitHub release calls. The connect deadline is what keeps a
+/// stalled TCP/TLS handshake from hanging the download or update UI forever;
+/// individual requests still set their own total timeout.
+fn http_client(user_agent: &str) -> Result<reqwest::Client, String> {
+    reqwest::Client::builder()
+        .user_agent(user_agent)
+        .connect_timeout(Duration::from_secs(10))
+        .build()
+        .map_err(|e| e.to_string())
+}
+
 #[tauri::command]
 pub async fn check_scrcpy(custom_path: Option<String>) -> serde_json::Value {
     let exe_path = get_binary_path("scrcpy", custom_path);
@@ -374,6 +385,24 @@ pub async fn adb_shell(
     }
 }
 
+/// The terminal panel renders whatever comes back from the command; a
+/// runaway command (adb logcat never exits) must not grow the Rust side
+/// without bound. Keep the first 256 KiB and mark the cut.
+const MAX_TERMINAL_OUTPUT_BYTES: usize = 256 * 1024;
+
+fn cap_terminal_output(mut text: String) -> String {
+    if text.len() <= MAX_TERMINAL_OUTPUT_BYTES {
+        return text;
+    }
+    let mut end = MAX_TERMINAL_OUTPUT_BYTES;
+    while !text.is_char_boundary(end) {
+        end -= 1;
+    }
+    text.truncate(end);
+    text.push_str("\n[output truncated]");
+    text
+}
+
 #[tauri::command]
 pub async fn run_terminal_command(
     device: Option<String>,
@@ -429,18 +458,20 @@ pub async fn run_terminal_command(
         args.push(part);
     }
 
-    let output = create_command(&exe_path).args(&args).output().await;
+    let mut command = create_command(&exe_path);
+    command.args(&args);
+    let output = process::output_with_timeout(command, Duration::from_secs(30)).await;
 
     match output {
         Ok(o) => {
             json!({
                 "success": o.status.success(),
                 "binary": binary_name,
-                "stdout": String::from_utf8_lossy(&o.stdout).to_string(),
-                "stderr": String::from_utf8_lossy(&o.stderr).to_string()
+                "stdout": cap_terminal_output(String::from_utf8_lossy(&o.stdout).to_string()),
+                "stderr": cap_terminal_output(String::from_utf8_lossy(&o.stderr).to_string())
             })
         }
-        Err(e) => json!({ "success": false, "message": e.to_string() }),
+        Err(e) => json!({ "success": false, "message": e }),
     }
 }
 
@@ -2912,6 +2943,21 @@ mod tests {
     }
 
     #[test]
+    fn test_cap_terminal_output_keeps_small_output() {
+        assert_eq!(cap_terminal_output("ok".to_string()), "ok");
+    }
+
+    #[test]
+    fn test_cap_terminal_output_truncates_on_char_boundary() {
+        // Two-byte chars: a naive byte cut would slice one in half and panic
+        // on the next String operation.
+        let text = "é".repeat(MAX_TERMINAL_OUTPUT_BYTES / 2 + 1);
+        let capped = cap_terminal_output(text);
+        assert!(capped.ends_with("[output truncated]"));
+        assert!(capped.len() <= MAX_TERMINAL_OUTPUT_BYTES + "\n[output truncated]".len());
+    }
+
+    #[test]
     fn test_parse_adb_device_line_usb_serial() {
         assert_eq!(
             parse_adb_device_line("ZY22MGW35T device"),
@@ -3210,10 +3256,7 @@ pub async fn download_scrcpy(window: Window, app_handle: tauri::AppHandle) -> Re
     );
     let _ = window.emit("scrcpy-status", json!({ "type": "downloading", "success": true, "message": format!("Fetching latest {} release...", arch_tag) }));
 
-    let client = reqwest::Client::builder()
-        .user_agent("OpenScrcpy-Downloader")
-        .build()
-        .map_err(|e| e.to_string())?;
+    let client = http_client("OpenScrcpy-Downloader")?;
 
     // Attempt to get the latest release via API, but fallback to redirect scraping if rate limited
     let mut download_url = String::new();
@@ -3221,7 +3264,11 @@ pub async fn download_scrcpy(window: Window, app_handle: tauri::AppHandle) -> Re
     let mut release_tag: Option<String> = None;
 
     let api_url = "https://api.github.com/repos/Genymobile/scrcpy/releases/latest";
-    let api_resp = client.get(api_url).send().await;
+    let api_resp = client
+        .get(api_url)
+        .timeout(Duration::from_secs(15))
+        .send()
+        .await;
 
     let mut used_fallback = false;
 
@@ -3258,6 +3305,7 @@ pub async fn download_scrcpy(window: Window, app_handle: tauri::AppHandle) -> Re
         // Fallback: Follow redirect of /releases/latest to get the tag name
         let redirect_res = client
             .get("https://github.com/Genymobile/scrcpy/releases/latest")
+            .timeout(Duration::from_secs(15))
             .send()
             .await
             .map_err(|e| format!("Fallback failed: {}", e))?;
@@ -3306,6 +3354,7 @@ pub async fn download_scrcpy(window: Window, app_handle: tauri::AppHandle) -> Re
     );
     let sums_resp = client
         .get(&sums_url)
+        .timeout(Duration::from_secs(15))
         .send()
         .await
         .map_err(|e| format!("Failed to fetch SHA256SUMS.txt: {}", e))?;
@@ -3346,10 +3395,9 @@ pub async fn download_scrcpy(window: Window, app_handle: tauri::AppHandle) -> Re
     {
         let mut file = std::fs::File::create(&temp_archive_path)
             .map_err(|e| format!("Failed to create archive file: {}", e))?;
-        let mut download_resp = client
-            .get(&download_url)
-            .send()
+        let mut download_resp = timeout(Duration::from_secs(30), client.get(&download_url).send())
             .await
+            .map_err(|_| "Timed out connecting to the download URL".to_string())?
             .map_err(|e| format!("Failed to connect to download URL: {}", e))?;
         if !download_resp.status().is_success() {
             return Err(format!(
@@ -3366,7 +3414,15 @@ pub async fn download_scrcpy(window: Window, app_handle: tauri::AppHandle) -> Re
 
         let mut downloaded: u64 = 0;
         let mut last_percent: Option<u64> = None;
-        while let Some(chunk) = download_resp.chunk().await.map_err(|e| e.to_string())? {
+        loop {
+            // A stalled transfer must not keep the download flag on forever.
+            // The timeout is per chunk, not for the whole file, so a slow but
+            // healthy link still gets to finish.
+            let chunk = timeout(Duration::from_secs(30), download_resp.chunk())
+                .await
+                .map_err(|_| "Download stalled for 30s".to_string())?
+                .map_err(|e| e.to_string())?;
+            let Some(chunk) = chunk else { break };
             file.write_all(&chunk)
                 .map_err(|e| format!("Failed to write chunk: {}", e))?;
             downloaded += chunk.len() as u64;
@@ -3530,13 +3586,14 @@ pub async fn get_local_scrcpy_version(custom_path: Option<String>) -> Option<Str
 }
 
 pub async fn get_latest_scrcpy_version() -> Result<String, String> {
-    let client = reqwest::Client::builder()
-        .user_agent("OpenScrcpy-Updater")
-        .build()
-        .map_err(|e| e.to_string())?;
+    let client = http_client("OpenScrcpy-Updater")?;
 
     let api_url = "https://api.github.com/repos/Genymobile/scrcpy/releases/latest";
-    let api_resp = client.get(api_url).send().await;
+    let api_resp = client
+        .get(api_url)
+        .timeout(Duration::from_secs(15))
+        .send()
+        .await;
 
     let mut tag_name = String::new();
     let mut used_fallback = false;
@@ -3558,6 +3615,7 @@ pub async fn get_latest_scrcpy_version() -> Result<String, String> {
     if used_fallback || tag_name.is_empty() {
         let redirect_res = client
             .get("https://github.com/Genymobile/scrcpy/releases/latest")
+            .timeout(Duration::from_secs(15))
             .send()
             .await
             .map_err(|e| format!("Fallback failed: {}", e))?;
