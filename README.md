@@ -78,6 +78,9 @@ environment.systemPackages = [
 
 ## Security
 
+The in-app console runs only the `adb` and `scrcpy` binaries resolved by the
+app, not an arbitrary shell. It is meant for device and session commands.
+
 Found a vulnerability? Read [SECURITY.md](SECURITY.md) — report it privately, never in a public issue.
 
 ## License

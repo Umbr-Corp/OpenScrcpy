@@ -1,5 +1,6 @@
 use crate::download;
 use crate::process;
+use crate::validate;
 use crate::{ScrcpyState, SessionHandle, StopRequest};
 use serde::Deserialize;
 use serde_json::json;
@@ -270,6 +271,7 @@ pub async fn adb_connect(
     custom_path: Option<String>,
     silent: Option<bool>,
 ) -> Result<serde_json::Value, String> {
+    validate::adb_address(&ip)?;
     let silent = silent.unwrap_or(false);
     let adb_path = get_binary_path("adb", custom_path);
     if !silent {
@@ -324,6 +326,7 @@ pub async fn adb_pair(
     code: String,
     custom_path: Option<String>,
 ) -> Result<serde_json::Value, String> {
+    validate::adb_address(&ip)?;
     let adb_path = get_binary_path("adb", custom_path);
     let _ = window.emit("scrcpy-log", format!("[SYSTEM] Pairing with {}...", ip));
 
@@ -355,6 +358,9 @@ pub async fn adb_shell(
     command: String,
     custom_path: Option<String>,
 ) -> serde_json::Value {
+    if let Err(e) = validate::device(&device) {
+        return json!({ "success": false, "message": e });
+    }
     let adb_path = get_binary_path("adb", custom_path);
 
     let output = create_command(&adb_path)
@@ -408,6 +414,9 @@ pub async fn run_terminal_command(
     if !has_serial_flag {
         if let Some(ref d) = device {
             if !d.is_empty() {
+                if let Err(e) = validate::device(d) {
+                    return json!({ "success": false, "message": e });
+                }
                 // For ADB, don't inject for certain global commands
                 let is_global_adb = binary_name == "adb"
                     && !parts.is_empty()
@@ -516,6 +525,9 @@ pub async fn push_file(
     file_path: String,
     custom_path: Option<String>,
 ) -> serde_json::Value {
+    if let Err(e) = validate::device(&device) {
+        return json!({ "success": false, "message": e });
+    }
     let adb_path = get_binary_path("adb", custom_path);
 
     let output = create_command(&adb_path)
@@ -545,6 +557,9 @@ pub async fn install_apk(
     file_path: String,
     custom_path: Option<String>,
 ) -> serde_json::Value {
+    if let Err(e) = validate::device(&device) {
+        return json!({ "success": false, "message": e });
+    }
     let adb_path = get_binary_path("adb", custom_path);
 
     let output = create_command(&adb_path)
@@ -608,6 +623,9 @@ pub async fn list_scrcpy_options(
     arg: String,
     custom_path: Option<String>,
 ) -> serde_json::Value {
+    if let Err(e) = validate::device(&device) {
+        return json!({ "success": false, "message": e });
+    }
     let exe_path = get_binary_path("scrcpy", custom_path);
 
     let mut command = create_command(&exe_path);
@@ -2084,6 +2102,18 @@ async fn spawn_mic_level_meter(
     });
 }
 
+fn validate_scrcpy_config(config: &ScrcpyConfig) -> Result<(), String> {
+    validate::device(&config.device)?;
+    validate::video_codec(config.codec.as_deref())?;
+    validate::audio_codec(config.audio_codec.as_deref())?;
+    validate::mic_source(config.mic_source.as_deref())?;
+    validate::mic_codec(config.mic_codec.as_deref())?;
+    validate::rotation(config.rotation.as_deref())?;
+    validate::fps(config.fps)?;
+    validate::bitrate(config.bitrate)?;
+    Ok(())
+}
+
 #[tauri::command]
 pub async fn run_scrcpy(
     window: Window,
@@ -2091,6 +2121,8 @@ pub async fn run_scrcpy(
     config: ScrcpyConfig,
     app_handle: tauri::AppHandle,
 ) -> Result<(), String> {
+    validate_scrcpy_config(&config)?;
+
     let video_dir = app_handle
         .path()
         .video_dir()
@@ -2653,6 +2685,27 @@ mod tests {
             window_y: None,
             ignore_video_encoder_constraints: None,
         }
+    }
+
+    #[test]
+    fn test_validate_scrcpy_config_accepts_defaults_and_rejects_bad_values() {
+        assert!(validate_scrcpy_config(&base_config("mirror")).is_ok());
+
+        let mut config = base_config("mirror");
+        config.codec = Some("vp9".to_string());
+        assert!(validate_scrcpy_config(&config).is_err());
+
+        let mut config = base_config("mirror");
+        config.device = "-s".to_string();
+        assert!(validate_scrcpy_config(&config).is_err());
+
+        let mut config = base_config("mic");
+        config.mic_codec = Some("flac".to_string());
+        assert!(validate_scrcpy_config(&config).is_err());
+
+        let mut config = base_config("mirror");
+        config.fps = Some(0);
+        assert!(validate_scrcpy_config(&config).is_err());
     }
 
     #[test]

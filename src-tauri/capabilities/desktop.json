@@ -10,6 +10,6 @@
   ],
   "permissions": [
     "updater:default",
-    "process:default"
+    "process:allow-restart"
   ]
 }

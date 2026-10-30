@@ -126,8 +126,6 @@ const PerformanceGrid = ({
                             { value: "h264", label: "H.264" },
                             { value: "h265", label: "H.265" },
                             { value: "av1", label: "AV1" },
-                            { value: "vp8", label: "VP8" },
-                            { value: "vp9", label: "VP9" },
                         ]}
                         {...selectClassNames}
                     />
@@ -420,8 +418,6 @@ export default function ControlPanel({
                                         { value: "h264", label: "H.264" },
                                         { value: "h265", label: "H.265" },
                                         { value: "av1", label: "AV1" },
-                                        { value: "vp8", label: "VP8" },
-                                        { value: "vp9", label: "VP9" },
                                     ]}
                                     {...selectClassNames}
                                 />
