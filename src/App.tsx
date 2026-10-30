@@ -59,6 +59,7 @@ function App() {
     pushFile,
     installApk,
     historyDevices,
+    addToHistory,
     clearHistory,
     isOnboardingOpen,
     setIsOnboardingOpen,
@@ -291,6 +292,10 @@ function App() {
       const { invoke } = await import('@tauri-apps/api/core');
       const res = await invoke<{ success: boolean; message: string; ip?: string }>('goto_wireless', { device });
       if (res.success) {
+        // Legacy tcpip has no pairing trust for adb to remember, so the
+        // address must land in Recent Devices or the hub loses the phone on
+        // the next app start (the history retry is what reconnects it).
+        if (res.ip) addToHistory(`${res.ip}:5555`);
         showAlert({ title: t('alerts.wirelessOkTitle'), message: t('alerts.wirelessOkMsg', { ip: res.ip ?? '' }), kind: 'success' });
       } else {
         const detail = (res.message || '').trim();

@@ -108,6 +108,7 @@ export function useScrcpy() {
         pushFile,
         installApk,
         historyDevices,
+        addToHistory,
         clearHistory,
         sessionRunning: runningDevices.includes(activeDevice || ''),
         isOnboardingOpen,
