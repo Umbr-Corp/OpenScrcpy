@@ -453,17 +453,21 @@ fn split_args(s: &str) -> Result<Vec<String>, String> {
     while let Some(c) = chars.next() {
         match quote {
             Some(q) if c == q => quote = None,
-            Some('"') if c == '\\' && matches!(chars.clone().next(), Some('"' | '\\')) => {
+            // Only \" is an escape: a backslash is a path separator on
+            // Windows, so \\ must survive (a UNC path starts with two).
+            Some('"') if c == '\\' && chars.clone().next() == Some('"') => {
                 current.push(chars.next().unwrap());
             }
             // Inside single quotes is POSIX-style literal: no escapes, so a
             // Windows path keeps every backslash.
             Some(_) => current.push(c),
             None if c == '"' || c == '\'' => quote = Some(c),
+            // Escapes cover separators and quotes only; a doubled backslash
+            // stays literal so \\server\share paths survive unquoted.
             None if c == '\\'
                 && matches!(
                     chars.clone().next(),
-                    Some(n) if n.is_whitespace() || n == '\\' || n == '"' || n == '\''
+                    Some(n) if n.is_whitespace() || n == '"' || n == '\''
                 ) =>
             {
                 current.push(chars.next().unwrap());
@@ -3076,6 +3080,19 @@ mod tests {
             vec![
                 "push".to_string(),
                 r"C:\Users\me\foto.jpg".to_string(),
+                "/sdcard/".to_string()
+            ]
+        );
+    }
+
+    #[test]
+    fn test_split_args_keeps_unc_paths() {
+        let args = split_args(r"push \\server\share\foto.jpg /sdcard/").unwrap();
+        assert_eq!(
+            args,
+            vec![
+                "push".to_string(),
+                r"\\server\share\foto.jpg".to_string(),
                 "/sdcard/".to_string()
             ]
         );
