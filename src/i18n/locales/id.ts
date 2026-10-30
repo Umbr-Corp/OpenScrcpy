@@ -308,6 +308,7 @@ languages: {
         diagnosticSavedAlert: 'Laporan diagnostik disimpan ke Unduhan sebagai: {fileName}'
     },
     alerts: {
+        downloadFailedTitle: 'Unduhan Gagal',
         wirelessOkTitle: 'Terhubung via Wi-Fi',
         wirelessOkMsg: 'Siap di {ip}:5555 — kabel dilepas.',
         wirelessFailTitle: 'Gagal Beralih ke Wi-Fi',

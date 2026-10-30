@@ -15,6 +15,9 @@ interface ControlPanelProps {
     onStart: () => void;
     onStop: () => void;
     isRunning: boolean;
+    /** A start invoke is in flight; keep a second click from spawning a
+     *  second scrcpy before the first one is registered. */
+    isStarting?: boolean;
     onListOptions: (arg: string) => void;
     detectedCameras?: { id: string, name: string }[];
     renderDriverSupport?: RenderDriverSupport;
@@ -35,6 +38,7 @@ export default function ControlPanel({
     onStart,
     onStop,
     isRunning,
+    isStarting = false,
     onListOptions,
     detectedCameras = [],
     renderDriverSupport = { hostOs: 'unknown', supportsRenderDriver: false, supportedDrivers: [] }
@@ -535,6 +539,8 @@ export default function ControlPanel({
                     <button
                         type="button"
                         onClick={onStart}
+                        disabled={isStarting}
+                        aria-busy={isStarting}
                         className="ds-btn ds-btn-primary w-full"
                         style={{ padding: '12px 16px' }}
                     >

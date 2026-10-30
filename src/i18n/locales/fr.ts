@@ -308,6 +308,7 @@ export const fr: Translations = {
         diagnosticSavedAlert: 'Rapport de diagnostic enregistré dans Téléchargements sous : {fileName}'
     },
     alerts: {
+        downloadFailedTitle: 'Échec du téléchargement',
         wirelessOkTitle: 'Connecté au Wi-Fi',
         wirelessOkMsg: 'Prêt sur {ip}:5555 — vous pouvez débrancher le câble.',
         wirelessFailTitle: 'Échec de la bascule',
