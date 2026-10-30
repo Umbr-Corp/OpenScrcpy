@@ -178,11 +178,9 @@ fn extract_device_model(line: &str) -> Option<String> {
 pub async fn get_devices(custom_path: Option<String>) -> serde_json::Value {
     let adb_path = get_binary_path("adb", custom_path);
 
-    let output = create_command(&adb_path)
-        .arg("devices")
-        .arg("-l")
-        .output()
-        .await;
+    let mut cmd = create_command(&adb_path);
+    cmd.arg("devices").arg("-l");
+    let output = process::output_with_timeout(cmd, Duration::from_secs(10)).await;
 
     match output {
         Ok(o) => {
@@ -219,11 +217,9 @@ pub async fn get_devices(custom_path: Option<String>) -> serde_json::Value {
 pub async fn get_mdns_devices(custom_path: Option<String>) -> serde_json::Value {
     let adb_path = get_binary_path("adb", custom_path);
 
-    let output = create_command(&adb_path)
-        .arg("mdns")
-        .arg("services")
-        .output()
-        .await;
+    let mut cmd = create_command(&adb_path);
+    cmd.arg("mdns").arg("services");
+    let output = process::output_with_timeout(cmd, Duration::from_secs(10)).await;
 
     match output {
         Ok(o) => {
@@ -358,13 +354,9 @@ pub async fn adb_shell(
     }
     let adb_path = get_binary_path("adb", custom_path);
 
-    let output = create_command(&adb_path)
-        .arg("-s")
-        .arg(&device)
-        .arg("shell")
-        .arg(&command)
-        .output()
-        .await;
+    let mut cmd = create_command(&adb_path);
+    cmd.arg("-s").arg(&device).arg("shell").arg(&command);
+    let output = process::output_with_timeout(cmd, Duration::from_secs(10)).await;
 
     match output {
         Ok(o) => {
