@@ -157,6 +157,7 @@ const LogPanel = memo(({ logs, onClear, onAddLog, onRunCommand }: LogPanelProps)
                 <input
                     id="log-terminal-input"
                     type="text"
+                    aria-label={t('logPanel.terminalPlaceholder')}
                     value={command}
                     onChange={(e) => setCommand(e.target.value)}
                     onKeyDown={handleKeyDown}

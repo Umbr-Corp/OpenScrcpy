@@ -1,10 +1,12 @@
-import { Play, Square, Monitor, Camera, LayoutGrid, Mic, Lock, Unlock, Settings2, Video, ExternalLink, Keyboard, Mouse, type LucideIcon } from 'lucide-react';
+import { Play, Square, Monitor, Camera, LayoutGrid, Mic, Lock, Unlock, Settings2, Video, ExternalLink, Keyboard, Mouse } from 'lucide-react';
 import { ConfigFieldSetter, RenderDriverSupport, ScrcpyConfig } from '../../hooks/useScrcpy';
 import Tooltip from '../Tooltip';
 import Select from '../Select';
 import SliderRow from '../SliderRow';
-import { buildRendererOptions, mapRendererSelection } from './rendererOptions';
+import { buildRendererOptions } from './rendererOptions';
 import MicMeter from './MicMeter';
+import PerformanceGrid from './PerformanceGrid';
+import ToggleRow from './ToggleRow';
 import { useI18n } from '../../i18n';
 
 interface ControlPanelProps {
@@ -26,165 +28,6 @@ const dsHoverStyles = `
 .cp-opt { border: 1px solid transparent; }
 .cp-opt:hover { border-color: var(--primary); }
 `;
-
-interface ToggleRowProps {
-    checked: boolean;
-    onChange: (v: boolean) => void;
-    label: string;
-    hint?: string;
-    icon?: LucideIcon;
-}
-
-// Single settings toggle row: label on the left, .ds-toggle on the right.
-// Keyboard accessible (role="switch"); hover uses the primary border token.
-const ToggleRow = ({ checked, onChange, label, hint, icon: Icon }: ToggleRowProps) => (
-    <div
-        role="switch"
-        aria-checked={checked}
-        tabIndex={0}
-        onClick={() => onChange(!checked)}
-        onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                onChange(!checked);
-            }
-        }}
-        className="cp-row flex items-center justify-between gap-3 cursor-pointer px-3 py-2"
-    >
-        <div className="flex items-center gap-2 min-w-0">
-            {Icon && (
-                <span style={{ color: checked ? 'var(--primary)' : 'var(--text-muted)' }} className="flex items-center shrink-0">
-                    <Icon size={12} />
-                </span>
-            )}
-            <div className="min-w-0">
-                <span className="ds-label truncate block">{label}</span>
-                {hint && (
-                    <span className="block ds-caption truncate" style={{ color: 'var(--text-muted)', fontSize: 10.5, lineHeight: '13px' }}>{hint}</span>
-                )}
-            </div>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-            <span className="ds-toggle" data-on={checked ? 'true' : 'false'} aria-hidden="true">
-                <span />
-            </span>
-        </div>
-    </div>
-);
-
-// Resolution / codec / fps / rotation / renderer grid, shared by the three
-// session modes with selective hiding. Module scope: a dropdown declared
-// inside the parent's body would remount (and close) on every parent render,
-// e.g. the 5s background device poll in App.
-const PerformanceGrid = ({
-    config,
-    handleChange,
-    rendererOptions,
-    showResolution = true,
-    showCodec = true
-}: {
-    config: ScrcpyConfig;
-    handleChange: ConfigFieldSetter;
-    rendererOptions: { value: string; label: string }[];
-    showResolution?: boolean;
-    showCodec?: boolean;
-}) => {
-    const { t } = useI18n();
-    const selectClassNames = {
-        triggerClassName: 'cp-select',
-        optionClassName: 'cp-opt',
-        customLabel: t('controlPanel.custom')
-    };
-
-    return (
-        <div className="space-y-2">
-            <div className={`grid ${showResolution ? 'grid-cols-3' : 'grid-cols-2'} gap-2`}>
-                {showResolution && (
-                    <Select
-                        label={t('controlPanel.resolution')}
-                        value={config.res || "0"}
-                        onChange={(val) => handleChange('res', val)}
-                        options={[
-                            { value: "0", label: t('controlPanel.resolutionOriginal') },
-                            { value: "3840", label: "4K" },
-                            { value: "2560", label: "2K" },
-                            { value: "1920", label: "1080p" },
-                            { value: "1600", label: "900p" },
-                            { value: "1280", label: "720p" },
-                            { value: "1024", label: "576p" },
-                            { value: "800", label: "480p" },
-                        ]}
-                        {...selectClassNames}
-                    />
-                )}
-                {showCodec && (
-                    <Select
-                        label={t('controlPanel.codec')}
-                        value={config.codec || "h264"}
-                        onChange={(val) => handleChange('codec', val)}
-                        options={[
-                            { value: "h264", label: "H.264" },
-                            { value: "h265", label: "H.265" },
-                            { value: "av1", label: "AV1" },
-                        ]}
-                        {...selectClassNames}
-                    />
-                )}
-                <Select
-                    label={t('controlPanel.fps')}
-                    value={config.fps === undefined || config.fps === null ? 0 : config.fps}
-                    onChange={(val) => handleChange('fps', val === 0 ? undefined : val)}
-                    options={[
-                        { value: 0, label: t('controlPanel.rendererAuto') || "Automatic" },
-                        { value: 30, label: "30" },
-                        { value: 60, label: "60" },
-                        { value: 90, label: "90" },
-                        { value: 120, label: "120" },
-                    ]}
-                    {...selectClassNames}
-                />
-                <Select
-                    label={t('controlPanel.rotation')}
-                    value={config.rotation || "0"}
-                    onChange={(val) => handleChange('rotation', val)}
-                    options={[
-                        { value: "0", label: "0°" },
-                        { value: "270", label: "-90°" },
-                        { value: "90", label: "+90°" },
-                        { value: "180", label: "180°" },
-                    ]}
-                    {...selectClassNames}
-                />
-                <Select
-                    label={t('controlPanel.graphicsRenderer')}
-                    value={config.renderDriver || 'auto'}
-                    onChange={(val) => handleChange('renderDriver', mapRendererSelection(val))}
-                    options={rendererOptions}
-                    {...selectClassNames}
-                />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-                <Tooltip text={t('controlPanel.vsyncTooltip')} block>
-                    <ToggleRow
-                        checked={config.vsync !== false}
-                        onChange={(v) => handleChange('vsync', v)}
-                        label={t('controlPanel.vsync')}
-                        hint={t('controlPanel.vsyncHint')}
-                    />
-                </Tooltip>
-                {/* v4.1: ignore encoder constraints */}
-                <Tooltip text={t('controlPanel.ignoreEncoderConstraintsTooltip')} block>
-                    <ToggleRow
-                        checked={!!config.ignoreVideoEncoderConstraints}
-                        onChange={(v) => handleChange('ignoreVideoEncoderConstraints', v)}
-                        label={t('controlPanel.ignoreEncoderConstraints')}
-                        hint="v4.1"
-                    />
-                </Tooltip>
-            </div>
-        </div>
-    );
-};
 
 export default function ControlPanel({
     config,
@@ -401,6 +244,7 @@ export default function ControlPanel({
                                 <Select
                                     value={config.cameraId || ""}
                                     onChange={(val) => handleChange('cameraId', val)}
+                                    ariaLabel={t('controlPanel.cameraDevice')}
                                     options={[
                                         { value: "", label: t('controlPanel.autoSelect') },
                                         ...detectedCameras.map(cam => ({ value: cam.id, label: cam.name }))
@@ -580,7 +424,7 @@ export default function ControlPanel({
                                 {/* v4: Background Color for Desktop mode */}
                                 <div className="space-y-1">
                                     <div className="flex items-center gap-1.5">
-                                        <span className="ds-label">{t('controlPanel.backgroundColor')}</span>
+                                        <label className="ds-label" htmlFor="cp-background-color">{t('controlPanel.backgroundColor')}</label>
                                         <Tooltip text={t('controlPanel.backgroundColorTooltip')} placement="top" />
                                     </div>
                                     <div className="flex items-center gap-2">
@@ -589,6 +433,7 @@ export default function ControlPanel({
                                             style={{ width: 20, height: 20, borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-base)', backgroundColor: config.backgroundColor || '#222222' }}
                                         />
                                         <input
+                                            id="cp-background-color"
                                             type="text"
                                             placeholder="#1a1a1a"
                                             value={config.backgroundColor || ''}
