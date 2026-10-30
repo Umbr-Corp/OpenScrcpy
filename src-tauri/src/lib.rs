@@ -76,11 +76,17 @@ pub fn run() {
                         new_preload.push_str(path);
                         std::env::set_var("LD_PRELOAD", &new_preload);
 
-                        let current_exe = std::env::current_exe().unwrap_or_else(|_| {
-                            std::path::PathBuf::from(std::env::args().next().unwrap())
-                        });
+                        let current_exe = std::env::current_exe()
+                            .ok()
+                            .or_else(|| std::env::args_os().next().map(std::path::PathBuf::from));
+                        let Some(current_exe) = current_exe else {
+                            eprintln!(
+                                "[SYSTEM] Could not resolve argv[0]; skipping Wayland re-exec."
+                            );
+                            break;
+                        };
                         let mut cmd = std::process::Command::new(current_exe);
-                        cmd.args(std::env::args().skip(1));
+                        cmd.args(std::env::args_os().skip(1));
                         let _ = cmd.exec();
                         break;
                     }
@@ -135,7 +141,6 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
-            commands::greet,
             commands::check_scrcpy,
             commands::get_devices,
             commands::adb_connect,

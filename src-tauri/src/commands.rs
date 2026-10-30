@@ -35,11 +35,6 @@ fn is_audio_codec_error(text: &str) -> bool {
     mentions_codec && mentions_failure
 }
 
-#[tauri::command]
-pub fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
-}
-
 fn get_binary_path(binary_name: &str, custom_folder: Option<String>) -> String {
     let exe_ext = std::env::consts::EXE_EXTENSION;
     let binary_filename = if exe_ext.is_empty() {
@@ -1534,6 +1529,7 @@ async fn spawn_scrcpy_streams(
 
     let mut child = command.spawn().map_err(|e| e.to_string())?;
 
+    // Both streams are piped just above, so take() cannot be None here.
     let stdout = child.stdout.take().expect("Failed to capture stdout");
     let stderr = child.stderr.take().expect("Failed to capture stderr");
 
@@ -3047,6 +3043,43 @@ mod tests {
         assert!(!is_expected_asset_name("../evil.zip", ".zip"));
         assert!(!is_expected_asset_name("/abs/scrcpy-win64-v1.zip", ".zip"));
         assert!(!is_expected_asset_name("scrcpy-win64-v1.zip ", ".zip"));
+        assert!(!is_expected_asset_name("scrcpy-v1/../../evil.zip", ".zip"));
+        let oversized = format!("scrcpy-{}.zip", "a".repeat(200));
+        assert!(!is_expected_asset_name(&oversized, ".zip"));
+    }
+
+    #[test]
+    fn test_find_wlan_ipv4_keeps_scanning_past_trailing_src() {
+        assert_eq!(
+            find_wlan_ipv4("inet 10.0.0.5/24 brd 10.0.0.255 scope global wlan0 src"),
+            Some("10.0.0.5".to_string())
+        );
+    }
+
+    #[test]
+    fn test_find_wlan_ipv4_ignores_ipv6_and_junk() {
+        assert_eq!(find_wlan_ipv4("inet fe80::1/64 src ::1"), None);
+        assert_eq!(find_wlan_ipv4(""), None);
+        assert_eq!(find_wlan_ipv4("src"), None);
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn test_get_local_scrcpy_version_times_out_on_hung_binary() {
+        use std::os::unix::fs::PermissionsExt;
+
+        let dir = std::env::temp_dir().join(format!("openscrcpy-version-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).expect("temp dir");
+        let fake = dir.join("scrcpy");
+        std::fs::write(&fake, "#!/bin/sh\nsleep 30\n").expect("fake scrcpy");
+        std::fs::set_permissions(&fake, std::fs::Permissions::from_mode(0o755)).expect("chmod");
+
+        let started = std::time::Instant::now();
+        let version = get_local_scrcpy_version(Some(dir.to_string_lossy().to_string())).await;
+        let _ = std::fs::remove_dir_all(&dir);
+
+        assert!(version.is_none());
+        assert!(started.elapsed() < std::time::Duration::from_secs(10));
     }
 
     #[test]
@@ -3473,15 +3506,13 @@ pub async fn get_scrcpy_bin_dir() -> Result<String, String> {
     }
 }
 
-pub fn get_local_scrcpy_version(custom_path: Option<String>) -> Option<String> {
+pub async fn get_local_scrcpy_version(custom_path: Option<String>) -> Option<String> {
     let exe_path = get_binary_path("scrcpy", custom_path);
-    let mut cmd = std::process::Command::new(&exe_path);
-    #[cfg(target_os = "windows")]
-    {
-        use std::os::windows::process::CommandExt;
-        cmd.creation_flags(CREATE_NO_WINDOW);
-    }
-    let output = cmd.arg("--version").output().ok()?;
+    let mut cmd = create_command(&exe_path);
+    cmd.arg("--version");
+    let output = process::output_with_timeout(cmd, Duration::from_secs(3))
+        .await
+        .ok()?;
     if output.status.success() {
         let out_str = String::from_utf8_lossy(&output.stdout);
         for line in out_str.lines() {
@@ -3582,7 +3613,7 @@ fn compare_versions(local: &str, remote: &str) -> bool {
 
 #[tauri::command]
 pub async fn check_scrcpy_update(custom_path: Option<String>) -> serde_json::Value {
-    let local_version = match get_local_scrcpy_version(custom_path.clone()) {
+    let local_version = match get_local_scrcpy_version(custom_path.clone()).await {
         Some(v) => v,
         None => {
             return json!({ "update_available": false, "local_version": null, "latest_version": null, "message": "Scrcpy not installed or not working" })
@@ -3766,7 +3797,9 @@ fn find_wlan_ipv4(text: &str) -> Option<String> {
         if *tok != "src" && *tok != "inet" {
             continue;
         }
-        let raw = tokens.get(i + 1)?;
+        let Some(raw) = tokens.get(i + 1) else {
+            continue;
+        };
         let candidate = raw.split('/').next().unwrap_or("");
         let segs: Vec<&str> = candidate.split('.').collect();
         let is_v4 = segs.len() == 4
