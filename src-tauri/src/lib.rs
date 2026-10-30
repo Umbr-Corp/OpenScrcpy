@@ -163,8 +163,7 @@ pub fn run() {
             commands::run_terminal_command,
             commands::check_scrcpy_update,
             commands::open_app_release,
-            commands::goto_wireless,
-            get_app_version
+            commands::goto_wireless
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application");
@@ -176,9 +175,4 @@ pub fn run() {
             commands::teardown_sessions(app_handle);
         }
     });
-}
-
-#[tauri::command]
-fn get_app_version(app: tauri::AppHandle) -> String {
-    app.package_info().version.to_string()
 }

@@ -39,7 +39,7 @@ Branch: `chore/refino-baseline`, criada a partir de `fix/release-manifest-assets
 
 - `npm audit` reporta 9 vulnerabilidades (3 moderadas, 6 altas) em dependências de desenvolvimento. Fora do escopo deste refino.
 - A branch base tem 2 commits de release ainda não mesclados na `main`. O refino será empilhado sobre eles.
-- O CI continua cobrindo só Ubuntu, sem `cargo test`, `fmt` e `-D warnings`. Corrigido na Fase 9.
+- O CI da base cobria só Ubuntu, sem `cargo test`, `fmt` e `-D warnings`. Resolvido na Fase 9.
 
 ## Como reproduzir
 
@@ -51,3 +51,19 @@ cargo fmt --check --manifest-path src-tauri/Cargo.toml
 cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
 cargo test --manifest-path src-tauri/Cargo.toml
 ```
+
+## Matriz de CI
+
+`.github/workflows/pull_request.yml` roda os seis comandos acima em
+`ubuntu-22.04`, `windows-latest` e `macos-latest`. O build Tauri completo
+(`npm run tauri build -- --no-bundle`) roda só no Ubuntu, para limitar custo.
+
+Para reproduzir a matriz localmente, rode a sequência acima no sistema alvo
+depois de instalar as dependências de build. No Linux, o job instala
+`libwebkit2gtk-4.1-dev`, `libxdo-dev`, `libayatana-appindicator3-dev`,
+`librsvg2-dev`, `libjavascriptcoregtk-4.1-dev` e `libsoup-3.0-dev`. Windows e
+macOS usam as dependências nativas do runner.
+
+O contrato IPC (`scripts/ipc-contract.mjs`) falha quando um comando está no
+`generate_handler!` sem `invoke` no frontend, ou quando o frontend chama um
+comando que não está registrado.
