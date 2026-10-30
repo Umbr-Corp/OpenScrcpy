@@ -220,6 +220,39 @@ describe('Sidebar Component', () => {
         expect(connectBtn).toBeDisabled();
     });
 
+    it('shows unauthorized and offline transports with a hint instead of hiding them', () => {
+        render(
+            <Sidebar
+                {...mockProps}
+                devices={[]}
+                unavailableDevices={[
+                    { serial: 'usb-unauth', state: 'unauthorized', model: 'Pixel 7' },
+                    { serial: 'usb-offline', state: 'offline', model: 'Pixel 8' },
+                ]}
+            />
+        );
+
+        expect(screen.getByText('Pixel 7')).toBeInTheDocument();
+        expect(screen.getByText('Authorize on the device')).toBeInTheDocument();
+        expect(screen.getByText('Pixel 8')).toBeInTheDocument();
+        expect(screen.getByText('Offline')).toBeInTheDocument();
+    });
+
+    it('keeps two USB devices of the same model on separate cards', () => {
+        render(
+            <Sidebar
+                {...mockProps}
+                devices={['usb1', 'usb2']}
+                deviceModels={{ usb1: 'Pixel 7', usb2: 'Pixel 7' }}
+                runningDevices={[]}
+            />
+        );
+
+        expect(screen.getAllByText('Pixel 7')).toHaveLength(2);
+        expect(screen.getByRole('button', { name: 'USB: usb1' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'USB: usb2' })).toBeInTheDocument();
+    });
+
     it('shows a clean label for an mDNS wireless-debugging serial, but keeps the full serial for selection', () => {
         const mdnsSerial = 'adb-VWGE5XZHOBAIAAJN-thoiAU._adb-tls-connect._tcp';
         const onSelectDevice = vi.fn();

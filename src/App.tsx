@@ -25,6 +25,7 @@ function App() {
     devices,
     deviceModels,
     deviceFriendlyNames,
+    unavailableDevices,
     logs,
     activeDevice,
     setActiveDevice,
@@ -516,6 +517,7 @@ function App() {
                   devices={devices}
                   deviceModels={deviceModels}
                   deviceFriendlyNames={deviceFriendlyNames}
+                  unavailableDevices={unavailableDevices}
                   runningDevices={runningDevices}
                   onRefresh={handleRefresh}
                   onKillAdb={handleKillAdb}

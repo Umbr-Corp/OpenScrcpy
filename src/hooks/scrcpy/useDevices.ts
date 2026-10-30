@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { useI18n } from '../../i18n';
 import { LogLevel } from '../../logs';
-import { CommandResult, DeviceListResult, MdnsDevicesResult, MdnsDevice } from './types';
+import { CommandResult, DeviceListResult, MdnsDevicesResult, MdnsDevice, UnavailableDevice } from './types';
 
 interface UseDevicesOptions {
     /** Saved scrcpy binary path, used as the fallback for every adb/scrcpy
@@ -28,6 +28,9 @@ export function useDevices({ scrcpyPath, historyDevices, addToHistory, addLogs }
     // getprop` round-trip -- see the effect below for the once-per-serial
     // cache that keeps this off the 5s background device poll.
     const [deviceFriendlyNames, setDeviceFriendlyNames] = useState<Record<string, string>>({});
+    // Adb transports present but not usable yet (unauthorized/offline), shown
+    // as a hint under the hub instead of silently disappearing.
+    const [unavailableDevices, setUnavailableDevices] = useState<UnavailableDevice[]>([]);
     const [activeDevice, setActiveDevice] = useState<string>("");
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [mdnsDevices, setMdnsDevices] = useState<MdnsDevice[]>([]);
@@ -87,6 +90,7 @@ export function useDevices({ scrcpyPath, historyDevices, addToHistory, addLogs }
                 });
 
                 setDevices(newDevices);
+                setUnavailableDevices(res.unavailable ?? []);
                 prevDevicesRef.current = newDevices;
                 newDevices.forEach(device => delete reconnectBackoffRef.current[device]);
 
@@ -402,6 +406,7 @@ export function useDevices({ scrcpyPath, historyDevices, addToHistory, addLogs }
         devices,
         deviceModels,
         deviceFriendlyNames,
+        unavailableDevices,
         mdnsDevices,
         activeDevice,
         setActiveDevice,

@@ -1,7 +1,7 @@
 import React from 'react';
-import { Smartphone, RefreshCw, Usb, Wifi, UploadCloud, Zap } from 'lucide-react';
+import { AlertTriangle, Smartphone, RefreshCw, Usb, Wifi, UploadCloud, Zap } from 'lucide-react';
 import { useI18n } from '../i18n';
-import { MdnsDevice, isMdnsDeviceConnected, mdnsHostIp } from '../hooks/useScrcpy';
+import { MdnsDevice, UnavailableDevice, isMdnsDeviceConnected, mdnsHostIp } from '../hooks/useScrcpy';
 import { usePairingRefresh } from '../hooks/scrcpy/usePairingRefresh';
 import SheetModal from './SheetModal';
 
@@ -30,6 +30,8 @@ export interface SidebarProps {
     // Nicer marketing name per serial when available (e.g. "Galaxy S23"),
     // fetched lazily; preferred over deviceModels when present.
     deviceFriendlyNames?: Record<string, string>;
+    // Transports adb sees but cannot use yet (unauthorized/offline).
+    unavailableDevices?: UnavailableDevice[];
     runningDevices: string[];
     onRefresh: () => void;
     onKillAdb: () => void;
@@ -53,6 +55,7 @@ export default function Sidebar({
     devices,
     deviceModels = {},
     deviceFriendlyNames = {},
+    unavailableDevices = [],
     runningDevices,
     onRefresh,
     onKillAdb,
@@ -113,18 +116,28 @@ export default function Sidebar({
 
     // One card per physical device: adb lists the USB and Wi-Fi transports
     // separately, so a phone that went wireless while plugged in appears
-    // twice (same SM-A055M, two entries). Group every transport id under its
-    // friendly/model name; the chips carry the individual transports and the
-    // card click falls back to the first available id.
+    // twice (same SM-A055M, two entries). Merge only that shape, one USB plus
+    // one Wi-Fi: two identical USB phones are separate devices, and merging
+    // them by name left two indistinguishable "USB" chips on one card.
     const deviceGroups = React.useMemo(() => {
-        const groups = new Map<string, { name: string; ids: string[] }>();
+        const byName = new Map<string, string[]>();
         for (const d of devices) {
             const name = deviceFriendlyNames[d] || deviceModels[d] || formatDeviceLabel(d);
-            const g = groups.get(name);
-            if (g) g.ids.push(d);
-            else groups.set(name, { name, ids: [d] });
+            const ids = byName.get(name);
+            if (ids) ids.push(d);
+            else byName.set(name, [d]);
         }
-        return Array.from(groups.values());
+        const groups: { name: string; ids: string[] }[] = [];
+        for (const [name, ids] of byName) {
+            const usb = ids.filter(id => !id.includes('.'));
+            const wireless = ids.filter(id => id.includes('.'));
+            if (usb.length === 1 && wireless.length === 1) {
+                groups.push({ name, ids: [usb[0], wireless[0]] });
+            } else {
+                for (const id of ids) groups.push({ name, ids: [id] });
+            }
+        }
+        return groups;
     }, [devices, deviceModels, deviceFriendlyNames]);
 
     // Shared by the manual pairing form and the discovered-device modal.
@@ -322,6 +335,26 @@ export default function Sidebar({
                             })
                         )}
                     </div>
+
+                    {unavailableDevices.length > 0 && (
+                        <div className="ds-panel p-2 space-y-1.5" role="status">
+                            {unavailableDevices.map(d => (
+                                <div key={d.serial} className="flex items-center gap-2 min-w-0">
+                                    <AlertTriangle size={12} className="shrink-0" style={{ color: 'var(--text-muted)' }} />
+                                    <span className="ds-caption truncate" title={d.serial}>
+                                        {d.model || formatDeviceLabel(d.serial)}
+                                    </span>
+                                    <span className="ds-badge ml-auto shrink-0">
+                                        {d.state === 'unauthorized'
+                                            ? t('sidebar.deviceUnauthorized')
+                                            : d.state === 'offline'
+                                                ? t('sidebar.deviceOffline')
+                                                : t('sidebar.deviceUnavailable')}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
 
                     <div className="ds-tabs" role="tablist" aria-label={t('sidebar.deviceHub')}>
                         <button

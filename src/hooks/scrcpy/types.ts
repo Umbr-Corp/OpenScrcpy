@@ -44,11 +44,20 @@ export interface CommandResult {
 }
 
 /** `get_devices`: the device hub's polling response. */
+/** A transport adb sees but cannot use yet: unauthorized (the phone is still
+ *  showing the debugging prompt) or offline. */
+export interface UnavailableDevice {
+    serial: string;
+    state: string;
+    model?: string;
+}
+
 export interface DeviceListResult {
     error?: boolean;
     message?: string;
     devices?: string[];
     deviceModels?: Record<string, string>;
+    unavailable?: UnavailableDevice[];
 }
 
 /** `get_mdns_devices`: wireless-debugging service records. */
