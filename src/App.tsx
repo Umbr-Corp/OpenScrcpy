@@ -66,11 +66,10 @@ function App() {
   const [appVersion, setAppVersion] = useState("1.0.0");
   const [lastCheckedPath, setLastCheckedPath] = useState<string | undefined>(undefined);
   const [hasCheckedUpdate, setHasCheckedUpdate] = useState(false);
-  // Self-update notice: filled when the app's own GitHub release is newer
-  // than the running build (checked once, silently, on startup).
-  const [appUpdateInfo, setAppUpdateInfo] = useState<{
+  // Latest update announced by the updater plugin, if any. The plugin reads
+  // updater/latest.json, so this is also what feeds the header badge.
+  const [appUpdate, setAppUpdate] = useState<{
     latest: string;
-    current: string;
     notes: string;
   } | null>(null);
   // Device being switched from USB to wireless (drives the card button state).
@@ -138,12 +137,10 @@ function App() {
     }
   }, [scrcpyStatus.found, config.scrcpyPath, isDownloading, hasCheckedUpdate, lastCheckedPath, t]);
 
-  // ── App self-update (GitHub releases) ────────────────────────────────
-  // Opens "releases/latest" in the user's browser; the download itself
-  // stays out of the app on purpose (Route 1, no updater plugin yet).
-  // In-app install path (validator-checked): the updater plugin downloads
-  // the signed artifact announced by latest.json and installs it; a manual
-  // "See on GitHub" secondary path stays for when the plugin path fails.
+  // ── App self-update (updater plugin + updater/latest.json) ──────────
+  // The plugin is the only check path: it reads the manifest, compares the
+  // announced version with the running build and downloads the signed
+  // artifact. "See on the web" stays as a fallback when install fails.
   const handleAutoUpdate = async () => {
     try {
       const { check } = await import('@tauri-apps/plugin-updater');
@@ -247,17 +244,18 @@ function App() {
     });
   };
 
-  const checkAppUpdate = async (silent: boolean) => {
+  const checkForAppUpdate = async (silent: boolean) => {
     if (!isTauri()) return null;
     try {
-      const { invoke } = await import('@tauri-apps/api/core');
-      const res = await invoke<{ update_available: boolean; current: string; latest: string; notes: string }>('check_app_update');
-      if (res.update_available) setAppUpdateInfo(res);
+      const { check } = await import('@tauri-apps/plugin-updater');
+      const update = await check();
+      const info = update ? { latest: update.version, notes: update.body ?? '' } : null;
+      setAppUpdate(info);
       if (!silent) {
-        if (res.update_available) openAppUpdateModal(res);
-        else showAlert({ title: t('alerts.appUpToDateTitle'), message: t('alerts.appUpToDateMsg', { v: res.current }), kind: 'info' });
+        if (info) openAppUpdateModal(info);
+        else showAlert({ title: t('alerts.appUpToDateTitle'), message: t('alerts.appUpToDateMsg', { v: appVersion }), kind: 'info' });
       }
-      return res;
+      return info;
     } catch {
       if (!silent) showAlert({ title: t('alerts.appCheckFailedTitle'), message: t('alerts.appCheckFailedMsg'), kind: 'warning' });
       return null;
@@ -265,7 +263,7 @@ function App() {
   };
 
   useEffect(() => {
-    checkAppUpdate(true).catch(() => { });
+    checkForAppUpdate(true).catch(() => { });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -505,9 +503,9 @@ function App() {
             isDownloading={isDownloading}
             downloadProgress={downloadProgress}
             version={appVersion}
-            appUpdateLatest={appUpdateInfo?.latest ?? null}
-            onOpenAppUpdate={() => appUpdateInfo && openAppUpdateModal(appUpdateInfo)}
-            onCheckAppUpdate={() => void checkAppUpdate(false)}
+            appUpdateLatest={appUpdate?.latest ?? null}
+            onOpenAppUpdate={() => appUpdate && openAppUpdateModal(appUpdate)}
+            onCheckAppUpdate={() => void checkForAppUpdate(false)}
           />
           <WindowResizeEdges />
 

@@ -1,6 +1,6 @@
 {
   "version": "1.1.7",
-  "notes": "See the assets below for the release.",
+  "notes": "* chore: bump version to 1.1.7 (739fffd)\n* refactor(popups): shell único, barra de progresso e teclado nos popovers (63ffb30)\n* perf(alerts): store fora do App e gate de progresso no download (8789922)\n* fix(popups): lote P1 de qualidade dos diálogos (f8359bb)\n* feat(update): polir diálogo de atualização e corrigir chaves i18n (27c6dc7)",
   "pub_date": "2026-10-20T05:05:49.929Z",
   "platforms": {
     "linux-x86_64-rpm": {

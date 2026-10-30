@@ -30,7 +30,7 @@
 - **One-click core setup** — automatic core binary download and update checks, right from the header.
 - **Render driver selection** — capability-aware graphics backends, filtered by OS.
 - **Drag and drop files** — drop an APK to install it, or push any file to `/sdcard/Download/`.
-- **In-app update notices** — checks the Forgejo releases for a newer app version and surfaces a one-click link in the header.
+- **In-app update notices** — checks the Forgejo releases and installs the signed update from inside the app.
 
 ---
 
@@ -73,6 +73,18 @@ environment.systemPackages = [
 1. `npm install`
 2. `npm run tauri dev` — development
 3. `npm run tauri build` — production
+
+### Updates
+
+The app updates through the Tauri updater plugin, which polls
+`updater/latest.json` on the default branch. `scripts/publish-release.mjs
+manifest` rebuilds that file from the published release assets: it maps each
+platform to the signed artifact and uses the release body as the notes. An
+empty body falls back to `Release v<version>` instead of the old placeholder.
+
+The app version must match in `package.json`, `src-tauri/tauri.conf.json`,
+`src-tauri/Cargo.toml`, `src-tauri/Cargo.lock` and `updater/latest.json`.
+`scripts/__tests__/version-consistency.test.ts` enforces it.
 
 ---
 

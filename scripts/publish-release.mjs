@@ -18,7 +18,7 @@ import { readFile, writeFile, mkdir, readdir, stat } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import process from 'node:process';
-import { buildUpdaterManifest, withSignatures } from './updater-manifest.mjs';
+import { buildUpdaterManifest, normalizeReleaseNotes, withSignatures } from './updater-manifest.mjs';
 
 const API_URL = (process.env.GITHUB_API_URL ?? 'https://api.github.com').replace(/\/+$/, '');
 const SERVER_URL = (process.env.GITHUB_SERVER_URL ?? 'https://github.com').replace(/\/+$/, '');
@@ -149,7 +149,7 @@ function releaseNotes() {
     // No previous tag, or a shallow clone: fall through to the default body.
   }
 
-  return `See the assets below for the release.`;
+  return '';
 }
 
 async function collectAssets(release) {
@@ -178,7 +178,7 @@ async function uploadMode(artifactsDir) {
   const release = await createRelease({
     tag_name: TAG,
     name: `OpenScrcpy v${version}`,
-    body: releaseNotes(),
+    body: normalizeReleaseNotes(releaseNotes(), version),
     draft: false,
     prerelease: false,
     target_commitish: TAG,
@@ -211,7 +211,7 @@ async function manifestMode() {
 
   const manifest = buildUpdaterManifest({
     version,
-    notes: release.body ?? '',
+    notes: normalizeReleaseNotes(release.body, version),
     pubDate: release.published_at ?? new Date().toISOString(),
     baseUrl: `${SERVER_URL}/${REPOSITORY}/releases/download/${TAG}`,
     artifacts,

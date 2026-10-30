@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildUpdaterManifest, withSignatures } from '../updater-manifest.mjs';
+import { buildUpdaterManifest, normalizeReleaseNotes, withSignatures } from '../updater-manifest.mjs';
 
 const SIGNATURE = 'dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkK';
 
@@ -37,7 +37,7 @@ describe('withSignatures', () => {
 describe('buildUpdaterManifest', () => {
   const manifest = buildUpdaterManifest({
     version: '1.1.7',
-    notes: 'See the assets below for the release.',
+    notes: '* fix(popups): dialogs de atualização (f8359bb)',
     pubDate: '2026-10-20T05:05:49.929Z',
     baseUrl: 'https://v16.next.forgejo.org/UmbrCorp/OpenScrcpy/releases/download/v1.1.7',
     artifacts: withSignatures(assets).filter((a) => a.signature),
@@ -78,7 +78,26 @@ describe('buildUpdaterManifest', () => {
 
   it('keeps the version and the notes', () => {
     expect(manifest.version).toBe('1.1.7');
-    expect(manifest.notes).toBe('See the assets below for the release.');
+    expect(manifest.notes).toBe('* fix(popups): dialogs de atualização (f8359bb)');
     expect(manifest.pub_date).toBe('2026-10-20T05:05:49.929Z');
+  });
+});
+
+describe('normalizeReleaseNotes', () => {
+  it('keeps a real release body', () => {
+    expect(normalizeReleaseNotes('* fix: stop limpo\n* feat: badge', '1.2.0')).toBe(
+      '* fix: stop limpo\n* feat: badge',
+    );
+  });
+
+  it('replaces an empty body with a short honest line', () => {
+    expect(normalizeReleaseNotes('', '1.2.0')).toBe('Release v1.2.0');
+    expect(normalizeReleaseNotes(null, '1.2.0')).toBe('Release v1.2.0');
+  });
+
+  it('never republishes the old placeholder', () => {
+    expect(normalizeReleaseNotes('See the assets below for the release.', '1.2.0')).toBe(
+      'Release v1.2.0',
+    );
   });
 });

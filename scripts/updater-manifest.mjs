@@ -12,6 +12,22 @@
  * CLI writes next to the bundle (base64, minisign format).
  */
 
+const PLACEHOLDER_NOTES = /^see the assets below for the release\.?$/i;
+
+/**
+ * Release body as the updater should show it. An empty body and the old
+ * workflow placeholder become a short, honest line instead of a fake
+ * changelog.
+ *
+ * @param {string|null|undefined} body
+ * @param {string} version
+ */
+export function normalizeReleaseNotes(body, version) {
+  const notes = (body ?? '').trim();
+  if (!notes || PLACEHOLDER_NOTES.test(notes)) return `Release v${version}`;
+  return notes;
+}
+
 /** Artifact file name -> updater platform keys it answers for. */
 export const ARTIFACT_TARGETS = [
   { pattern: /\.AppImage$/, keys: ['linux-x86_64', 'linux-x86_64-appimage'] },

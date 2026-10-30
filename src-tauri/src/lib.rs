@@ -162,7 +162,6 @@ pub fn run() {
             commands::get_scrcpy_bin_dir,
             commands::run_terminal_command,
             commands::check_scrcpy_update,
-            commands::check_app_update,
             commands::open_app_release,
             commands::goto_wireless,
             get_app_version
