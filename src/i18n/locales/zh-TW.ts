@@ -311,6 +311,7 @@ export const zhTW: Translations = {
         diagnosticSavedAlert: '診斷報告已儲存至「下載」資料夾，檔案名稱為：{fileName}'
     },
     alerts: {
+        downloadFailedTitle: '下載失敗',
         wirelessOkTitle: '已連接無線',
         wirelessOkMsg: '已在 {ip}:5555 就緒 — 可以拔掉傳輸線。',
         wirelessFailTitle: '切換到無線失敗',

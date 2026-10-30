@@ -311,6 +311,7 @@ export const ptBR: Translations = {
         diagnosticSavedAlert: 'Relatório de diagnóstico salvo em Downloads como: {fileName}'
     },
     alerts: {
+        downloadFailedTitle: 'Falha no Download',
         wirelessOkTitle: 'Wi-Fi Conectado',
         wirelessOkMsg: 'Pronto em {ip}:5555 — já pode desconectar o cabo.',
         wirelessFailTitle: 'Não Foi Possível Trocar',

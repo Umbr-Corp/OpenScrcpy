@@ -3,6 +3,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { useI18n } from '../../i18n';
 import { isTauri } from '../../tauri';
+import { showAlert } from '../../alerts';
 import { LogLevel } from '../../logs';
 import { DownloadStatus, RenderDriverSupport } from './types';
 
@@ -96,10 +97,19 @@ export function useDownloads({ scrcpyPath, addLogs, onDownloadComplete }: UseDow
             await invoke('download_scrcpy');
         } catch (e: any) {
             setIsDownloading(false);
-            // Surfaced inside the onboarding modal; the console still gets
-            // the raw error for diagnosis.
-            setDownloadError(t('onboarding.downloadFailed'));
+            // The onboarding modal shows this inline; when setup is already
+            // complete the modal stays closed, so the header download button
+            // would otherwise fail silently.
+            const message = t('onboarding.downloadFailed');
+            setDownloadError(message);
             addLogs(t('logs.downloadError', { error: String(e) }), 'err');
+            if (!isOnboardingOpen) {
+                showAlert({
+                    title: t('alerts.downloadFailedTitle'),
+                    message,
+                    kind: 'error',
+                });
+            }
         } finally {
             downloadingRef.current = false;
         }

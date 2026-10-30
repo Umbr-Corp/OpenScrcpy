@@ -43,6 +43,7 @@ export function useScrcpy() {
 
     const {
         runningDevices,
+        isStarting,
         detectedCameras,
         runScrcpy,
         stopScrcpy,
@@ -94,6 +95,7 @@ export function useScrcpy() {
         listScrcpyOptions,
         runTerminalCommand,
         runningDevices,
+        isStarting,
         defaultRecordPath,
         detectedCameras,
         renderDriverSupport,

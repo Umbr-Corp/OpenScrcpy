@@ -35,6 +35,11 @@ export function useSession({ scrcpyPath, activeDevice, rememberWindowPosition, a
     // Devices with a live mirror session, fed by the backend's scrcpy-status
     // events; sessionRunning in the hub is derived from this + activeDevice.
     const [runningDevices, setRunningDevices] = useState<string[]>([]);
+    const [isStarting, setIsStarting] = useState(false);
+    // The backend registers a session only after spawning the child. Two
+    // concurrent run_scrcpy calls for the same device both pass that gap,
+    // spawn two scrcpy processes and leave the first one untracked.
+    const startingRef = useRef(false);
     const [detectedCameras, setDetectedCameras] = useState<{ id: string, name: string }[]>([]);
     const [windowPositions, setWindowPositions] = useState<WindowPositions>(() => loadStoredJSON<WindowPositions>('scrcpy_window_positions', {}));
     const rememberWindowPositionRef = useRef(true);
@@ -95,6 +100,9 @@ export function useSession({ scrcpyPath, activeDevice, rememberWindowPosition, a
     }, [activeDevice]);
 
     const runScrcpy = async (config: ScrcpyConfig) => {
+        if (startingRef.current) return;
+        startingRef.current = true;
+        setIsStarting(true);
         try {
             addLogs(t('logs.initializingScrcpy', { device: config.device }), 'system');
             // Resolve the saved position for this specific device only, so
@@ -108,6 +116,9 @@ export function useSession({ scrcpyPath, activeDevice, rememberWindowPosition, a
             await invoke('run_scrcpy', { config: configWithPos });
         } catch (e: any) {
             addLogs(t('logs.failedToStartScrcpy', { error: String(e) }), 'err');
+        } finally {
+            startingRef.current = false;
+            setIsStarting(false);
         }
     };
 
@@ -235,6 +246,9 @@ export function useSession({ scrcpyPath, activeDevice, rememberWindowPosition, a
                 const lines = res.stderr.trim().split('\n').map((l: string) => `[${res.binary?.toUpperCase() || 'ERR'}] ${l}`);
                 addLogs(lines);
             }
+            if (!res.success && res.message) {
+                addLogs(t('logs.commandFailed', { error: String(res.message) }), 'err');
+            }
             return res;
         } catch (e: any) {
             addLogs(t('logs.commandFailed', { error: String(e) }), 'err');
@@ -244,6 +258,7 @@ export function useSession({ scrcpyPath, activeDevice, rememberWindowPosition, a
 
     return {
         runningDevices,
+        isStarting,
         detectedCameras,
         runScrcpy,
         stopScrcpy,

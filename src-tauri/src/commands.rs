@@ -99,6 +99,17 @@ fn create_command<S: AsRef<std::ffi::OsStr>>(program: S) -> TokioCommand {
     cmd
 }
 
+/// Client for the GitHub release calls. The connect deadline is what keeps a
+/// stalled TCP/TLS handshake from hanging the download or update UI forever;
+/// individual requests still set their own total timeout.
+fn http_client(user_agent: &str) -> Result<reqwest::Client, String> {
+    reqwest::Client::builder()
+        .user_agent(user_agent)
+        .connect_timeout(Duration::from_secs(10))
+        .build()
+        .map_err(|e| e.to_string())
+}
+
 #[tauri::command]
 pub async fn check_scrcpy(custom_path: Option<String>) -> serde_json::Value {
     let exe_path = get_binary_path("scrcpy", custom_path);
@@ -178,11 +189,9 @@ fn extract_device_model(line: &str) -> Option<String> {
 pub async fn get_devices(custom_path: Option<String>) -> serde_json::Value {
     let adb_path = get_binary_path("adb", custom_path);
 
-    let output = create_command(&adb_path)
-        .arg("devices")
-        .arg("-l")
-        .output()
-        .await;
+    let mut cmd = create_command(&adb_path);
+    cmd.arg("devices").arg("-l");
+    let output = process::output_with_timeout(cmd, Duration::from_secs(10)).await;
 
     match output {
         Ok(o) => {
@@ -233,11 +242,9 @@ pub async fn get_devices(custom_path: Option<String>) -> serde_json::Value {
 pub async fn get_mdns_devices(custom_path: Option<String>) -> serde_json::Value {
     let adb_path = get_binary_path("adb", custom_path);
 
-    let output = create_command(&adb_path)
-        .arg("mdns")
-        .arg("services")
-        .output()
-        .await;
+    let mut cmd = create_command(&adb_path);
+    cmd.arg("mdns").arg("services");
+    let output = process::output_with_timeout(cmd, Duration::from_secs(10)).await;
 
     match output {
         Ok(o) => {
@@ -372,13 +379,9 @@ pub async fn adb_shell(
     }
     let adb_path = get_binary_path("adb", custom_path);
 
-    let output = create_command(&adb_path)
-        .arg("-s")
-        .arg(&device)
-        .arg("shell")
-        .arg(&command)
-        .output()
-        .await;
+    let mut cmd = create_command(&adb_path);
+    cmd.arg("-s").arg(&device).arg("shell").arg(&command);
+    let output = process::output_with_timeout(cmd, Duration::from_secs(10)).await;
 
     match output {
         Ok(o) => {
@@ -386,6 +389,24 @@ pub async fn adb_shell(
         }
         Err(e) => json!({ "success": false, "message": e.to_string() }),
     }
+}
+
+/// The terminal panel renders whatever comes back from the command; a
+/// runaway command (adb logcat never exits) must not grow the Rust side
+/// without bound. Keep the first 256 KiB and mark the cut.
+const MAX_TERMINAL_OUTPUT_BYTES: usize = 256 * 1024;
+
+fn cap_terminal_output(mut text: String) -> String {
+    if text.len() <= MAX_TERMINAL_OUTPUT_BYTES {
+        return text;
+    }
+    let mut end = MAX_TERMINAL_OUTPUT_BYTES;
+    while !text.is_char_boundary(end) {
+        end -= 1;
+    }
+    text.truncate(end);
+    text.push_str("\n[output truncated]");
+    text
 }
 
 #[tauri::command]
@@ -443,44 +464,64 @@ pub async fn run_terminal_command(
         args.push(part);
     }
 
-    let output = create_command(&exe_path).args(&args).output().await;
+    let mut command = create_command(&exe_path);
+    command.args(&args);
+    let output = process::output_with_timeout(command, Duration::from_secs(30)).await;
 
     match output {
         Ok(o) => {
             json!({
                 "success": o.status.success(),
                 "binary": binary_name,
-                "stdout": String::from_utf8_lossy(&o.stdout).to_string(),
-                "stderr": String::from_utf8_lossy(&o.stderr).to_string()
+                "stdout": cap_terminal_output(String::from_utf8_lossy(&o.stdout).to_string()),
+                "stderr": cap_terminal_output(String::from_utf8_lossy(&o.stderr).to_string())
             })
         }
-        Err(e) => json!({ "success": false, "message": e.to_string() }),
+        Err(e) => json!({ "success": false, "message": e }),
     }
 }
 
 fn split_args(s: &str) -> Result<Vec<String>, String> {
     let mut args = Vec::new();
     let mut current = String::new();
-    let mut in_quotes = false;
-    let chars = s.chars();
+    let mut quote: Option<char> = None;
+    let mut chars = s.chars();
 
-    for c in chars {
-        if c == '"' {
-            in_quotes = !in_quotes;
-        } else if c.is_whitespace() && !in_quotes {
-            if !current.is_empty() {
-                args.push(current.clone());
-                current.clear();
+    while let Some(c) = chars.next() {
+        match quote {
+            Some(q) if c == q => quote = None,
+            // Only \" is an escape: a backslash is a path separator on
+            // Windows, so \\ must survive (a UNC path starts with two).
+            Some('"') if c == '\\' && chars.clone().next() == Some('"') => {
+                current.push(chars.next().unwrap());
             }
-        } else {
-            current.push(c);
+            // Inside single quotes is POSIX-style literal: no escapes, so a
+            // Windows path keeps every backslash.
+            Some(_) => current.push(c),
+            None if c == '"' || c == '\'' => quote = Some(c),
+            // Escapes cover separators and quotes only; a doubled backslash
+            // stays literal so \\server\share paths survive unquoted.
+            None if c == '\\'
+                && matches!(
+                    chars.clone().next(),
+                    Some(n) if n.is_whitespace() || n == '"' || n == '\''
+                ) =>
+            {
+                current.push(chars.next().unwrap());
+            }
+            None if c.is_whitespace() => {
+                if !current.is_empty() {
+                    args.push(std::mem::take(&mut current));
+                }
+            }
+            None => current.push(c),
         }
+    }
+    if let Some(q) = quote {
+        return Err(format!("Unclosed {} quote", q));
     }
     if !current.is_empty() {
         args.push(current);
-    }
-    if in_quotes {
-        return Err("Unclosed quotes".to_string());
     }
     Ok(args)
 }
@@ -553,7 +594,22 @@ pub async fn push_file(
             if o.status.success() {
                 json!({ "success": true, "message": "File pushed to Downloads" })
             } else {
-                json!({ "success": false, "message": "Transfer failed" })
+                // adb reports the real cause on stderr ("device offline",
+                // "No space left"); collapsing every failure to one string
+                // left the log unable to tell them apart.
+                let stderr = String::from_utf8_lossy(&o.stderr);
+                let stdout = String::from_utf8_lossy(&o.stdout);
+                let detail = if stderr.trim().is_empty() {
+                    stdout.trim()
+                } else {
+                    stderr.trim()
+                };
+                let message = if detail.is_empty() {
+                    format!("Transfer failed (exit code {:?})", o.status.code())
+                } else {
+                    format!("Transfer failed: {}", detail)
+                };
+                json!({ "success": false, "message": message })
             }
         }
         Err(e) => json!({ "success": false, "message": e.to_string() }),
@@ -2360,7 +2416,7 @@ pub async fn run_scrcpy(
 
         loop {
             tokio::select! {
-                _ = tokio::time::sleep(Duration::from_millis(500)) => {}
+                _ = tokio::time::sleep(Duration::from_millis(2000)) => {}
                 request = &mut stop_rx => {
                     let position = match request {
                         Ok(request) => request.position,
@@ -2391,9 +2447,9 @@ pub async fn run_scrcpy(
             // grabs its own guaranteed-fresh sample): SDL destroys the window
             // before the process exits, so by the time that exit is detected
             // below the position is unreadable, and this periodic sample is
-            // all that is left to persist. Sampling every tick instead of
-            // every few seconds keeps that worst case down to ~500ms stale
-            // instead of several seconds.
+            // all that is left to persist. Two seconds is a good trade: on
+            // Linux the sample spawns xdotool, on macOS an osascript call,
+            // and the stop path takes its own fresh sample anyway.
             if track_pos {
                 if let Some(pid) = current_child.id() {
                     if let Some(pos) = try_capture_window_pos(pid) {
@@ -2926,6 +2982,21 @@ mod tests {
     }
 
     #[test]
+    fn test_cap_terminal_output_keeps_small_output() {
+        assert_eq!(cap_terminal_output("ok".to_string()), "ok");
+    }
+
+    #[test]
+    fn test_cap_terminal_output_truncates_on_char_boundary() {
+        // Two-byte chars: a naive byte cut would slice one in half and panic
+        // on the next String operation.
+        let text = "é".repeat(MAX_TERMINAL_OUTPUT_BYTES / 2 + 1);
+        let capped = cap_terminal_output(text);
+        assert!(capped.ends_with("[output truncated]"));
+        assert!(capped.len() <= MAX_TERMINAL_OUTPUT_BYTES + "\n[output truncated]".len());
+    }
+
+    #[test]
     fn test_parse_adb_device_line_usb_serial() {
         assert_eq!(
             parse_adb_device_line("ZY22MGW35T device"),
@@ -3043,6 +3114,63 @@ mod tests {
     }
 
     #[test]
+    fn test_split_args_supports_single_quotes() {
+        let args = split_args("push 'Minha Foto.jpg' /sdcard/").unwrap();
+        assert_eq!(
+            args,
+            vec![
+                "push".to_string(),
+                "Minha Foto.jpg".to_string(),
+                "/sdcard/".to_string()
+            ]
+        );
+    }
+
+    #[test]
+    fn test_split_args_supports_escaped_spaces() {
+        let args = split_args(r"push Minha\ Foto.jpg /sdcard/").unwrap();
+        assert_eq!(
+            args,
+            vec![
+                "push".to_string(),
+                "Minha Foto.jpg".to_string(),
+                "/sdcard/".to_string()
+            ]
+        );
+    }
+
+    #[test]
+    fn test_split_args_keeps_windows_paths_inside_quotes() {
+        let args = split_args(r#"push "C:\Users\me\foto.jpg" /sdcard/"#).unwrap();
+        assert_eq!(
+            args,
+            vec![
+                "push".to_string(),
+                r"C:\Users\me\foto.jpg".to_string(),
+                "/sdcard/".to_string()
+            ]
+        );
+    }
+
+    #[test]
+    fn test_split_args_keeps_unc_paths() {
+        let args = split_args(r"push \\server\share\foto.jpg /sdcard/").unwrap();
+        assert_eq!(
+            args,
+            vec![
+                "push".to_string(),
+                r"\\server\share\foto.jpg".to_string(),
+                "/sdcard/".to_string()
+            ]
+        );
+    }
+
+    #[test]
+    fn test_split_args_rejects_unclosed_single_quote() {
+        assert!(split_args("push 'Minha Foto.jpg").is_err());
+    }
+
+    #[test]
     fn test_is_expected_asset_name_accepts_real_releases() {
         assert!(is_expected_asset_name("scrcpy-win64-v3.3.3.zip", ".zip"));
         assert!(is_expected_asset_name(
@@ -3146,7 +3274,7 @@ pub async fn stop_scrcpy(state: State<'_, ScrcpyState>, device: String) -> Resul
 
     // Grab the window's position now, one last time, before it is killed:
     // this is the only moment it is guaranteed to still be exactly where the
-    // user left it. The monitor task refreshes its own sample every ~500ms,
+    // user left it. The monitor task refreshes its own sample every ~2s,
     // but a move right before Stop could still beat it.
     let position = if pid_value != 0 {
         try_capture_window_pos(pid_value)
@@ -3224,10 +3352,7 @@ pub async fn download_scrcpy(window: Window, app_handle: tauri::AppHandle) -> Re
     );
     let _ = window.emit("scrcpy-status", json!({ "type": "downloading", "success": true, "message": format!("Fetching latest {} release...", arch_tag) }));
 
-    let client = reqwest::Client::builder()
-        .user_agent("OpenScrcpy-Downloader")
-        .build()
-        .map_err(|e| e.to_string())?;
+    let client = http_client("OpenScrcpy-Downloader")?;
 
     // Attempt to get the latest release via API, but fallback to redirect scraping if rate limited
     let mut download_url = String::new();
@@ -3235,7 +3360,11 @@ pub async fn download_scrcpy(window: Window, app_handle: tauri::AppHandle) -> Re
     let mut release_tag: Option<String> = None;
 
     let api_url = "https://api.github.com/repos/Genymobile/scrcpy/releases/latest";
-    let api_resp = client.get(api_url).send().await;
+    let api_resp = client
+        .get(api_url)
+        .timeout(Duration::from_secs(15))
+        .send()
+        .await;
 
     let mut used_fallback = false;
 
@@ -3272,6 +3401,7 @@ pub async fn download_scrcpy(window: Window, app_handle: tauri::AppHandle) -> Re
         // Fallback: Follow redirect of /releases/latest to get the tag name
         let redirect_res = client
             .get("https://github.com/Genymobile/scrcpy/releases/latest")
+            .timeout(Duration::from_secs(15))
             .send()
             .await
             .map_err(|e| format!("Fallback failed: {}", e))?;
@@ -3320,6 +3450,7 @@ pub async fn download_scrcpy(window: Window, app_handle: tauri::AppHandle) -> Re
     );
     let sums_resp = client
         .get(&sums_url)
+        .timeout(Duration::from_secs(15))
         .send()
         .await
         .map_err(|e| format!("Failed to fetch SHA256SUMS.txt: {}", e))?;
@@ -3360,10 +3491,9 @@ pub async fn download_scrcpy(window: Window, app_handle: tauri::AppHandle) -> Re
     {
         let mut file = std::fs::File::create(&temp_archive_path)
             .map_err(|e| format!("Failed to create archive file: {}", e))?;
-        let mut download_resp = client
-            .get(&download_url)
-            .send()
+        let mut download_resp = timeout(Duration::from_secs(30), client.get(&download_url).send())
             .await
+            .map_err(|_| "Timed out connecting to the download URL".to_string())?
             .map_err(|e| format!("Failed to connect to download URL: {}", e))?;
         if !download_resp.status().is_success() {
             return Err(format!(
@@ -3380,7 +3510,15 @@ pub async fn download_scrcpy(window: Window, app_handle: tauri::AppHandle) -> Re
 
         let mut downloaded: u64 = 0;
         let mut last_percent: Option<u64> = None;
-        while let Some(chunk) = download_resp.chunk().await.map_err(|e| e.to_string())? {
+        loop {
+            // A stalled transfer must not keep the download flag on forever.
+            // The timeout is per chunk, not for the whole file, so a slow but
+            // healthy link still gets to finish.
+            let chunk = timeout(Duration::from_secs(30), download_resp.chunk())
+                .await
+                .map_err(|_| "Download stalled for 30s".to_string())?
+                .map_err(|e| e.to_string())?;
+            let Some(chunk) = chunk else { break };
             file.write_all(&chunk)
                 .map_err(|e| format!("Failed to write chunk: {}", e))?;
             downloaded += chunk.len() as u64;
@@ -3432,6 +3570,30 @@ pub async fn download_scrcpy(window: Window, app_handle: tauri::AppHandle) -> Re
             .map_err(|e| format!("Failed to stage extracted files: {}", e))?;
     }
     download::validate_extracted(&new_dir, needs_adb)?;
+
+    // A live session keeps the old binaries mapped, and on Windows can lock
+    // the install directory so the next update fails to clear its backup.
+    // Refuse instead of swapping underneath a running mirror.
+    let sessions_active = !app_handle
+        .state::<ScrcpyState>()
+        .sessions
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .is_empty();
+    if sessions_active {
+        return Err("Stop all mirror sessions before updating the scrcpy core".to_string());
+    }
+
+    // The adb server outlives the download and may still be running the old
+    // binary. Kill it so the next adb call starts from the new tree.
+    let mut adb_stop = create_command(get_binary_path("adb", None));
+    adb_stop.arg("kill-server");
+    if let Err(e) = process::output_with_timeout(adb_stop, Duration::from_secs(5)).await {
+        let _ = window.emit(
+            "scrcpy-log",
+            format!("[SYSTEM] Could not stop adb before installing: {}", e),
+        );
+    }
 
     // Swap the staged tree into place, restoring the previous install if the
     // final rename fails.
@@ -3544,13 +3706,14 @@ pub async fn get_local_scrcpy_version(custom_path: Option<String>) -> Option<Str
 }
 
 pub async fn get_latest_scrcpy_version() -> Result<String, String> {
-    let client = reqwest::Client::builder()
-        .user_agent("OpenScrcpy-Updater")
-        .build()
-        .map_err(|e| e.to_string())?;
+    let client = http_client("OpenScrcpy-Updater")?;
 
     let api_url = "https://api.github.com/repos/Genymobile/scrcpy/releases/latest";
-    let api_resp = client.get(api_url).send().await;
+    let api_resp = client
+        .get(api_url)
+        .timeout(Duration::from_secs(15))
+        .send()
+        .await;
 
     let mut tag_name = String::new();
     let mut used_fallback = false;
@@ -3572,6 +3735,7 @@ pub async fn get_latest_scrcpy_version() -> Result<String, String> {
     if used_fallback || tag_name.is_empty() {
         let redirect_res = client
             .get("https://github.com/Genymobile/scrcpy/releases/latest")
+            .timeout(Duration::from_secs(15))
             .send()
             .await
             .map_err(|e| format!("Fallback failed: {}", e))?;

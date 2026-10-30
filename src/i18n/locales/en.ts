@@ -312,6 +312,7 @@ export const en = {
         diagnosticSavedAlert: 'Diagnostic report saved to Downloads as: {fileName}'
     },
     alerts: {
+        downloadFailedTitle: 'Download Failed',
         wirelessOkTitle: 'Wireless Connected',
         wirelessOkMsg: 'Ready at {ip}:5555 — you can unplug the cable now.',
         wirelessFailTitle: 'Wireless Switch Failed',

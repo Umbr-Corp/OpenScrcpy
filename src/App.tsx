@@ -45,6 +45,7 @@ function App() {
     listScrcpyOptions,
     runTerminalCommand,
     runningDevices,
+    isStarting,
     isRefreshing,
     sessionRunning,
     clearLogs,
@@ -475,8 +476,8 @@ function App() {
       if (selected && typeof selected === 'string') {
         setConfig(prev => ({ ...prev, scrcpyPath: selected }));
         setLogs(prev => appendLogs(prev, t('logs.customScrcpyPathSet', { path: selected }), 'system'));
-        // Trigger a check with the new path
-        setTimeout(() => checkScrcpy(selected), 100);
+        // Explicit path: no need to wait for the config state to settle.
+        void checkScrcpy(selected);
       }
     } catch (e) {
       console.error(e);
@@ -486,8 +487,10 @@ function App() {
   const handleResetPath = async () => {
     setConfig(prev => ({ ...prev, scrcpyPath: undefined }));
     setLogs(prev => appendLogs(prev, t('logs.customScrcpyPathCleared'), 'system'));
-    // Trigger a check with no custom path
-    setTimeout(() => checkScrcpy(undefined), 100);
+    // '' means "ignore the saved path and use the default bundle". Passing
+    // undefined here would fall back to the old scrcpyPath closure and report
+    // a custom install as ready while the next session uses the default.
+    void checkScrcpy('');
   };
 
   return (
@@ -542,6 +545,7 @@ function App() {
                   onStart={handleStart}
                   onStop={handleStop}
                   isRunning={sessionRunning}
+                  isStarting={isStarting}
                   detectedCameras={detectedCameras}
                   renderDriverSupport={renderDriverSupport}
                   onListOptions={(arg) => {

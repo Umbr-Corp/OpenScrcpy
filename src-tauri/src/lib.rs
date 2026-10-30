@@ -96,6 +96,14 @@ pub fn run() {
     }
 
     let builder = tauri::Builder::default()
+        // Must be the first plugin: a second launch exits here, after asking
+        // the running instance to surface its window.
+        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.unminimize();
+                let _ = window.set_focus();
+            }
+        }))
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
