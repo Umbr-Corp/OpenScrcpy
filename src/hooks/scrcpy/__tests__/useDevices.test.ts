@@ -67,3 +67,94 @@ describe('useDevices — history reconnect', () => {
         expect(adbConnectCalls()).toBe(2);
     });
 });
+
+describe('useDevices — poll latch and selection', () => {
+    beforeEach(() => {
+        mockInvoke.mockReset();
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
+    });
+
+    it('starts a new poll after a failed one settles', async () => {
+        vi.useFakeTimers();
+        let getDevicesCalls = 0;
+        let failFirst: ((reason: unknown) => void) | undefined;
+        mockInvoke.mockImplementation((cmd: string) => {
+            if (cmd === 'get_devices') {
+                getDevicesCalls += 1;
+                if (getDevicesCalls === 1) {
+                    return new Promise((_resolve, reject) => {
+                        failFirst = reject;
+                    });
+                }
+                return Promise.resolve({ error: false, devices: [] });
+            }
+            if (cmd === 'get_mdns_devices') return Promise.resolve({ error: false, services: [] });
+            return Promise.resolve(null);
+        });
+
+        renderHook(() =>
+            useDevices({
+                historyDevices: [],
+                addToHistory: vi.fn(),
+                addLogs: vi.fn(),
+            })
+        );
+
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(5000);
+        });
+        expect(getDevicesCalls).toBe(1);
+
+        // The single-flight latch must clear when the request settles, even
+        // by rejection. If it stayed set, every later tick would join this
+        // dead promise and the hub would never update again.
+        await act(async () => {
+            failFirst?.(new Error('adb hung'));
+            await Promise.resolve();
+        });
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(5000);
+        });
+        expect(getDevicesCalls).toBe(2);
+    });
+
+    it('moves the selection off a device that disconnects', async () => {
+        let currentDevices = ['device1', 'device2'];
+        mockInvoke.mockImplementation((cmd: string) => {
+            if (cmd === 'get_devices') return Promise.resolve({ error: false, devices: currentDevices });
+            if (cmd === 'get_mdns_devices') return Promise.resolve({ error: false, services: [] });
+            return Promise.resolve(null);
+        });
+
+        const { result } = renderHook(() =>
+            useDevices({
+                historyDevices: [],
+                addToHistory: vi.fn(),
+                addLogs: vi.fn(),
+            })
+        );
+
+        await act(async () => {
+            await result.current.refreshDevices();
+        });
+        expect(result.current.activeDevice).toBe('device1');
+
+        act(() => {
+            result.current.setActiveDevice('device2');
+        });
+        currentDevices = ['device1'];
+        await act(async () => {
+            await result.current.refreshDevices();
+        });
+        expect(result.current.activeDevice).toBe('device1');
+
+        currentDevices = [];
+        await act(async () => {
+            await result.current.refreshDevices();
+        });
+        expect(result.current.activeDevice).toBe('');
+    });
+});

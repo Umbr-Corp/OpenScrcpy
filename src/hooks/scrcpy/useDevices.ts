@@ -94,9 +94,11 @@ export function useDevices({ scrcpyPath, historyDevices, addToHistory, addLogs }
                     addLogs(t('logs.discoveryActive', { count: newDevices.length }), 'system');
                 }
 
-                if (newDevices.length > 0 && !activeDevice) {
-                    setActiveDevice(newDevices[0]);
-                }
+                // Keep the current selection only while its serial is still
+                // present. A disconnected device must not stay selected: Start
+                // would launch scrcpy with a stale -s and drag-and-drop would
+                // push to a serial that no longer exists.
+                setActiveDevice(prev => (newDevices.includes(prev) ? prev : (newDevices[0] ?? '')));
             } else if (!silent) {
                 addLogs(t('logs.discoveryError', { error: res.message ?? 'unknown error' }), 'err');
             }
