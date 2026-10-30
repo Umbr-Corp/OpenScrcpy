@@ -3467,6 +3467,30 @@ pub async fn download_scrcpy(window: Window, app_handle: tauri::AppHandle) -> Re
     }
     download::validate_extracted(&new_dir, needs_adb)?;
 
+    // A live session keeps the old binaries mapped, and on Windows can lock
+    // the install directory so the next update fails to clear its backup.
+    // Refuse instead of swapping underneath a running mirror.
+    let sessions_active = !app_handle
+        .state::<ScrcpyState>()
+        .sessions
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .is_empty();
+    if sessions_active {
+        return Err("Stop all mirror sessions before updating the scrcpy core".to_string());
+    }
+
+    // The adb server outlives the download and may still be running the old
+    // binary. Kill it so the next adb call starts from the new tree.
+    let mut adb_stop = create_command(get_binary_path("adb", None));
+    adb_stop.arg("kill-server");
+    if let Err(e) = process::output_with_timeout(adb_stop, Duration::from_secs(5)).await {
+        let _ = window.emit(
+            "scrcpy-log",
+            format!("[SYSTEM] Could not stop adb before installing: {}", e),
+        );
+    }
+
     // Swap the staged tree into place, restoring the previous install if the
     // final rename fails.
     if old_dir.exists() {
