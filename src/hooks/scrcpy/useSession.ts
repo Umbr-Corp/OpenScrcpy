@@ -235,6 +235,9 @@ export function useSession({ scrcpyPath, activeDevice, rememberWindowPosition, a
                 const lines = res.stderr.trim().split('\n').map((l: string) => `[${res.binary?.toUpperCase() || 'ERR'}] ${l}`);
                 addLogs(lines);
             }
+            if (!res.success && res.message) {
+                addLogs(t('logs.commandFailed', { error: String(res.message) }), 'err');
+            }
             return res;
         } catch (e: any) {
             addLogs(t('logs.commandFailed', { error: String(e) }), 'err');
