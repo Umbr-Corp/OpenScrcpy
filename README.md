@@ -83,8 +83,10 @@ platform to the signed artifact and uses the release body as the notes. An
 empty body falls back to `Release v<version>` instead of the old placeholder.
 
 The app version must match in `package.json`, `src-tauri/tauri.conf.json`,
-`src-tauri/Cargo.toml`, `src-tauri/Cargo.lock` and `updater/latest.json`.
+`src-tauri/Cargo.toml` and `src-tauri/Cargo.lock`.
 `scripts/__tests__/version-consistency.test.ts` enforces it.
+`updater/latest.json` is not bumped by hand: the release workflow rebuilds it
+from the published assets after the tag.
 
 ---
 
