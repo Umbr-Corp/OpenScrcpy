@@ -1,5 +1,7 @@
 # Auditoria de Frontend — OpenScrcpy
 
+> **Nota pós-auditoria (2026-11-07):** este documento registra o estado **anterior** à decisão de migrar. A migração completa para Svelte 5 foi executada na branch `feat/svelte-5`; consulte `docs/MIGRACAO-SVELTE-5.md` para o estado atual. As recomendações de "manter React" abaixo não valem mais.
+
 **Data:** 2026-11-07  
 **Base:** `main` em `0e3eb98` + correção de microfone deste changeset  
 **Escopo:** React/TypeScript/Tailwind/Tauri, componentes, hooks, i18n, acessibilidade, performance, build e avaliação de frameworks alternativos.  
