@@ -12,12 +12,12 @@ O frontend foi migrado de React 19 para **Svelte 5 com runes**, sem React no bun
 
 | Métrica | React (antes) | Svelte 5 (depois) |
 | --- | --- | --- |
-| Bundle JS principal | 465,32 KB / 136,90 KB gzip | **224,68 KB / 67,56 KB gzip** |
+| Bundle JS principal | 465,32 KB / 136,90 KB gzip | **225,61 KB / 67,78 KB gzip** |
 | CSS | 27,71 KB / 6,04 KB gzip | 28,39 KB / 6,13 KB gzip |
 | Locales | 8 no bundle inicial | 8 chunks lazy (14–25 KB cada) |
 | `tsc --noEmit` | limpo | limpo |
 | `svelte-check` | — | **0 erros**, 2 warnings de a11y |
-| Testes | 123 (React Testing Library) | **61** (Vitest + Testing Library Svelte) |
+| Testes | 123 (React Testing Library) | **64** (Vitest + Testing Library Svelte) |
 
 O bundle inicial caiu aproximadamente **51%** (gzip) e cada locale só é baixado quando selecionado.
 
@@ -59,7 +59,7 @@ O bundle inicial caiu aproximadamente **51%** (gzip) e cada locale só é baixad
 ```bash
 npx tsc --noEmit
 npm run lint          # svelte-check
-npm test -- --run     # 61 testes
+npm test -- --run     # 64 testes
 npm run build         # build de produção
 ```
 
@@ -67,8 +67,8 @@ Resultado em 2026-11-07:
 
 - `tsc`: ok
 - `svelte-check`: 0 erros, 2 warnings de a11y
-- Vitest: **61 testes em 16 arquivos, todos passando**
-- Build: ok; bundle principal **224,68 KB / 67,56 KB gzip**
+- Vitest: **64 testes em 17 arquivos, todos passando**
+- Build: ok; bundle principal **225,61 KB / 67,78 KB gzip**
 
 ---
 
@@ -77,7 +77,7 @@ Resultado em 2026-11-07:
 1. **Dois warnings de a11y**:
    - `Header.svelte`: `<header>` com `onmousedown`/`ondblclick` para arrastar a janela.
    - `Sidebar.svelte`: card de dispositivo com `role="group"` e `tabindex`, contendo botões internos.
-2. **Paridade de testes**: a suíte caiu de 123 para 61 porque os testes de hooks React foram removidos. Falta portar cenários de:
+2. **Paridade de testes**: a suíte caiu de 123 para 64 porque os testes de hooks React foram removidos. Falta portar cenários de:
    - descoberta/pareamento/reconexão de dispositivos;
    - download/onboarding/updater;
    - start/stop/substituição de sessão;
