@@ -50,7 +50,7 @@ Foram corrigidos **10 problemas de integração/qualidade** encontrados nesta au
 ### 2.4 Empacotamento
 
 - AppImage: `OpenScrcpy_2.0.0_amd64.AppImage` (113 MB) em `~/Downloads`.
-- SHA-256: `db3ea51965d97e5080e31cbf02239bd0cd901f2e1e1b5c95b3b992083dd78bc8`.
+- SHA-256: `421fd3346608a4bf731f52f7466b1a67af204b0fb7ba435d8b8684d374820635`.
 
 ---
 
