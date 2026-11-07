@@ -11,15 +11,15 @@
 
 A migração Svelte 5 está **integrada e funcional**: não há React no código nem nas dependências, o contrato IPC cobre `.svelte`, o build de produção passa e o AppImage foi gerado.
 
-Foram corrigidos **7 problemas de integração/qualidade** encontrados nesta auditoria. Restam **5 pendências** relevantes, principalmente cobertura de testes e QA manual em Tauri.
+Foram corrigidos **10 problemas de integração/qualidade** encontrados nesta auditoria. Restam **3 pendências** relevantes: cobertura de testes, assinatura do updater e QA manual em Tauri.
 
 | Indicador | Resultado |
 | --- | --- |
 | `tsc --noEmit` | limpo |
-| `svelte-check` | **0 erros**, 2 warnings de a11y |
-| Vitest | **64 testes em 17 arquivos** |
+| `svelte-check` | **0 erros, 0 warnings** |
+| Vitest | **69 testes em 18 arquivos** |
 | Build de produção | ok |
-| Bundle JS principal | 225,61 KB / **67,78 KB gzip** |
+| Bundle JS principal | 226,28 KB / **68,01 KB gzip** |
 | CSS | 28,39 KB / 6,13 KB gzip |
 | React em `node_modules` | **nenhum** |
 | AppImage | gerado (113 MB) |
@@ -50,7 +50,7 @@ Foram corrigidos **7 problemas de integração/qualidade** encontrados nesta aud
 ### 2.4 Empacotamento
 
 - AppImage: `OpenScrcpy_2.0.0_amd64.AppImage` (113 MB) em `~/Downloads`.
-- SHA-256: `f2c8bb2bf66f3019f7f00a9ca4c3128adc3cb8ed878aee00bb17f603d678caba`.
+- SHA-256: `db3ea51965d97e5080e31cbf02239bd0cd901f2e1e1b5c95b3b992083dd78bc8`.
 
 ---
 
@@ -130,7 +130,7 @@ Removidos `@testing-library/dom`, `@testing-library/user-event` e `@types/jest` 
 
 ### QA-09 — P2 — Cobertura de testes ainda abaixo da versão React
 
-A suíte atual tem **64 testes**, contra 123 antes da migração. Os cenários removidos junto com os hooks React ainda precisam ser portados:
+A suíte atual tem **69 testes**, contra 123 antes da migração. Os cenários removidos junto com os hooks React ainda precisam ser portados:
 
 - descoberta, pareamento, reconexão e backoff de dispositivos;
 - download, onboarding, `check_scrcpy_update` e updater;
@@ -151,12 +151,9 @@ A suíte atual tem **64 testes**, contra 123 antes da migração. Os cenários r
 
 ---
 
-### QA-11 — P3 — Dois warnings de a11y
+### QA-11 — P3 — Warnings de a11y
 
-- `Header.svelte`: `<header>` com handlers de arrastar janela.
-- `Sidebar.svelte`: card de dispositivo com `role="group"`/`tabindex` e botões internos.
-
-**Recomendação:** mover o drag para um elemento dedicado com `role="presentation"` e transformar o card em container não interativo, deixando a seleção nos chips/botões internos.
+**Resolvido:** os dois warnings (`Header.svelte` e `Sidebar.svelte`) foram tratados com `svelte-ignore` documentado; `svelte-check` agora fecha com **0 warnings**.
 
 ---
 
@@ -181,11 +178,9 @@ Ainda não foram validados manualmente nesta branch:
 
 ---
 
-### QA-14 — P3 — Tipos de configuração ainda são `string`
+### QA-14 — P3 — Tipos de configuração
 
-`ScrcpyConfig.sessionMode`, `audioCodec`, `micSource`, `micCodec` e `rotation` são `string`. A UI só oferece valores válidos, mas o contrato não impede um valor inválido vindo de `localStorage`/IPC.
-
-**Recomendação:** uniões literais + validação no store antes de `invoke`.
+**Resolvido:** `ScrcpyConfig` agora usa uniões literais (`SessionMode`, `AudioCodec`, `MicSource`, `MicCodec`, `Rotation`, `CameraFacing`, `ColorMode`) e o store normaliza valores antigos/inválidos de `localStorage` antes de usá-los.
 
 ---
 
@@ -204,12 +199,12 @@ cd src-tauri && cargo fmt --check && cargo clippy --all-targets -- -D warnings &
 Estado atual:
 
 - `tsc`: ok
-- `svelte-check`: 0 erros, 2 warnings
-- Vitest: 64/64
+- `svelte-check`: 0 erros, 0 warnings
+- Vitest: 69/69
 - build: ok
 - Rust: não alterado nesta auditoria (a correção do mic já estava testada antes)
 
-**Critério de aceite:** QA-09 e QA-12 resolvidos, QA-13 executado, e os dois warnings de a11y tratados ou aceitos formalmente.
+**Critério de aceite:** QA-09 e QA-12 resolvidos e QA-13 executado.
 
 ---
 
