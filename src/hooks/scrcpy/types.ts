@@ -134,7 +134,7 @@ export interface ScrcpyConfig {
     windowX?: number;
     windowY?: number;
     /** Mic bridge (audio-only capture source). */
-    /** Audio source: "mic" (raw) or "voice-communication" (Android NS/AGC/AEC). */
+    /** Audio source: "mic" (raw) or "mic-voice-communication" (Android NS/AGC/AEC). */
     micSource?: string;
     /** Lossy codec: "opus" (default) or "aac". */
     micCodec?: string;

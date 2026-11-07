@@ -6,7 +6,11 @@
 
 pub const VIDEO_CODECS: &[&str] = &["h264", "h265", "av1"];
 pub const AUDIO_CODECS: &[&str] = &["auto", "opus", "aac", "flac", "raw"];
-pub const MIC_SOURCES: &[&str] = &["mic", "voice-communication"];
+// scrcpy names the VOICE_COMMUNICATION source "mic-voice-communication".
+// "voice-communication" is the value persisted by older OpenScrcpy builds;
+// it stays accepted here and is normalized before it reaches the command
+// line, so users with an old localStorage entry keep working.
+pub const MIC_SOURCES: &[&str] = &["mic", "mic-voice-communication", "voice-communication"];
 pub const MIC_CODECS: &[&str] = &["opus", "aac"];
 pub const ROTATIONS: &[&str] = &["0", "90", "180", "270"];
 
@@ -36,6 +40,16 @@ pub fn audio_codec(value: Option<&str>) -> Result<(), String> {
 
 pub fn mic_source(value: Option<&str>) -> Result<(), String> {
     allowlisted("microphone source", value, MIC_SOURCES)
+}
+
+/// Map the value saved by older builds to the source name scrcpy expects.
+/// Everything else is returned unchanged (validation is responsible for
+/// rejecting unknown values).
+pub fn normalize_mic_source(value: &str) -> &str {
+    match value {
+        "voice-communication" => "mic-voice-communication",
+        other => other,
+    }
 }
 
 pub fn mic_codec(value: Option<&str>) -> Result<(), String> {
@@ -148,6 +162,12 @@ mod tests {
         assert!(audio_codec(Some("AAC")).is_err());
         assert!(audio_codec(Some("")).is_err());
         assert!(mic_source(Some("speaker")).is_err());
+        assert!(mic_source(Some("mic-voice-communication")).is_ok());
+        assert_eq!(
+            normalize_mic_source("voice-communication"),
+            "mic-voice-communication"
+        );
+        assert_eq!(normalize_mic_source("mic"), "mic");
         assert!(mic_codec(Some("flac")).is_err());
         assert!(rotation(Some("45")).is_err());
         assert!(fps(Some(0)).is_err());

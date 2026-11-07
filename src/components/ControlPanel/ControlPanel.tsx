@@ -477,7 +477,7 @@ export default function ControlPanel({
                                         onChange={(val: string) => handleChange('micSource', val)}
                                         options={[
                                             { value: 'mic', label: t('controlPanel.micSourceMic') },
-                                            { value: 'voice-communication', label: t('controlPanel.micSourceVoiceComm') },
+                                            { value: 'mic-voice-communication', label: t('controlPanel.micSourceVoiceComm') },
                                         ]}
                                         {...selectClassNames}
                                     />

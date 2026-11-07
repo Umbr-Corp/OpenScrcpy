@@ -886,8 +886,9 @@ pub struct ScrcpyConfig {
     /// scrcpy from starting.
     ignore_video_encoder_constraints: Option<bool>,
     // Mic bridge (audio-only capture source)
-    /// Audio source: "mic" (raw) or "voice-communication" (Android-side
+    /// Audio source: "mic" (raw) or "mic-voice-communication" (Android-side
     /// noise suppression + AGC + echo cancellation), for Android 12+.
+    /// The legacy "voice-communication" value is still accepted and mapped.
     mic_source: Option<String>,
     /// Lossy codec for the bridge: "opus" (default) or "aac".
     mic_codec: Option<String>,
@@ -1324,6 +1325,10 @@ fn build_scrcpy_args(
             args.push("--no-video".to_string());
             let source = config.mic_source.as_deref().unwrap_or("").trim();
             let source = if source.is_empty() { "mic" } else { source };
+            // Older builds persisted "voice-communication"; scrcpy expects
+            // "mic-voice-communication". Normalize here so a saved config
+            // keeps working after the rename.
+            let source = validate::normalize_mic_source(source);
             args.push(format!("--audio-source={}", source));
             // The bridge has its own codec choice; the automatic repair
             // chain's override (when present) still wins so recovery can try
@@ -2211,9 +2216,15 @@ pub async fn run_scrcpy(
     );
     if config.session_mode == "mic" {
         let _ = window.emit("scrcpy-log", format!("[SYSTEM] Target: {}", config.device));
+        let source = config.mic_source.as_deref().unwrap_or("").trim();
+        let source = if source.is_empty() { "mic" } else { source };
+        let source = validate::normalize_mic_source(source);
         let _ = window.emit(
             "scrcpy-log",
-            "[SYSTEM] Audio-only bridge (--no-window --no-video --audio-source=mic).".to_string(),
+            format!(
+                "[SYSTEM] Audio-only bridge (--no-window --no-video --audio-source={}).",
+                source
+            ),
         );
     } else {
         let res_label = config
@@ -2845,6 +2856,43 @@ mod tests {
         let args = build_scrcpy_args(&config, None, None);
         assert!(args.contains(&"--no-audio".to_string()));
         assert!(!args.iter().any(|a| a.starts_with("--audio-codec")));
+    }
+
+    #[test]
+    fn test_build_scrcpy_args_mic_defaults() {
+        let config = base_config("mic");
+        let args = build_scrcpy_args(&config, None, None);
+        assert!(args.contains(&"--no-window".to_string()));
+        assert!(args.contains(&"--no-video".to_string()));
+        assert!(args.contains(&"--audio-source=mic".to_string()));
+        assert!(args.contains(&"--audio-codec=opus".to_string()));
+        assert!(args.contains(&"--audio-bit-rate=128k".to_string()));
+    }
+
+    #[test]
+    fn test_build_scrcpy_args_mic_uses_voice_communication_source() {
+        let mut config = base_config("mic");
+        config.mic_source = Some("mic-voice-communication".to_string());
+        let args = build_scrcpy_args(&config, None, None);
+        assert!(args.contains(&"--audio-source=mic-voice-communication".to_string()));
+    }
+
+    #[test]
+    fn test_build_scrcpy_args_mic_normalizes_legacy_source() {
+        let mut config = base_config("mic");
+        config.mic_source = Some("voice-communication".to_string());
+        let args = build_scrcpy_args(&config, None, None);
+        assert!(args.contains(&"--audio-source=mic-voice-communication".to_string()));
+        assert!(!args.contains(&"--audio-source=voice-communication".to_string()));
+    }
+
+    #[test]
+    fn test_build_scrcpy_args_mic_codec_override_wins() {
+        let mut config = base_config("mic");
+        config.mic_codec = Some("aac".to_string());
+        let args = build_scrcpy_args(&config, None, Some("opus"));
+        assert!(args.contains(&"--audio-codec=opus".to_string()));
+        assert!(!args.contains(&"--audio-codec=aac".to_string()));
     }
 
     #[test]
