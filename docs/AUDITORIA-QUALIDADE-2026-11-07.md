@@ -17,7 +17,7 @@ Foram corrigidos **10 problemas de integração/qualidade** encontrados nesta au
 | --- | --- |
 | `tsc --noEmit` | limpo |
 | `svelte-check` | **0 erros, 0 warnings** |
-| Vitest | **69 testes em 18 arquivos** |
+| Vitest | **80 testes em 20 arquivos** |
 | Build de produção | ok |
 | Bundle JS principal | 226,28 KB / **68,01 KB gzip** |
 | CSS | 28,39 KB / 6,13 KB gzip |
@@ -130,24 +130,23 @@ Removidos `@testing-library/dom`, `@testing-library/user-event` e `@types/jest` 
 
 ### QA-09 — P2 — Cobertura de testes ainda abaixo da versão React
 
-A suíte atual tem **69 testes**, contra 123 antes da migração. Os cenários removidos junto com os hooks React ainda precisam ser portados:
+A suíte atual tem **80 testes**, contra 123 antes da migração. Os cenários removidos junto com os hooks React ainda precisam ser portados:
 
 - descoberta, pareamento, reconexão e backoff de dispositivos;
 - download, onboarding, `check_scrcpy_update` e updater;
 - start/stop/substituição de sessão e geração;
-- ErrorBoundary;
 - drag & drop;
-- fluxo de microfone e `MicMeter` com eventos.
+- fluxo completo de microfone no backend (o `MicMeter` já tem teste de eventos).
 
 **Recomendação:** priorizar testes de store com `invoke` mockado; não é necessário montar a UI inteira.
 
 ---
 
-### QA-10 — P3 — Store central com ~1.095 linhas
+### QA-10 — P3 — Store central ainda grande
 
-`src/lib/scrcpy.svelte.ts` concentra configuração, logs, dispositivos, sessão, downloads e updater. Funciona e está testado em parte, mas mistura responsabilidades.
+`src/lib/scrcpy.svelte.ts` concentra dispositivos, sessão, downloads e updater (~1.030 linhas). A configuração/defaults já foi extraída para `src/lib/config.ts`, mas o restante ainda mistura responsabilidades.
 
-**Recomendação:** dividir em módulos por domínio (`config`, `devices`, `session`, `downloads`) mantendo um facade `scrcpy` para os componentes. Fazer isso com testes de contrato antes/depois.
+**Recomendação:** dividir em módulos por domínio (`devices`, `session`, `downloads`) mantendo um facade `scrcpy` para os componentes, com testes de contrato antes/depois.
 
 ---
 
@@ -161,7 +160,7 @@ A suíte atual tem **69 testes**, contra 123 antes da migração. Os cenários r
 
 `src-tauri/tauri.conf.json` mantém `createUpdaterArtifacts: true`. O build local sem `TAURI_SIGNING_PRIVATE_KEY` gera o AppImage, mas termina com erro de assinatura.
 
-**Recomendação:** garantir a chave no CI de release ou usar um perfil de build local que desative updater artifacts explicitamente.
+**Mitigação:** `npm run build:appimage:local` usa `src-tauri/tauri.local.conf.json` e desativa updater artifacts. O release assinado continua exigindo `TAURI_SIGNING_PRIVATE_KEY` no CI.
 
 ---
 
@@ -200,7 +199,7 @@ Estado atual:
 
 - `tsc`: ok
 - `svelte-check`: 0 erros, 0 warnings
-- Vitest: 69/69
+- Vitest: 80/80
 - build: ok
 - Rust: não alterado nesta auditoria (a correção do mic já estava testada antes)
 

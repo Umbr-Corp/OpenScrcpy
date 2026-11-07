@@ -17,7 +17,7 @@ O frontend foi migrado de React 19 para **Svelte 5 com runes**, sem React no bun
 | Locales | 8 no bundle inicial | 8 chunks lazy (14–25 KB cada) |
 | `tsc --noEmit` | limpo | limpo |
 | `svelte-check` | — | **0 erros, 0 warnings** |
-| Testes | 123 (React Testing Library) | **69** (Vitest + Testing Library Svelte) |
+| Testes | 123 (React Testing Library) | **80** (Vitest + Testing Library Svelte) |
 
 O bundle inicial caiu aproximadamente **51%** (gzip) e cada locale só é baixado quando selecionado.
 
@@ -59,7 +59,7 @@ O bundle inicial caiu aproximadamente **51%** (gzip) e cada locale só é baixad
 ```bash
 npx tsc --noEmit
 npm run lint          # svelte-check
-npm test -- --run     # 69 testes
+npm test -- --run     # 80 testes
 npm run build         # build de produção
 ```
 
@@ -67,7 +67,7 @@ Resultado em 2026-11-07:
 
 - `tsc`: ok
 - `svelte-check`: 0 erros, 2 warnings de a11y
-- Vitest: **69 testes em 18 arquivos, todos passando**
+- Vitest: **80 testes em 20 arquivos, todos passando**
 - Build: ok; bundle principal **226,28 KB / 68,01 KB gzip**
 
 ---
