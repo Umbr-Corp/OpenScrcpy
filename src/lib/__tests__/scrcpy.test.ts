@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { scrcpy, DEFAULT_CONFIG } from '../scrcpy.svelte';
+import { scrcpy, DEFAULT_CONFIG, normalizeConfig } from '../scrcpy.svelte';
 
 describe('scrcpy store', () => {
     beforeEach(() => {
@@ -49,5 +49,23 @@ describe('scrcpy store', () => {
         expect(scrcpy.historyDevices).toHaveLength(10);
         expect(scrcpy.historyDevices[0]).toBe('192.168.0.5:5555');
         expect(new Set(scrcpy.historyDevices).size).toBe(10);
+    });
+
+    it('normalizes stale persisted enum values', () => {
+        const config = normalizeConfig({
+            sessionMode: 'invalid',
+            audioCodec: 'mp3',
+            micSource: 'voice-communication',
+            micCodec: 'flac',
+            rotation: '45',
+            cameraFacing: 'sideways'
+        } as any);
+
+        expect(config.sessionMode).toBe('mirror');
+        expect(config.audioCodec).toBe('auto');
+        expect(config.micSource).toBe('mic-voice-communication');
+        expect(config.micCodec).toBe('opus');
+        expect(config.rotation).toBe('0');
+        expect(config.cameraFacing).toBeUndefined();
     });
 });

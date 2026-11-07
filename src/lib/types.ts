@@ -64,15 +64,23 @@ export function mdnsHostIp(address: string): string {
     return lastColon > 0 ? address.slice(0, lastColon) : address;
 }
 
+export type SessionMode = 'mirror' | 'camera' | 'desktop' | 'mic';
+export type AudioCodec = 'auto' | 'opus' | 'aac' | 'flac' | 'raw';
+export type MicSource = 'mic' | 'mic-voice-communication';
+export type MicCodec = 'opus' | 'aac';
+export type Rotation = '0' | '90' | '180' | '270';
+export type ColorMode = 'light' | 'dark' | 'system';
+export type CameraFacing = 'front' | 'back' | 'external';
+
 export interface ScrcpyConfig {
     device: string;
-    sessionMode: string;
+    sessionMode: SessionMode;
     bitrate?: number;
     fps?: number;
     stayAwake?: boolean;
     turnOff?: boolean;
     audioEnabled?: boolean;
-    audioCodec?: string;
+    audioCodec?: AudioCodec;
     alwaysOnTop?: boolean;
     fullscreen?: boolean;
     borderless?: boolean;
@@ -80,7 +88,7 @@ export interface ScrcpyConfig {
     recordPath?: string;
     scrcpyPath?: string;
     otgPure?: boolean;
-    cameraFacing?: string;
+    cameraFacing?: CameraFacing;
     cameraId?: string;
     codec?: string;
     cameraAr?: string;
@@ -88,7 +96,7 @@ export interface ScrcpyConfig {
     vdWidth?: number;
     vdHeight?: number;
     vdDpi?: number;
-    rotation?: string;
+    rotation?: Rotation;
     res?: string;
     aspectRatioLock?: boolean;
     hidKeyboard?: boolean;
@@ -104,8 +112,8 @@ export interface ScrcpyConfig {
     ignoreVideoEncoderConstraints?: boolean;
     windowX?: number;
     windowY?: number;
-    micSource?: string;
-    micCodec?: string;
+    micSource?: MicSource;
+    micCodec?: MicCodec;
     micBitrate?: number;
     micDenoise?: boolean;
 }

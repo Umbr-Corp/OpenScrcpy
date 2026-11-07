@@ -155,7 +155,8 @@
                         {@const usbId = ids.find(id => !id.includes('.'))}
                         {@const hasWireless = ids.some(id => id.includes('.'))}
                         {@const switching = wirelessSwitching != null && ids.includes(wirelessSwitching)}
-                        <!-- svelte-ignore a11y_no_noninteractive_tabindex a11y_no_noninteractive_element_interactions -->
+                        <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+                        <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
                         <div
                             role="group"
                             tabindex="0"

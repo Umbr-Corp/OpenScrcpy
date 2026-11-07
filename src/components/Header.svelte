@@ -7,10 +7,11 @@
     import ProgressBar from './ProgressBar.svelte';
     import WindowButtons from './WindowButtons.svelte';
     import { WINDOW_DRAG_EXCLUDE } from './windowChrome';
+    import type { ColorMode } from '../lib/types';
 
     interface Props {
-        colorMode: 'light' | 'dark' | 'system';
-        onColorModeChange: (mode: 'light' | 'dark' | 'system') => void;
+        colorMode: ColorMode;
+        onColorModeChange: (mode: ColorMode) => void;
         binaryStatus: { found: boolean; message: string };
         onDownload: () => void;
         onSetPath: () => void;
@@ -136,7 +137,8 @@
     ];
 </script>
 
-<!-- svelte-ignore a11y_no_noninteractive_element_interactions a11y_no_static_element_interactions -->
+<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+<!-- svelte-ignore a11y_no_static_element_interactions -->
 <header
     class="flex items-center gap-3 px-4 py-2 flex-nowrap"
     style="background-color: var(--bg-surface); border-bottom: 1px solid var(--border-base)"

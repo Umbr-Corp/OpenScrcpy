@@ -1,5 +1,5 @@
 <script lang="ts">
-    import type { ConfigFieldSetter, ScrcpyConfig } from '../../lib/types';
+    import type { ConfigFieldSetter, Rotation, ScrcpyConfig } from '../../lib/types';
     import Select from '../Select.svelte';
     import Tooltip from '../Tooltip.svelte';
     import { t } from '../../i18n';
@@ -41,7 +41,7 @@
         <FpsSelect value={config.fps} onChange={(value) => handleChange('fps', value)} />
         <RotationSelect
             value={config.rotation}
-            onChange={(value) => handleChange('rotation', value)}
+            onChange={(value) => handleChange('rotation', value as Rotation)}
         />
         <Select
             label={t('controlPanel.graphicsRenderer')}
