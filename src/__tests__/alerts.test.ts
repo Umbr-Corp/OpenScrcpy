@@ -29,4 +29,20 @@ describe('alert store', () => {
         expect(alert.isOpen).toBe(false);
         expect(alert.title).toBe('');
     });
+
+    it('does not leak optional fields from the previous alert', () => {
+        showAlert({
+            title: 'Download',
+            message: '42%',
+            progress: 42,
+            progressDetail: '12/28 MB',
+            eyebrow: 'v1 → v2'
+        });
+
+        showAlert({ title: 'Done', message: 'Finished' });
+
+        expect(alert.progress).toBeUndefined();
+        expect(alert.progressDetail).toBeUndefined();
+        expect(alert.eyebrow).toBeUndefined();
+    });
 });

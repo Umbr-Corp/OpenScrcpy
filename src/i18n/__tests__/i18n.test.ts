@@ -21,6 +21,13 @@ describe('i18n', () => {
         expect(t('controlPanel.micBridgeTitle')).toBe('Ponte de Microfone');
     });
 
+    it('keeps the last requested locale when loads race', async () => {
+        await Promise.all([setLocale('fr'), setLocale('pt-BR')]);
+
+        expect(i18n.locale).toBe('pt-BR');
+        expect(t('controlPanel.micBridgeTitle')).toBe('Ponte de Microfone');
+    });
+
     it('falls back to the key when it does not exist', () => {
         expect(t('missing.key')).toBe('missing.key');
     });

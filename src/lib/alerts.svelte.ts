@@ -23,14 +23,32 @@ export interface AlertSnapshot extends AlertOptions {
     isOpen: boolean;
 }
 
-const CLOSED: AlertSnapshot = { isOpen: false, title: '', message: '' };
+const EMPTY: AlertSnapshot = {
+    isOpen: false,
+    title: '',
+    message: '',
+    kind: undefined,
+    actionLabel: undefined,
+    onAction: undefined,
+    showCancel: undefined,
+    cancelLabel: undefined,
+    onCancel: undefined,
+    secondaryLabel: undefined,
+    onSecondary: undefined,
+    progress: undefined,
+    progressDetail: undefined,
+    eyebrow: undefined,
+    icon: undefined
+};
 
-export const alert = $state<AlertSnapshot>({ ...CLOSED });
+export const alert = $state<AlertSnapshot>({ ...EMPTY });
 
 export function showAlert(options: AlertOptions) {
-    Object.assign(alert, CLOSED, options, { isOpen: true });
+    // Start from EMPTY on every call: optional fields from the previous alert
+    // must not leak into the next one (progress, callbacks, labels, icon...).
+    Object.assign(alert, EMPTY, options, { isOpen: true });
 }
 
 export function closeAlert() {
-    Object.assign(alert, CLOSED);
+    Object.assign(alert, EMPTY);
 }

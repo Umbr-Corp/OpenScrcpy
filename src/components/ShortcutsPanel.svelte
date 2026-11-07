@@ -2,7 +2,9 @@
     import { Maximize, Home, ChevronLeft, List, Power, RotateCw, Clipboard, MonitorOff, Keyboard } from '@lucide/svelte';
     import { t } from '../i18n';
 
-    const shortcuts = [
+    // Derived: the labels must follow the active locale; a module-level array
+    // would freeze the language used when the module was first imported.
+    const shortcuts = $derived.by(() => [
         { label: t('shortcuts.full'), key: 'F', icon: Maximize },
         { label: t('shortcuts.home'), key: 'H', icon: Home },
         { label: t('shortcuts.back'), key: 'B', icon: ChevronLeft },
@@ -11,7 +13,7 @@
         { label: t('shortcuts.rotate'), key: 'R', icon: RotateCw },
         { label: t('shortcuts.paste'), key: 'V', icon: Clipboard },
         { label: t('shortcuts.off'), key: 'O', icon: MonitorOff }
-    ];
+    ]);
 </script>
 
 <div class="ds-card p-3.5 space-y-2">

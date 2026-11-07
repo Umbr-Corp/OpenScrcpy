@@ -18,7 +18,9 @@
     import ErrorBoundary from './components/ErrorBoundary.svelte';
 
     onMount(() => {
-        void scrcpy.init();
+        void scrcpy.init().catch(error => {
+            console.error('Failed to initialize scrcpy store', error);
+        });
         return () => scrcpy.destroy();
     });
 
@@ -51,7 +53,7 @@
             }
         });
         return () => {
-            unlisten.then(fn => fn());
+            unlisten.then(fn => fn()).catch(() => {});
         };
     });
 

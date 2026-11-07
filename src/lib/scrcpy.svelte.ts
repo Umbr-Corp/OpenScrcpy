@@ -99,6 +99,8 @@ class ScrcpyStore {
     private intervals: ReturnType<typeof setInterval>[] = [];
     private startedModeByDevice: Record<string, string> = {};
     private scrcpyUpdateChecked = false;
+    private colorMediaQuery: MediaQueryList | null = null;
+    private colorMediaHandler: ((event: MediaQueryListEvent) => void) | null = null;
 
     get sessionRunning(): boolean {
         return this.runningDevices.includes(this.activeDevice);
@@ -172,6 +174,7 @@ class ScrcpyStore {
             (safeGetItem('scrcpy_color_mode') as 'light' | 'dark' | 'system') || 'system';
         this.historyDevices = loadStoredJSON<string[]>('scrcpy_history', []);
         this.windowPositions = loadStoredJSON<WindowPositions>('scrcpy_window_positions', {});
+        this.scrcpyStatus = { found: false, message: t('common.loading') };
 
         try {
             this.appVersion = await getVersion();
@@ -203,6 +206,11 @@ class ScrcpyStore {
         this.unlisteners = [];
         for (const interval of this.intervals) clearInterval(interval);
         this.intervals = [];
+        if (this.colorMediaQuery && this.colorMediaHandler) {
+            this.colorMediaQuery.removeEventListener('change', this.colorMediaHandler);
+            this.colorMediaQuery = null;
+            this.colorMediaHandler = null;
+        }
     };
 
     private setupEventListeners = () => {
@@ -233,15 +241,20 @@ class ScrcpyStore {
             event => {
                 if (this.config.rememberWindowPosition === false) return;
                 const { device, x, y } = event.payload;
+                // The App-level effect persists this; writing here too caused
+                // two localStorage writes per window-position event.
                 this.windowPositions = { ...this.windowPositions, [device]: { x, y } };
-                this.persistWindowPositions();
             }
         );
 
-        void Promise.all([status, windowPos]).then(fns => {
-            if (this.mounted) this.unlisteners.push(...fns);
-            else fns.forEach(fn => fn());
-        });
+        void Promise.all([status, windowPos])
+            .then(fns => {
+                if (this.mounted) this.unlisteners.push(...fns);
+                else fns.forEach(fn => fn());
+            })
+            .catch(error => {
+                console.error('Failed to subscribe to backend events', error);
+            });
     };
 
     private startPolling = () => {
@@ -262,10 +275,20 @@ class ScrcpyStore {
         const apply = (dark: boolean) => {
             document.documentElement.setAttribute('data-mode', dark ? 'dark' : 'light');
         };
+
+        if (this.colorMediaQuery && this.colorMediaHandler) {
+            this.colorMediaQuery.removeEventListener('change', this.colorMediaHandler);
+            this.colorMediaQuery = null;
+            this.colorMediaHandler = null;
+        }
+
         if (mode === 'system') {
             const mq = window.matchMedia('(prefers-color-scheme: dark)');
+            const handler = (event: MediaQueryListEvent) => apply(event.matches);
             apply(mq.matches);
-            mq.addEventListener('change', event => apply(event.matches));
+            mq.addEventListener('change', handler);
+            this.colorMediaQuery = mq;
+            this.colorMediaHandler = handler;
         } else {
             apply(mode === 'dark');
         }

@@ -146,8 +146,11 @@ export function t(key: string, vars?: Record<string, Primitive>): string {
     return key;
 }
 
+let loadToken = 0;
+
 export async function setLocale(next: Locale): Promise<void> {
     if (!SUPPORTED_LOCALES.includes(next)) return;
+    const token = ++loadToken;
     i18n.locale = next;
     safeSetItem(STORAGE_KEY, next);
     applyDocumentLocale(next);
@@ -161,12 +164,15 @@ export async function setLocale(next: Locale): Promise<void> {
     i18n.loading = true;
     try {
         const bundle = await loaders[next]();
+        // A slower import must not overwrite the locale the user picked last.
+        if (token !== loadToken) return;
         i18n.translations = deepMerge(en, bundle);
     } catch (e) {
+        if (token !== loadToken) return;
         console.error(`Failed to load locale ${next}`, e);
         i18n.translations = en;
     } finally {
-        i18n.loading = false;
+        if (token === loadToken) i18n.loading = false;
     }
 }
 
