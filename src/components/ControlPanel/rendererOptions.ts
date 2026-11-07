@@ -1,4 +1,4 @@
-import { RenderDriverSupport } from '../../hooks/useScrcpy';
+import type { RenderDriverSupport } from '../../lib/types';
 
 export interface RendererOption {
     value: string;
@@ -11,7 +11,7 @@ export function buildRendererOptions(
 ): RendererOption[] {
     return [
         { value: 'auto', label: autoLabel },
-        ...renderDriverSupport.supportedDrivers.map((driver) => ({
+        ...renderDriverSupport.supportedDrivers.map(driver => ({
             value: driver.id,
             label: driver.label
         }))

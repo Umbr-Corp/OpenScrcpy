@@ -193,6 +193,18 @@ input[type="range"].ds-range { accent-color: var(--primary); height: 4px; cursor
 .ds-toggle > span { display: block; width: 16px; height: 16px; border-radius: var(--radius-full); background: var(--bg-surface); transition: transform 0.09s ease-out; }
 .ds-toggle[data-on="true"] > span { transform: translateX(12px); }
 
+/* ── Settings rows / selects (ControlPanel and SessionBehavior) ── */
+.cp-row { border: 1px solid var(--border-base); border-radius: var(--radius-md); background: var(--bg-surface); transition: background 0.09s ease-out, border-color 0.15s cubic-bezier(0.4, 0, 0.2, 1); }
+.cp-row:hover { border-color: var(--primary); background: var(--bg-input); }
+.cp-select:hover { border-color: var(--primary); }
+.cp-opt { border: 1px solid transparent; }
+.cp-opt:hover { border-color: var(--primary); }
+.sb-row { border: 1px solid transparent; border-radius: var(--radius-md); }
+.sb-row:hover { border-color: var(--primary); }
+.sb-select:hover { border-color: var(--primary); }
+.sb-opt { border: 1px solid transparent; }
+.sb-opt:hover { border-color: var(--primary); }
+
 /* ── Navigation (segmented tabs, 2 zones: devices + modes) */
 .ds-tabs { display: flex; gap: 4px; background: var(--bg-input); border: 1px solid var(--border-base); border-radius: var(--radius-md); padding: 4px; }
 .ds-tab { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-size: 13px; font-weight: 440; color: var(--text-muted); border-radius: var(--radius-sm); padding: 6px 8px; cursor: pointer; border: 1px solid transparent; transition: background 0.09s ease-out, color 0.15s cubic-bezier(0.4, 0, 0.2, 1); }

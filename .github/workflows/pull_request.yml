@@ -25,8 +25,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Type-check Frontend
-        run: npx tsc --noEmit
+      - name: Type-check Frontend (Svelte + TypeScript)
+        run: npm run lint
 
       - name: Test Frontend
         run: npm test

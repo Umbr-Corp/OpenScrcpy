@@ -37,7 +37,7 @@ export function diffIpcContract(registered, invoked) {
   };
 }
 
-/** Raw source of every non-test .ts/.tsx file under src/. */
+/** Raw source of every non-test .ts/.tsx/.svelte file under src/. */
 export function appSources(root = process.cwd()) {
   const files = [];
 
@@ -48,7 +48,7 @@ export function appSources(root = process.cwd()) {
         if (entry.name !== '__tests__' && entry.name !== 'test') walk(full);
         continue;
       }
-      if (!/\.tsx?$/.test(entry.name) || /\.test\.tsx?$/.test(entry.name)) continue;
+      if (!/\.(tsx?|svelte)$/.test(entry.name) || /\.test\.tsx?$/.test(entry.name)) continue;
       files.push(readFileSync(full, 'utf8'));
     }
   }

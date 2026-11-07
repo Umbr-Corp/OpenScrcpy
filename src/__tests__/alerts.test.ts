@@ -1,47 +1,32 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { closeAlert, getAlertSnapshot, showAlert, subscribeAlert } from '../alerts';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { alert, closeAlert, showAlert } from '../lib/alerts.svelte';
 
 describe('alert store', () => {
     beforeEach(() => {
         closeAlert();
     });
 
-    it('opens with the given options and notifies subscribers', () => {
-        const listener = vi.fn();
-        const unsubscribe = subscribeAlert(listener);
-
+    it('opens with the given options', () => {
         showAlert({ title: 'Title', message: 'Body', kind: 'success' });
 
-        expect(listener).toHaveBeenCalledTimes(1);
-        expect(getAlertSnapshot()).toMatchObject({
-            isOpen: true,
-            title: 'Title',
-            message: 'Body',
-            kind: 'success'
-        });
-        unsubscribe();
+        expect(alert.isOpen).toBe(true);
+        expect(alert.title).toBe('Title');
+        expect(alert.message).toBe('Body');
+        expect(alert.kind).toBe('success');
     });
 
-    it('keeps a stable snapshot between updates', () => {
+    it('replaces the current alert options', () => {
         showAlert({ title: 'Title', message: 'Body' });
-        const first = getAlertSnapshot();
-        expect(getAlertSnapshot()).toBe(first);
-
         showAlert({ title: 'Title', message: 'Body', progress: 42 });
-        expect(getAlertSnapshot()).not.toBe(first);
-        expect(getAlertSnapshot().progress).toBe(42);
+
+        expect(alert.progress).toBe(42);
     });
 
-    it('closes once and ignores repeated closes', () => {
-        const listener = vi.fn();
-        const unsubscribe = subscribeAlert(listener);
-
+    it('closes and clears the alert', () => {
         showAlert({ title: 'Title', message: 'Body' });
         closeAlert();
-        closeAlert();
 
-        expect(listener).toHaveBeenCalledTimes(2);
-        expect(getAlertSnapshot().isOpen).toBe(false);
-        unsubscribe();
+        expect(alert.isOpen).toBe(false);
+        expect(alert.title).toBe('');
     });
 });

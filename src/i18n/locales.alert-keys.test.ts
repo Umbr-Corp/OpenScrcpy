@@ -26,11 +26,11 @@ const bundles: Record<string, Record<string, any>> = {
  *  None today: every `alerts.*` and `logs.*` key must exist in all locales. */
 const FALLBACK_KEYS = new Set<string>([]);
 
-const SOURCE_EXTENSIONS = ['.ts', '.tsx'];
+const SOURCE_EXTENSIONS = ['.ts', '.tsx', '.svelte'];
 
 // Raw source of every app file under src/, resolved by Vite so the test does
 // not need Node typings. Tests, mocks and locale bundles are filtered out.
-const sources = import.meta.glob('../**/*.{ts,tsx}', {
+const sources = import.meta.glob('../**/*.{ts,tsx,svelte}', {
     query: '?raw',
     import: 'default',
     eager: true

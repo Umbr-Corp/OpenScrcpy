@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { appendLogs, LOG_CAP, LogLevel } from './logs';
+import { appendLogs, LOG_CAP, LogLevel } from './lib/logs';
 
 describe('appendLogs structured levels', () => {
     it('attaches the level to every line of a batch', () => {
