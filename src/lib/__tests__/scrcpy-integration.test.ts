@@ -140,3 +140,83 @@ describe('scrcpy store — integration', () => {
         expect(scrcpy.mdnsDevices[0].address).toBe('192.168.0.5:5555');
     });
 });
+
+describe('scrcpy store — actions', () => {
+    beforeEach(() => {
+        localStorage.clear();
+        mockInvoke.mockReset();
+        resetStore();
+    });
+
+    it('installs APKs and pushes other files through the right command', async () => {
+        scrcpy.setActiveDevice('device1');
+        mockInvoke.mockResolvedValue({ success: true, message: 'ok' });
+
+        await scrcpy.handleFileOperation('/tmp/app.apk');
+        await scrcpy.handleFileOperation('/tmp/photo.jpg');
+
+        const commands = mockInvoke.mock.calls.map(([command]) => command);
+        expect(commands).toContain('install_apk');
+        expect(commands).toContain('push_file');
+    });
+
+    it('reports a download failure and clears the busy flag', async () => {
+        mockInvoke.mockRejectedValue(new Error('network down'));
+
+        await scrcpy.downloadScrcpy();
+
+        expect(scrcpy.isDownloading).toBe(false);
+        expect(scrcpy.downloadError).toBeTruthy();
+    });
+
+    it('persists the onboarding completion flag', () => {
+        scrcpy.isOnboardingOpen = true;
+
+        scrcpy.completeOnboarding();
+
+        expect(scrcpy.isOnboardingOpen).toBe(false);
+        expect(localStorage.getItem('scrcpy_onboarding_done')).toBe('true');
+    });
+
+    it('applies the color mode to the document', () => {
+        scrcpy.setColorMode('dark');
+        expect(document.documentElement.getAttribute('data-mode')).toBe('dark');
+
+        scrcpy.setColorMode('light');
+        expect(document.documentElement.getAttribute('data-mode')).toBe('light');
+    });
+
+    it('stops the active device session', async () => {
+        mockInvoke.mockResolvedValue(null);
+
+        await scrcpy.stopScrcpy('device1');
+
+        expect(mockInvoke).toHaveBeenCalledWith('stop_scrcpy', { device: 'device1' });
+    });
+
+    it('pairs a device and refreshes discovery', async () => {
+        const refresh = vi.spyOn(scrcpy, 'refreshDevicesUntilSettled').mockResolvedValue();
+        mockInvoke.mockResolvedValue({ success: true, message: 'paired' });
+
+        const result = await scrcpy.pairDevice('192.168.0.5:5555', '123456');
+
+        expect(result.success).toBe(true);
+        expect(mockInvoke).toHaveBeenCalledWith('adb_pair', {
+            ip: '192.168.0.5:5555',
+            code: '123456',
+            customPath: undefined
+        });
+        expect(refresh).toHaveBeenCalled();
+    });
+
+    it('switches a USB device to wireless and stores the address', async () => {
+        const refresh = vi.spyOn(scrcpy, 'refreshDevices').mockResolvedValue();
+        mockInvoke.mockResolvedValue({ success: true, message: 'ok', ip: '192.168.0.9' });
+
+        await scrcpy.handleGotoWireless('usb1');
+
+        expect(scrcpy.wirelessSwitching).toBeNull();
+        expect(scrcpy.historyDevices).toContain('192.168.0.9:5555');
+        expect(refresh).toHaveBeenCalled();
+    });
+});
