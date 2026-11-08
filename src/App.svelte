@@ -5,6 +5,7 @@
     import { scrcpy } from './lib/scrcpy.svelte';
     import { isTauri } from './lib/tauri';
     import { showAlert } from './lib/alerts.svelte';
+    import { setupMainWindowState } from './lib/windowState';
     import { t } from './i18n';
     import Header from './components/Header.svelte';
     import Sidebar from './components/Sidebar.svelte';
@@ -23,6 +24,8 @@
         });
         return () => scrcpy.destroy();
     });
+
+    onMount(() => setupMainWindowState());
 
     $effect(() => {
         if (scrcpy.ready) scrcpy.persistConfig();
