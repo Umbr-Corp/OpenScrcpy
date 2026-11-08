@@ -11,15 +11,15 @@
 
 A migração Svelte 5 está **integrada e funcional**: não há React no código nem nas dependências, o contrato IPC cobre `.svelte`, o build de produção passa e o AppImage foi gerado.
 
-Foram corrigidos **10 problemas de integração/qualidade** encontrados nesta auditoria. Restam **3 pendências** relevantes: cobertura de testes, assinatura do updater e QA manual em Tauri.
+Foram corrigidos **11 problemas de integração/qualidade** encontrados nesta auditoria. Restam **3 pendências** relevantes: cobertura de testes, assinatura do updater e QA manual em Tauri.
 
 | Indicador | Resultado |
 | --- | --- |
 | `tsc --noEmit` | limpo |
 | `svelte-check` | **0 erros, 0 warnings** |
-| Vitest | **87 testes em 23 arquivos** |
+| Vitest | **89 testes em 24 arquivos** |
 | Build de produção | ok |
-| Bundle JS principal | 226,28 KB / **68,01 KB gzip** |
+| Bundle JS principal | 227,16 KB / **68,33 KB gzip** |
 | CSS | 28,39 KB / 6,13 KB gzip |
 | React em `node_modules` | **nenhum** |
 | AppImage | gerado (113 MB) |
@@ -126,11 +126,21 @@ Removidos `@testing-library/dom`, `@testing-library/user-event` e `@types/jest` 
 
 ---
 
+### QA-15 — P2 — Janela principal sempre abria no tamanho fixo
+
+**Problema:** `tauri.conf.json` define `1200x890`, mas nada salvava o tamanho/posição depois que o usuário redimensionava a janela.
+
+**Correção:** `setupMainWindowState()` em `src/lib/windowState.ts` salva `outerSize`/`outerPosition` em `localStorage` e restaura no próximo boot, incluindo o estado maximizado. Permissões Tauri adicionadas em `capabilities/default.json`.
+
+**Teste:** `src/lib/__tests__/windowState.test.ts`.
+
+---
+
 ## 4. Achados abertos
 
 ### QA-09 — P2 — Cobertura de testes ainda abaixo da versão React
 
-A suíte atual tem **87 testes**, contra 123 antes da migração. Os cenários removidos junto com os hooks React ainda precisam ser portados:
+A suíte atual tem **89 testes**, contra 123 antes da migração. Os cenários removidos junto com os hooks React ainda precisam ser portados:
 
 - reconexão histórica e backoff de dispositivos;
 - download com progresso/eventos e instalação do updater;
@@ -200,7 +210,7 @@ Estado atual:
 
 - `tsc`: ok
 - `svelte-check`: 0 erros, 0 warnings
-- Vitest: 87/87
+- Vitest: 89/89
 - build: ok
 - Rust: não alterado nesta auditoria (a correção do mic já estava testada antes)
 
