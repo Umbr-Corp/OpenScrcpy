@@ -1432,8 +1432,10 @@ fn build_scrcpy_args(
             }
             if let Some(to) = config.turn_off {
                 if to {
+                    // Do not pass --no-power-on: if the phone is already
+                    // asleep, scrcpy must be allowed to wake it before
+                    // turning the screen off for the session.
                     args.push("--turn-screen-off".to_string());
-                    args.push("--no-power-on".to_string());
                 }
             }
         }
@@ -2792,6 +2794,17 @@ mod tests {
         assert!(args.contains(&"-s".to_string()));
         assert!(args.contains(&"device1".to_string()));
         assert!(args.contains(&"--video-codec=h264".to_string()));
+    }
+
+    #[test]
+    fn test_build_scrcpy_args_turn_off_allows_wake_before_screen_off() {
+        let mut config = base_config("mirror");
+        config.turn_off = Some(true);
+
+        let args = build_scrcpy_args(&config, None, None);
+
+        assert!(args.contains(&"--turn-screen-off".to_string()));
+        assert!(!args.contains(&"--no-power-on".to_string()));
     }
 
     #[test]
