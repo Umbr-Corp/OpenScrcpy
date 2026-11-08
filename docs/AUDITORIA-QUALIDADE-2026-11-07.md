@@ -17,7 +17,7 @@ Foram corrigidos **10 problemas de integração/qualidade** encontrados nesta au
 | --- | --- |
 | `tsc --noEmit` | limpo |
 | `svelte-check` | **0 erros, 0 warnings** |
-| Vitest | **80 testes em 20 arquivos** |
+| Vitest | **87 testes em 23 arquivos** |
 | Build de produção | ok |
 | Bundle JS principal | 226,28 KB / **68,01 KB gzip** |
 | CSS | 28,39 KB / 6,13 KB gzip |
@@ -130,13 +130,14 @@ Removidos `@testing-library/dom`, `@testing-library/user-event` e `@types/jest` 
 
 ### QA-09 — P2 — Cobertura de testes ainda abaixo da versão React
 
-A suíte atual tem **80 testes**, contra 123 antes da migração. Os cenários removidos junto com os hooks React ainda precisam ser portados:
+A suíte atual tem **87 testes**, contra 123 antes da migração. Os cenários removidos junto com os hooks React ainda precisam ser portados:
 
-- descoberta, pareamento, reconexão e backoff de dispositivos;
-- download, onboarding, `check_scrcpy_update` e updater;
-- start/stop/substituição de sessão e geração;
+- reconexão histórica e backoff de dispositivos;
+- download com progresso/eventos e instalação do updater;
+- stop/substituição de sessão e geração;
 - drag & drop;
-- fluxo completo de microfone no backend (o `MicMeter` já tem teste de eventos).
+- fluxo completo de microfone no backend (o `MicMeter` já tem teste de eventos);
+- integração real com Tauri (eventos `scrcpy-status`/`scrcpy-window-pos`).
 
 **Recomendação:** priorizar testes de store com `invoke` mockado; não é necessário montar a UI inteira.
 
@@ -199,7 +200,7 @@ Estado atual:
 
 - `tsc`: ok
 - `svelte-check`: 0 erros, 0 warnings
-- Vitest: 80/80
+- Vitest: 87/87
 - build: ok
 - Rust: não alterado nesta auditoria (a correção do mic já estava testada antes)
 
