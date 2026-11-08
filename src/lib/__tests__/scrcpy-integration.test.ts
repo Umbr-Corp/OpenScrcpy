@@ -108,6 +108,18 @@ describe('scrcpy store — integration', () => {
         ]);
     });
 
+    it('opens onboarding when the scrcpy bundle is missing', async () => {
+        localStorage.removeItem('scrcpy_onboarding_done');
+        mockInvoke.mockImplementation((command: string) => {
+            if (command === 'check_scrcpy') return Promise.resolve({ found: false, message: 'missing' });
+            if (command === 'get_render_drivers') return Promise.resolve(null);
+            return Promise.resolve(null);
+        });
+
+        await expect(scrcpy.checkScrcpy()).resolves.toBe(false);
+        expect(scrcpy.isOnboardingOpen).toBe(true);
+    });
+
     it('loads devices, unavailable transports and mDNS records', async () => {
         mockInvoke.mockImplementation((command: string) => {
             if (command === 'get_devices') {
