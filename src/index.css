@@ -94,12 +94,6 @@ body {
 /* Text selection follows the accent in both modes */
 ::selection { background: var(--primary); color: var(--text-on-primary); }
 
-/* Scrollbar */
-::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border-base); border-radius: var(--radius-full); }
-::-webkit-scrollbar-thumb:hover { background: var(--border-strong); }
-
 /* ── Surfaces ─────────────────────────────────────────── */
 .ds-card {
   background: var(--bg-surface);

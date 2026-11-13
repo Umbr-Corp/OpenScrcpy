@@ -9,6 +9,7 @@
         children: Snippet;
     }
     let { children }: Props = $props();
+    let savedFileName = $state('');
 
     async function exportDiagnostics(error: unknown) {
         const err = error instanceof Error ? error : new Error(String(error));
@@ -30,7 +31,7 @@
                 content: JSON.stringify(diagnostics, null, 2),
                 name: fileName
             });
-            alert(t('errorBoundary.diagnosticSavedAlert', { fileName }));
+            savedFileName = fileName;
         } catch (e) {
             console.error('Export failed:', e);
         }
@@ -79,6 +80,12 @@
                         {t('errorBoundary.exportLogs')}
                     </button>
                 </div>
+
+                {#if savedFileName}
+                    <p class="ds-caption" style="color: var(--text-muted)">
+                        {t('errorBoundary.diagnosticSavedAlert', { fileName: savedFileName })}
+                    </p>
+                {/if}
 
                 <p class="ds-caption" style="color: var(--text-muted)">
                     {t('errorBoundary.recoveryEngine')}

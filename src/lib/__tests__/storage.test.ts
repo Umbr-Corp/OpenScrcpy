@@ -24,7 +24,7 @@ describe('safe storage helpers', () => {
     });
 
     it('does not throw when storage writes are blocked', () => {
-        vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+        vi.spyOn(localStorage, 'setItem').mockImplementation(() => {
             throw new DOMException('quota exceeded', 'QuotaExceededError');
         });
 

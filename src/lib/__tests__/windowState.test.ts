@@ -30,7 +30,7 @@ describe('main window state', () => {
 
     it('restores the saved size and position', async () => {
         localStorage.setItem(
-            'opensrcpy_window_state',
+            'openscrcpy_window_state',
             JSON.stringify({ width: 1300, height: 900, x: 40, y: 60, maximized: false })
         );
 
@@ -44,9 +44,24 @@ describe('main window state', () => {
         cleanup();
     });
 
-    it('ignores invalid saved geometry', async () => {
+    it('migrates the legacy misspelled key', async () => {
         localStorage.setItem(
             'opensrcpy_window_state',
+            JSON.stringify({ width: 1300, height: 900, x: 40, y: 60, maximized: false })
+        );
+
+        const cleanup = setupMainWindowState();
+
+        await vi.waitFor(() => expect(mockWindow.setSize).toHaveBeenCalled());
+        expect(localStorage.getItem('openscrcpy_window_state')).not.toBeNull();
+        expect(localStorage.getItem('opensrcpy_window_state')).toBeNull();
+
+        cleanup();
+    });
+
+    it('ignores invalid saved geometry', async () => {
+        localStorage.setItem(
+            'openscrcpy_window_state',
             JSON.stringify({ width: 10, height: 10, x: 0, y: 0, maximized: false })
         );
 

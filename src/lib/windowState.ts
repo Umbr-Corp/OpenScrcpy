@@ -1,7 +1,7 @@
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { PhysicalPosition, PhysicalSize } from '@tauri-apps/api/dpi';
 import { isTauri } from './tauri';
-import { loadStoredJSON, safeSetItem } from './storage';
+import { loadStoredJSON, safeRemoveItem, safeSetItem } from './storage';
 
 export interface MainWindowState {
     width: number;
@@ -11,13 +11,19 @@ export interface MainWindowState {
     maximized: boolean;
 }
 
-const KEY = 'opensrcpy_window_state';
+const KEY = 'openscrcpy_window_state';
+// The key used before 2.0.0 had a typo in the project name. Read it once so
+// upgrades keep the window where the user left it, then migrate it.
+const LEGACY_KEY = 'opensrcpy_window_state';
 const MIN_WIDTH = 600;
 const MIN_HEIGHT = 400;
 
 function load(): MainWindowState | null {
-    const state = loadStoredJSON<MainWindowState | null>(KEY, null);
+    const stored = loadStoredJSON<MainWindowState | null>(KEY, null);
+    const legacy = stored ? null : loadStoredJSON<MainWindowState | null>(LEGACY_KEY, null);
+    const state = stored ?? legacy;
     if (!state) return null;
+
     const valid =
         Number.isFinite(state.width) &&
         Number.isFinite(state.height) &&
@@ -25,7 +31,13 @@ function load(): MainWindowState | null {
         Number.isFinite(state.y) &&
         state.width >= MIN_WIDTH &&
         state.height >= MIN_HEIGHT;
-    return valid ? state : null;
+    if (!valid) return null;
+
+    if (legacy) {
+        safeSetItem(KEY, JSON.stringify(state));
+        safeRemoveItem(LEGACY_KEY);
+    }
+    return state;
 }
 
 /** Restore the previous outer size/position and keep saving it as the user

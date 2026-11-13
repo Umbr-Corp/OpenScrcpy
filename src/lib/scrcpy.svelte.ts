@@ -50,7 +50,7 @@ class ScrcpyStore {
     downloadProgress = $state(0);
     downloadError = $state<string | null>(null);
     isDownloading = $state(false);
-    scrcpyStatus = $state<{ found: boolean; message: string }>({ found: false, message: 'Loading...' });
+    scrcpyStatus = $state<{ found: boolean; message: string }>({ found: false, message: t('common.loading') });
     renderDriverSupport = $state<RenderDriverSupport>({
         hostOs: 'unknown',
         supportsRenderDriver: false,
@@ -968,7 +968,7 @@ class ScrcpyStore {
                     await invoke('open_app_release');
                 } catch {
                     window.open(
-                        'https://v16.next.forgejo.org/UmbrCorp/OpenScrcpy/releases/latest',
+                        'https://github.com/Umbr-Corp/OpenScrcpy/releases/latest',
                         '_blank'
                     );
                 }
