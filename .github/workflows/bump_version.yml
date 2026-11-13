@@ -32,8 +32,8 @@ jobs:
 
       - name: Git Config
         run: |
-          git config --global user.name "forgejo-actions[bot]"
-          git config --global user.email "forgejo-actions[bot]@users.noreply.forgejo.org"
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
       - name: Bump package.json version
         run: |

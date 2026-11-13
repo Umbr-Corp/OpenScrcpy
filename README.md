@@ -6,7 +6,7 @@
 
 **Control your Android from the desktop. Mirror the screen, use it as a webcam, or open a virtual display.**
 
-`v1.1.7` · `MIT` · `Linux / Windows / macOS`
+`v2.0.0` · `MIT` · `Linux / Windows / macOS`
 
 [![Donate on Liberapay](https://img.shields.io/liberapay/goal/mryofc.svg?logo=liberapay)](https://pt.liberapay.com/mryofc/)
 
@@ -30,7 +30,7 @@
 - **One-click core setup** — automatic core binary download and update checks, right from the header.
 - **Render driver selection** — capability-aware graphics backends, filtered by OS.
 - **Drag and drop files** — drop an APK to install it, or push any file to `/sdcard/Download/`.
-- **In-app update notices** — checks the Forgejo releases and installs the signed update from inside the app.
+- **In-app update notices** — checks the GitHub releases and installs the signed update from inside the app.
 
 ---
 
@@ -38,16 +38,16 @@
 
 ### Quick start
 
-1. Download the latest release from [Releases](https://v16.next.forgejo.org/UmbrCorp/OpenScrcpy/releases).
+1. Download the latest release from [Releases](https://github.com/Umbr-Corp/OpenScrcpy/releases).
 2. Enable **USB debugging** on your Android device (plus **Wireless debugging** for Wi-Fi connections).
-3. Follow the full walkthrough in [GUIDE.md](GUIDE.md) or the [Wiki](https://v16.next.forgejo.org/UmbrCorp/OpenScrcpy/wiki).
+3. Follow the full walkthrough in [GUIDE.md](GUIDE.md) or the [Wiki](https://github.com/Umbr-Corp/OpenScrcpy/wiki).
 
 ### NixOS (flakes)
 
 To install it permanently with a desktop launcher, add the flake to your system's `flake.nix`:
 
 ```nix
-inputs.openscrcpy.url = "git+https://v16.next.forgejo.org/UmbrCorp/OpenScrcpy";
+inputs.openscrcpy.url = "git+https://github.com/Umbr-Corp/OpenScrcpy";
 ```
 
 Then add it to your system packages:
@@ -64,7 +64,7 @@ environment.systemPackages = [
 
 ### Prerequisites
 
-- A JavaScript runtime (v18 or newer)
+- Node.js 20.19+ or 22.12+ (Vite 8 requirement)
 - The Rust toolchain and Cargo
 - The desktop framework's OS-level prerequisites
 

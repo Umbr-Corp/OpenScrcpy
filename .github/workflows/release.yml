@@ -86,9 +86,9 @@ jobs:
           TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: node scripts/publish-release.mjs upload artifacts
 
-  # The updater polls a file on the default branch, not the release assets:
-  # Forgejo has no "latest/download" alias the way GitHub does. This job
-  # rebuilds updater/latest.json from the published assets and pushes it.
+  # The updater polls a file on the default branch, not a moving
+  # "latest" alias. This job rebuilds updater/latest.json from the
+  # published assets and pushes it back to main.
   manifest:
     needs: publish
     runs-on: ubuntu-latest

@@ -1,4 +1,4 @@
-# 📖 OpenScrcpy v1 beta - User Guide
+# 📖 OpenScrcpy 2.0 - User Guide
 
 This guide provides everything you need to know to get started with OpenScrcpy, from initial setup to advanced feature usage.
 
@@ -28,10 +28,10 @@ Before using OpenScrcpy, ensure you have the following:
 ## 🚀 Installation Guide
 
 ### 🪟 Windows
-1. Download the latest `.exe` or `.msi` from the [Releases](https://v16.next.forgejo.org/UmbrCorp/OpenScrcpy/releases) page.
+1. Download the latest `.exe` or `.msi` from the [Releases](https://github.com/Umbr-Corp/OpenScrcpy/releases) page.
 2. Run the installer or standalone executable.
 3. **Smart Setup**: On the first launch, OpenScrcpy will detect if the core binary is installed. If not, it will offer a one-click download.
-4. **Automated Updates**: When launched, OpenScrcpy v1 beta will automatically check your installed version against the latest official release and prompt you with a beautiful one-click update modal if a new version is available.
+4. **Automated Updates**: When launched, OpenScrcpy will automatically check your installed version against the latest official release and prompt you with a one-click update modal if a new version is available.
 
 ### 🍎 macOS
 1. Download the `.dmg` file matching your architecture (**Intel** or **Apple Silicon/M1/M2**).
@@ -90,7 +90,7 @@ You must enable **Developer Options** and **USB Debugging** on your phone for Op
 ## 🎮 Feature Guide
 
 ### ⌨️ HID Keyboard & Mouse (OTG Mode)
-OpenScrcpy v1 beta features advanced hardware simulation (HID) for a lag-free experience.
+OpenScrcpy features advanced hardware simulation (HID) for a lag-free experience.
 - **HID Keyboard**: Simulates a real USB keyboard. This is the **only way** to fix issues with Polish accents, special characters, and international layouts.
 - **HID Mouse**: Provides a high-precision, native cursor feel. Eliminates the "double cursor" or lag found in standard mirroring.
 - **Pure HID (No Mirror)**: Perfect for when you only want to use your PC as a "controller" for your phone (e.g., typing long messages or playing games while looking at the phone screen).
@@ -141,4 +141,4 @@ Renderer choices are **capability-aware**:
 
 ---
 
-*Found a bug or have a suggestion? Open an issue on [Forgejo](https://v16.next.forgejo.org/UmbrCorp/OpenScrcpy/issues)!*
+*Found a bug or have a suggestion? Open an issue on [GitHub](https://github.com/Umbr-Corp/OpenScrcpy/issues)!*

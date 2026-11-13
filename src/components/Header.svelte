@@ -219,7 +219,7 @@
             <p class="ds-body" style="color: var(--text-secondary)">{t('header.aboutDescription')}</p>
             <div class="flex gap-2 w-full">
                 <a
-                    href="https://v16.next.forgejo.org/UmbrCorp/OpenScrcpy"
+                    href="https://github.com/Umbr-Corp/OpenScrcpy"
                     target="_blank"
                     rel="noopener noreferrer"
                     class="ds-btn ds-btn-secondary flex-1"
@@ -227,7 +227,7 @@
                     {t('header.aboutRepository')} <ExternalLink size={12} />
                 </a>
                 <a
-                    href="https://v16.next.forgejo.org/UmbrCorp/OpenScrcpy/releases"
+                    href="https://github.com/Umbr-Corp/OpenScrcpy/releases"
                     target="_blank"
                     rel="noopener noreferrer"
                     class="ds-btn ds-btn-secondary flex-1"

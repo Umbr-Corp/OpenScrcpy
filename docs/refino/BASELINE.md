@@ -1,5 +1,8 @@
 # Baseline do refino
 
+> **Histórico da base 1.1.7/React.** O baseline vigente da versão 2.0.0 está em
+> [`docs/AUDITORIA-2.0.0-2026-11-13.md`](../AUDITORIA-2.0.0-2026-11-13.md).
+
 Data: 29/10/2026
 Branch: `chore/refino-baseline`, criada a partir de `fix/release-manifest-assets` (2 commits à frente da `main`).
 

@@ -232,8 +232,8 @@ async function manifestMode() {
   }
 
   execFileSync('git', [
-    '-c', 'user.name=forgejo-actions[bot]',
-    '-c', 'user.email=forgejo-actions[bot]@users.noreply.forgejo.org',
+    '-c', 'user.name=github-actions[bot]',
+    '-c', 'user.email=41898282+github-actions[bot]@users.noreply.github.com',
     'commit', '-m', `chore(release): updater manifest for ${TAG}`,
   ]);
 

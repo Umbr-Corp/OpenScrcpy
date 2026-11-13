@@ -4,14 +4,14 @@
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 1.0.x   | :white_check_mark: |
-| < 1.0   | :x:                |
+| 2.0.x   | :white_check_mark: |
+| < 2.0   | :x:                |
 
 ## Reporting a Vulnerability
 
 Do not open a public issue for security problems. Report them privately through
 **Security > Report a vulnerability** on the
-[repository](https://v16.next.forgejo.org/UmbrCorp/OpenScrcpy) (private vulnerability
+[repository](https://github.com/Umbr-Corp/OpenScrcpy) (private vulnerability
 reporting). Include the version you tested, the platform, and steps to reproduce.
 
 You can expect an initial response within 7 days. Once the issue is confirmed,

@@ -3883,7 +3883,7 @@ pub async fn check_scrcpy_update(custom_path: Option<String>) -> serde_json::Val
 pub async fn open_app_release(app: tauri::AppHandle) -> Result<(), String> {
     tauri_plugin_opener::OpenerExt::opener(&app)
         .open_url(
-            "https://v16.next.forgejo.org/UmbrCorp/OpenScrcpy/releases/latest",
+            "https://github.com/Umbr-Corp/OpenScrcpy/releases/latest",
             None::<&str>,
         )
         .map_err(|e| e.to_string())

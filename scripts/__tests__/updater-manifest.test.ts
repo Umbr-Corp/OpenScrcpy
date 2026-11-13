@@ -39,7 +39,7 @@ describe('buildUpdaterManifest', () => {
     version: '1.1.7',
     notes: '* fix(popups): dialogs de atualização (f8359bb)',
     pubDate: '2026-10-20T05:05:49.929Z',
-    baseUrl: 'https://v16.next.forgejo.org/UmbrCorp/OpenScrcpy/releases/download/v1.1.7',
+    baseUrl: 'https://github.com/Umbr-Corp/OpenScrcpy/releases/download/v1.1.7',
     artifacts: withSignatures(assets).filter((a) => a.signature),
   });
 
@@ -59,12 +59,12 @@ describe('buildUpdaterManifest', () => {
     ]);
   });
 
-  it('points every key at the forge download path', () => {
+  it('points every key at the release download path', () => {
     expect(manifest.platforms['linux-x86_64'].url).toBe(
-      'https://v16.next.forgejo.org/UmbrCorp/OpenScrcpy/releases/download/v1.1.7/OpenScrcpy_1.1.7_amd64.AppImage',
+      'https://github.com/Umbr-Corp/OpenScrcpy/releases/download/v1.1.7/OpenScrcpy_1.1.7_amd64.AppImage',
     );
     expect(manifest.platforms['windows-x86_64-nsis'].url).toBe(
-      'https://v16.next.forgejo.org/UmbrCorp/OpenScrcpy/releases/download/v1.1.7/OpenScrcpy_1.1.7_x64-setup.exe',
+      'https://github.com/Umbr-Corp/OpenScrcpy/releases/download/v1.1.7/OpenScrcpy_1.1.7_x64-setup.exe',
     );
   });
 

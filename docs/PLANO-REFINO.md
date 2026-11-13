@@ -1,4 +1,9 @@
-# Plano de refino do OpenScrcpy 1.1.7
+# Plano de refino do OpenScrcpy 1.1.7 (histórico)
+
+> **Este documento é histórico.** Ele descreve a base React/TypeScript de 1.1.7.
+> O frontend atual é Svelte 5 com runes, a versão é 2.0.0 e o prompt vigente de
+> auditoria e release está em [`PROMPT-AUDITORIA-2.0.0.md`](./PROMPT-AUDITORIA-2.0.0.md).
+> Não use os caminhos `*.tsx`/hooks React abaixo como referência do código atual.
 
 Plano de execução do pacote de 9 prompts de refino sobre Tauri 2 (Rust) e React/TypeScript. Uma fase por pull request, na ordem abaixo. Cada fase começa reproduzindo o defeito, corrige a causa e fecha com teste de regressão.
 
