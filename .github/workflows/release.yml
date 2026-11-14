@@ -30,6 +30,7 @@ jobs:
       # The updater plugin refuses unsigned bundles: sign the artifacts
       # so latest.json + .sig files land on the release (in-app updates).
       TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+      TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -42,10 +43,7 @@ jobs:
           cache: 'npm'
 
       - name: Install Rust
-        run: |
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain stable
-          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-          source "$HOME/.cargo/env"
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Add macOS targets
         if: matrix.platform == 'macos-latest'
@@ -71,12 +69,7 @@ jobs:
         run: npm install
 
       - name: Build
-        run: |
-          # The signing key has an empty password, but the variable still has
-          # to exist. Forgejo refuses to store an empty secret, so the value
-          # is guaranteed here instead of coming from the secret store.
-          export TAURI_SIGNING_PRIVATE_KEY_PASSWORD="${TAURI_SIGNING_PRIVATE_KEY_PASSWORD:-}"
-          npm run tauri build -- ${{ matrix.args }}
+        run: npm run tauri build -- ${{ matrix.args }}
 
       - name: Collect artifacts
         run: node scripts/collect-artifacts.mjs
