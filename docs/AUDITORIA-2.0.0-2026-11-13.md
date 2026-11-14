@@ -225,13 +225,20 @@ Rust/Cargo 1.99.1.
 
 ## 5. Release
 
-- Código e documentação enviados para `github/main`.
-- Tag `v2.0.0` criada e enviada; workflow `Release CI` disparado.
-- Status e assets verificados com `gh release view v2.0.0`.
-- O job de manifesto envia `latest.json` como asset da release, servido por
-  `releases/latest/download/latest.json`; o branch `main` não é mais escrito
-  pelo bot de release.
+- Código e documentação enviados para `github/main` no commit `7bd1c3f`.
+- Tag `v2.0.0` criada e enviada; workflow [`Release CI`](https://github.com/Umbr-Corp/OpenScrcpy/actions/runs/43534760647)
+  concluído com sucesso nos três sistemas.
+- Release pública: <https://github.com/Umbr-Corp/OpenScrcpy/releases/tag/v2.0.0>.
+- Assets assinados publicados: AppImage, .deb, .rpm, .msi, setup .exe,
+  `OpenScrcpy.app.tar.gz` (macOS universal) e `.dmg`.
+- O job de manifesto publicou `latest.json` como asset; o updater usa
+  `https://github.com/Umbr-Corp/OpenScrcpy/releases/latest/download/latest.json`.
+  O branch `main` não é mais escrito pelo bot de release.
+- Manifesto verificado: versão `2.0.0`, 11 chaves de plataforma e URLs em
+  `github.com/Umbr-Corp/OpenScrcpy/releases/download/v2.0.0`.
 
-> Este relatório é atualizado após o workflow concluir. Se o workflow falhar por
-> segredo ou assinatura, a falha fica registrada aqui e a release não é
-> considerada concluída.
+> O workflow precisou de três correções de infraestrutura durante a publicação:
+> `target_commitish` inválido no GitHub (422), coleta de bundles macOS
+> universais fora de `target/release` e branch protection bloqueando o push do
+> manifesto. A solução final publica o manifesto como asset da release, sem
+> depender de PAT ou bypass de proteção.

@@ -1,51 +1,51 @@
 {
-  "version": "1.1.7",
-  "notes": "* chore: bump version to 1.1.7 (739fffd)\n* refactor(popups): shell único, barra de progresso e teclado nos popovers (63ffb30)\n* perf(alerts): store fora do App e gate de progresso no download (8789922)\n* fix(popups): lote P1 de qualidade dos diálogos (f8359bb)\n* feat(update): polir diálogo de atualização e corrigir chaves i18n (27c6dc7)",
-  "pub_date": "2026-10-20T05:05:49.929Z",
+  "version": "2.0.0",
+  "notes": "* fix(release): publish latest.json as a release asset (7bd1c3f)\n* fix(release): collect universal macOS bundles and bypass main protection (bf2d47f)\n* fix(release): omit target_commitish on GitHub releases (3c04558)\n* ci(release): use rust-toolchain action on every runner (05339c2)\n* chore(release): point 2.0.0 docs and updater at GitHub (bae2a7f)\n* fix(audit): stabilize storage tests, i18n parity and window state (afc1d6a)\n* docs(auditoria): atualizar checksum do AppImage com janela persistente (51eea0f)\n* docs(auditoria): registrar persistência da janela e atualizar métricas (3f3f8ab)\n* feat(window): persistir tamanho e posição da janela principal (592b6c8)\n* docs(auditoria): atualizar checksum do AppImage com correção da tela (764c705)\n* docs(auditoria): atualizar cobertura de testes (dd4e9c9)\n* fix(mirror): permitir acordar a tela ao iniciar sessão (5b34ea7)\n* test(frontend): cobrir modais, onboarding e update check (8c09d16)\n* docs(auditoria): atualizar checksum do AppImage final (287bc4e)\n* docs(auditoria): atualizar cobertura e script local (f94de51)\n* test(frontend): ampliar cobertura de integração e isolar config (dadb564)\n* docs(auditoria): atualizar métricas e checksum do AppImage (72ae705)\n* refactor(frontend): tipar configuração e normalizar persistência (3d72332)\n* docs(auditoria): atualizar checksum do AppImage final (162a5e3)\n* docs(auditoria): qualidade e integração pós-Svelte 5 (ddb8e77)\n* fix(frontend): corrigir integração pós-migração Svelte (b6ba83f)\n* docs(migracao): registrar migração para Svelte 5 (b4447bb)\n* feat(frontend): migrar aplicação para Svelte 5 (93b8473)\n* docs(frontend): auditoria e avaliação de frameworks (94fb5ef)\n* docs(auditoria): plano completo por feature (5b78b66)\n* fix(mic): usar fonte mic-voice-communication do scrcpy (8f31292)\n* fix(janela): decorações desligadas na criação no Linux (0e3eb98)\n* chore(version): bump 2.0.0 (f9ad0d9)\n* test(version): latest.json como fixture de release (cae9b18)\n* fix(wireless): salvar destino do Ir para Wi-Fi no historico (aeae9cc)\n* fix(terminal): preservar caminhos UNC no split_args (422837f)\n* fix(dispositivos): limpar lista indisponivel quando o poll falha (2f2b02c)\n* test(processos): timeout do teste nao corre contra o pid file (f21e1d1)\n* fix(terminal): aspas simples e escape no split_args; amostra de janela a 2s (ff269b6)\n* fix(dispositivos): aparelho nao autorizado visivel e agrupamento por transporte (f7fae9d)\n* fix(fluxos): guarda de start, reset de caminho e erros visiveis (2b77a85)\n* fix(core): instancia unica e instalacao sem sessao ativa (bfecf79)\n* fix(io): timeouts no download, update e terminal (988c5a9)\n* fix(dispositivos): timeout no poll adb e limpeza da selecao (066b481)\n* ci: matriz de testes e contrato IPC (d2d1bd0)\n* refactor(ui): dividir ControlPanel e ampliar auditoria i18n/a11y (b0cec5b)\n* fix(updater): fonte unica no plugin e versao consistente (b3f1018)\n* fix(frontend): storage seguro, reconnect com backoff e estado tipado (bd69dd6)\n* fix(rust): sem panic em argv e ip, timeout na versao do scrcpy (0cca813)\n* fix(ipc): csp ativo, capabilities minimas e validacao de entrada (9cd1f49)\n* fix(download): progress no canal certo, checksum e instalacao atomica (baa727a)\n* fix(sessao): monitor dono do child e stop escalonado (dacd6b8)\n* fix(processos): timeout mata o filho e adb nao mata terceiros (20de75e)\n* chore(refino): baseline verde e plano de execucao (1dcf905)\n* docs: frontend audit v3 (2026-10-22, post-Forgejo migration) (918d4f8)\n* fix(release): read .sig from browser_download_url; sync Cargo.lock on bump (43428eb)\n* fix(ci): garantir TAURI_SIGNING_PRIVATE_KEY_PASSWORD no build (6a82a8d)\n* docs(readme): badge de versao atualizado para v1.1.7 (a74ed99)\n* docs(readme): screenshots do v1.1.7 (da4da49)\n* chore(forgejo): migrar para a instância Forgejo (0742067)\n* fix(release): informar o repositório ao editar as notas do draft (9fbf115)",
+  "pub_date": "2026-11-14T00:33:18Z",
   "platforms": {
     "linux-x86_64-rpm": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSN1BOUXlqMW9uOG5zT3pwL2YrYXN0bUcwNE13ZTY1THhZL2IvOVpianJBd01BS2RGT2V1RVRGM2Q5TE9xWEZwU0FLL2VPeVNZSGI2RjhxaGVETXdqeUpPNkxQT3NqeHdBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNDcyNjI2CWZpbGU6T3BlblNjcmNweS0xLjEuNy0xLng4Nl82NC5ycG0KZHplT0VDdFg5enpWeStucSt5KzltWng1UVdPcEJVN3RSb1VGMEh1blNnRG9Nd0E4LzRNTnRlRGgzdnFibzFLTUtQQ204N2wxbkx0cVIwNVd5QXJrRFE9PQo=",
-      "url": "https://v16.next.forgejo.org/UmbrCorp/OpenScrcpy/releases/download/v1.1.7/OpenScrcpy-1.1.7-1.x86_64.rpm"
-    },
-    "linux-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSN1BOUXlqMW9uOGk1THFuNm5mQkhUallUZGhjSldHUkcvTGg4VkhYcG1sbnY3OW1aSm16cTFQZTNVTXY4cUYzUnRkZlJHZFd5ZlNoWU9ORUk0SjRlQUc2RUVjeFpwd3cwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNDcyNjI2CWZpbGU6T3BlblNjcmNweV8xLjEuN19hbWQ2NC5BcHBJbWFnZQpQQXozM2JNTGFFN3lpcm9xZmluVmI1SWdVdmtmdDJkM0dRb0R6NE9QZ0IyVURjalVIRzdRMlBaaElFdEczL1JMVDEybXhuTW9tUzR4ZEwrNWkzZkRDZz09Cg==",
-      "url": "https://v16.next.forgejo.org/UmbrCorp/OpenScrcpy/releases/download/v1.1.7/OpenScrcpy_1.1.7_amd64.AppImage"
-    },
-    "linux-x86_64-appimage": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSN1BOUXlqMW9uOGk1THFuNm5mQkhUallUZGhjSldHUkcvTGg4VkhYcG1sbnY3OW1aSm16cTFQZTNVTXY4cUYzUnRkZlJHZFd5ZlNoWU9ORUk0SjRlQUc2RUVjeFpwd3cwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNDcyNjI2CWZpbGU6T3BlblNjcmNweV8xLjEuN19hbWQ2NC5BcHBJbWFnZQpQQXozM2JNTGFFN3lpcm9xZmluVmI1SWdVdmtmdDJkM0dRb0R6NE9QZ0IyVURjalVIRzdRMlBaaElFdEczL1JMVDEybXhuTW9tUzR4ZEwrNWkzZkRDZz09Cg==",
-      "url": "https://v16.next.forgejo.org/UmbrCorp/OpenScrcpy/releases/download/v1.1.7/OpenScrcpy_1.1.7_amd64.AppImage"
-    },
-    "linux-x86_64-deb": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSN1BOUXlqMW9uOGk4WVBVY2tiemRmM1NtOThuaE9Zbm5UYjlMSmx6Y1BMeTdRbnI2QWVINC83UW1TTkFJRGNKZzd4NDRpOEZzV3JaRmhFeDVxLzdnTTNndjBmSzNWSWdJPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNDcyNjI2CWZpbGU6T3BlblNjcmNweV8xLjEuN19hbWQ2NC5kZWIKSzBzdjhPdlFXUnFZc1p4bGJpNlptYU5yRUNqbkVyeStyM0NUemRyaVFBTisrUjB1NHB6M1BhSVk1RkFnc1g0UlRVc0prQ0l6WmdMa21rUlJKU0VMQVE9PQo=",
-      "url": "https://v16.next.forgejo.org/UmbrCorp/OpenScrcpy/releases/download/v1.1.7/OpenScrcpy_1.1.7_amd64.deb"
-    },
-    "windows-x86_64-nsis": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSN1BOUXlqMW9uOHY2NjZXUGFUWTdHSWtHWDJmMmgyOXhOMEcrSGNCU3I5L0RSYms3bDJjbllVY0FXZ25GQnFxdXJ4SWY5ZUQyaEM2WWdjY201Wm1EUk1BOHhtZjErUWdJPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNDcyNjQ4CWZpbGU6T3BlblNjcmNweV8xLjEuN194NjQtc2V0dXAuZXhlClFpYThlVDZMeTZxd3dUMGUzNDZYME4vZkl5SDBtR2hnc0ovb29MTVBldmxwclpkcEJMajA4RnVwZXRKdzNZV1ZUN0pmR09uWjhvSmpHaStvYXdoYkF3PT0K",
-      "url": "https://v16.next.forgejo.org/UmbrCorp/OpenScrcpy/releases/download/v1.1.7/OpenScrcpy_1.1.7_x64-setup.exe"
-    },
-    "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSN1BOUXlqMW9uOGloT2dIbVRQOTlTdmV0ZnBIWG8xaERUTXVZclJCMm52L0ZKYnpOYVZuM1FHY1pUK2xNQ3g2THBRWm5jOTQrVzd4Q1FlRWpnc3FKU0NvZFZFUTgwTlFFPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNDcyNjQ4CWZpbGU6T3BlblNjcmNweV8xLjEuN194NjRfZW4tVVMubXNpClJaTUttdTVoZXQ0SE5EbExRdUMwOUdGL1dkdCtNQVZ4TW5mNXB1SnpsMUpOd1U4aElhN3J2bFdmSitVZ1h3bUg2dFlUSHlNR1JEdHR1aVJuM1Z3OUFnPT0K",
-      "url": "https://v16.next.forgejo.org/UmbrCorp/OpenScrcpy/releases/download/v1.1.7/OpenScrcpy_1.1.7_x64_en-US.msi"
-    },
-    "windows-x86_64-msi": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSN1BOUXlqMW9uOGloT2dIbVRQOTlTdmV0ZnBIWG8xaERUTXVZclJCMm52L0ZKYnpOYVZuM1FHY1pUK2xNQ3g2THBRWm5jOTQrVzd4Q1FlRWpnc3FKU0NvZFZFUTgwTlFFPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNDcyNjQ4CWZpbGU6T3BlblNjcmNweV8xLjEuN194NjRfZW4tVVMubXNpClJaTUttdTVoZXQ0SE5EbExRdUMwOUdGL1dkdCtNQVZ4TW5mNXB1SnpsMUpOd1U4aElhN3J2bFdmSitVZ1h3bUg2dFlUSHlNR1JEdHR1aVJuM1Z3OUFnPT0K",
-      "url": "https://v16.next.forgejo.org/UmbrCorp/OpenScrcpy/releases/download/v1.1.7/OpenScrcpy_1.1.7_x64_en-US.msi"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSN1BOUXlqMW9uOGljRFJrTlROV1MyZU4xRnNGYVFRYUVjUFhOd2RCQ0VXSXRtR0RIOEc2WTV4aHI5ZzJqbGpoeXRaMzhhNkpuK1EwWUFPZDhGRGxEV3BhRTZ1U1FFMUF3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NjE2NTIyCWZpbGU6T3BlblNjcmNweS0yLjAuMC0xLng4Nl82NC5ycG0KVXZ2dGhvaTV1UzFaa1BYVXFhZFdheVVmZ0hMbzFJNnBsSmQyVkpLeFkxYW5LNlJQcDNzVmNSSVF4S084NFh4aVJMTjZXRWZDOU9hN3RZZHJ4MGRaQmc9PQo=",
+      "url": "https://github.com/Umbr-Corp/OpenScrcpy/releases/download/v2.0.0/OpenScrcpy-2.0.0-1.x86_64.rpm"
     },
     "darwin-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSN1BOUXlqMW9uOGtoWnNYZlNCVWt1ZERIOEVZSUZrSVdPNGVISUxUd0J5a1VobU5reXQrK0hNbjd4c3o5ZldpZW1UN2V4N3VTWGppK1hvc3FOaDRyRVk2MnVzeStwemdzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNDcyNzQ0CWZpbGU6T3BlblNjcmNweS5hcHAudGFyLmd6Cm5JcXkrV2hBVFFkRmZzaGVCaXZzS1A5MSt6TWxBdzc5OEZuVW5iRXl4VTlVRWF4azd5RXdjbmlqQkZycmJDeFJpOGRZZWh1bDAxWHJsdENpTGplSEJBPT0K",
-      "url": "https://v16.next.forgejo.org/UmbrCorp/OpenScrcpy/releases/download/v1.1.7/OpenScrcpy_universal.app.tar.gz"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSN1BOUXlqMW9uOGxwZGRQcWVsTXp0RUx1c2x1ZEJ3VmtMclFwOVNINUpUamsyYnpZUW5jME52ampnZFA1OGJvcUh5enJiTEJLNFlYL25kL1Juc0I0d2xGSWNEN0NmNkFVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NjE2Mzk2CWZpbGU6T3BlblNjcmNweS5hcHAudGFyLmd6Ck5EcDJVS0FsWTQ1clJNazBVZU5NbjRkWHpiRXltcGY0MUxwUTYvakp0QWZqeUdCdWZtcy9lRXlxWFozdlJBem1IK1dKVHlOZklWL2hDNWVqcTZCR0NBPT0K",
+      "url": "https://github.com/Umbr-Corp/OpenScrcpy/releases/download/v2.0.0/OpenScrcpy.app.tar.gz"
     },
     "darwin-aarch64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSN1BOUXlqMW9uOGtoWnNYZlNCVWt1ZERIOEVZSUZrSVdPNGVISUxUd0J5a1VobU5reXQrK0hNbjd4c3o5ZldpZW1UN2V4N3VTWGppK1hvc3FOaDRyRVk2MnVzeStwemdzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNDcyNzQ0CWZpbGU6T3BlblNjcmNweS5hcHAudGFyLmd6Cm5JcXkrV2hBVFFkRmZzaGVCaXZzS1A5MSt6TWxBdzc5OEZuVW5iRXl4VTlVRWF4azd5RXdjbmlqQkZycmJDeFJpOGRZZWh1bDAxWHJsdENpTGplSEJBPT0K",
-      "url": "https://v16.next.forgejo.org/UmbrCorp/OpenScrcpy/releases/download/v1.1.7/OpenScrcpy_universal.app.tar.gz"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSN1BOUXlqMW9uOGxwZGRQcWVsTXp0RUx1c2x1ZEJ3VmtMclFwOVNINUpUamsyYnpZUW5jME52ampnZFA1OGJvcUh5enJiTEJLNFlYL25kL1Juc0I0d2xGSWNEN0NmNkFVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NjE2Mzk2CWZpbGU6T3BlblNjcmNweS5hcHAudGFyLmd6Ck5EcDJVS0FsWTQ1clJNazBVZU5NbjRkWHpiRXltcGY0MUxwUTYvakp0QWZqeUdCdWZtcy9lRXlxWFozdlJBem1IK1dKVHlOZklWL2hDNWVqcTZCR0NBPT0K",
+      "url": "https://github.com/Umbr-Corp/OpenScrcpy/releases/download/v2.0.0/OpenScrcpy.app.tar.gz"
     },
     "darwin-x86_64-app": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSN1BOUXlqMW9uOGtoWnNYZlNCVWt1ZERIOEVZSUZrSVdPNGVISUxUd0J5a1VobU5reXQrK0hNbjd4c3o5ZldpZW1UN2V4N3VTWGppK1hvc3FOaDRyRVk2MnVzeStwemdzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNDcyNzQ0CWZpbGU6T3BlblNjcmNweS5hcHAudGFyLmd6Cm5JcXkrV2hBVFFkRmZzaGVCaXZzS1A5MSt6TWxBdzc5OEZuVW5iRXl4VTlVRWF4azd5RXdjbmlqQkZycmJDeFJpOGRZZWh1bDAxWHJsdENpTGplSEJBPT0K",
-      "url": "https://v16.next.forgejo.org/UmbrCorp/OpenScrcpy/releases/download/v1.1.7/OpenScrcpy_universal.app.tar.gz"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSN1BOUXlqMW9uOGxwZGRQcWVsTXp0RUx1c2x1ZEJ3VmtMclFwOVNINUpUamsyYnpZUW5jME52ampnZFA1OGJvcUh5enJiTEJLNFlYL25kL1Juc0I0d2xGSWNEN0NmNkFVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NjE2Mzk2CWZpbGU6T3BlblNjcmNweS5hcHAudGFyLmd6Ck5EcDJVS0FsWTQ1clJNazBVZU5NbjRkWHpiRXltcGY0MUxwUTYvakp0QWZqeUdCdWZtcy9lRXlxWFozdlJBem1IK1dKVHlOZklWL2hDNWVqcTZCR0NBPT0K",
+      "url": "https://github.com/Umbr-Corp/OpenScrcpy/releases/download/v2.0.0/OpenScrcpy.app.tar.gz"
     },
     "darwin-aarch64-app": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSN1BOUXlqMW9uOGtoWnNYZlNCVWt1ZERIOEVZSUZrSVdPNGVISUxUd0J5a1VobU5reXQrK0hNbjd4c3o5ZldpZW1UN2V4N3VTWGppK1hvc3FOaDRyRVk2MnVzeStwemdzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNDcyNzQ0CWZpbGU6T3BlblNjcmNweS5hcHAudGFyLmd6Cm5JcXkrV2hBVFFkRmZzaGVCaXZzS1A5MSt6TWxBdzc5OEZuVW5iRXl4VTlVRWF4azd5RXdjbmlqQkZycmJDeFJpOGRZZWh1bDAxWHJsdENpTGplSEJBPT0K",
-      "url": "https://v16.next.forgejo.org/UmbrCorp/OpenScrcpy/releases/download/v1.1.7/OpenScrcpy_universal.app.tar.gz"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSN1BOUXlqMW9uOGxwZGRQcWVsTXp0RUx1c2x1ZEJ3VmtMclFwOVNINUpUamsyYnpZUW5jME52ampnZFA1OGJvcUh5enJiTEJLNFlYL25kL1Juc0I0d2xGSWNEN0NmNkFVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NjE2Mzk2CWZpbGU6T3BlblNjcmNweS5hcHAudGFyLmd6Ck5EcDJVS0FsWTQ1clJNazBVZU5NbjRkWHpiRXltcGY0MUxwUTYvakp0QWZqeUdCdWZtcy9lRXlxWFozdlJBem1IK1dKVHlOZklWL2hDNWVqcTZCR0NBPT0K",
+      "url": "https://github.com/Umbr-Corp/OpenScrcpy/releases/download/v2.0.0/OpenScrcpy.app.tar.gz"
+    },
+    "linux-x86_64": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSN1BOUXlqMW9uOGo1VTVQRHU1SHN3c0ZzTXB2M2c4ZFN6bld5Q0FRZTNlWEEzMVMvTjlxMld4c0JUZjUrY0xMWUI1VjR0bWVCcWF5MkRIYVNLcnUxUGdHUmx0OTNLTGdrPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NjE2NTIyCWZpbGU6T3BlblNjcmNweV8yLjAuMF9hbWQ2NC5BcHBJbWFnZQp6Qm5TOW1NY1ZJc3pJaWhXbFF4ejNGeWZ4VHhsTUhIdXNPVVAwV3pTL3VhY3BmbmtBdlNOOXFydC9tWEJjVXIrdXdEMEdOdVB0YnNxczduM3ZZR0ZBZz09Cg==",
+      "url": "https://github.com/Umbr-Corp/OpenScrcpy/releases/download/v2.0.0/OpenScrcpy_2.0.0_amd64.AppImage"
+    },
+    "linux-x86_64-appimage": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSN1BOUXlqMW9uOGo1VTVQRHU1SHN3c0ZzTXB2M2c4ZFN6bld5Q0FRZTNlWEEzMVMvTjlxMld4c0JUZjUrY0xMWUI1VjR0bWVCcWF5MkRIYVNLcnUxUGdHUmx0OTNLTGdrPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NjE2NTIyCWZpbGU6T3BlblNjcmNweV8yLjAuMF9hbWQ2NC5BcHBJbWFnZQp6Qm5TOW1NY1ZJc3pJaWhXbFF4ejNGeWZ4VHhsTUhIdXNPVVAwV3pTL3VhY3BmbmtBdlNOOXFydC9tWEJjVXIrdXdEMEdOdVB0YnNxczduM3ZZR0ZBZz09Cg==",
+      "url": "https://github.com/Umbr-Corp/OpenScrcpy/releases/download/v2.0.0/OpenScrcpy_2.0.0_amd64.AppImage"
+    },
+    "linux-x86_64-deb": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSN1BOUXlqMW9uOGhFaStNblN5YmdSbGFQYVJ0L0JzaXQwQWtsV3lBa0hpZ1ZjVmhpcU1iRkxSemhsdEhOTytOWHMxVjdRSnhzZjJVVkZnSUxJamlpVW40TWhyUHpYYmcwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NjE2NTIyCWZpbGU6T3BlblNjcmNweV8yLjAuMF9hbWQ2NC5kZWIKWFg0c0pHa1FtNVlEUVJ1R3gxajlpVmdLQ3pQKzhJUkRsTGxkUHRVOW5qZUxYeTV6TFRibDk2TmN1RTVlNGlIZS9wdTZ5cWVlb2crR25WRFNHaVlYQWc9PQo=",
+      "url": "https://github.com/Umbr-Corp/OpenScrcpy/releases/download/v2.0.0/OpenScrcpy_2.0.0_amd64.deb"
+    },
+    "windows-x86_64-nsis": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSN1BOUXlqMW9uOHEveGxGUE12S21NbzJuam1YYnE4NGhWK0ZoUDNYVmtSaUtOV2NXNTlEaTVoMkF3OTk2cjJuSVY5NmI4TGFwUENQM3c2NWJ0bzIzMjJ5bTlIZkJEOVFNPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NjE2NTI1CWZpbGU6T3BlblNjcmNweV8yLjAuMF94NjQtc2V0dXAuZXhlCndMdXVSRXFMSXd2cDNqUmNmNEV5Wi9YdG1mWjAxVjM0ME14RGorZGZvc1hoa3lkQTFjYWx5LzdPbzlaTlh1a1ZNWWFhcWFiYUhPclczTE9POVkvRUJBPT0K",
+      "url": "https://github.com/Umbr-Corp/OpenScrcpy/releases/download/v2.0.0/OpenScrcpy_2.0.0_x64-setup.exe"
+    },
+    "windows-x86_64": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSN1BOUXlqMW9uOGp3aW5uNUZNQlY0VFBtNHJpS3hyVjJIM3NIVWFGRDVxVmtrTTdyRTlxUFpvN0NuYzJmVVJoMGJMVG5kUEZzcUdvaGJhTk9Qb1d4REF5TG5mQmNHN3dvPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NjE2NTI1CWZpbGU6T3BlblNjcmNweV8yLjAuMF94NjRfZW4tVVMubXNpCkw0QWtEWGF1U3BJSmV4dEdVRWphRWNQYlpReFBOMnNwVWZiV1ZYZTZwdDJ1QzhrN1krdk5FVENpNHZCSjgrQVRPeFR2eTVKaG9QYkJreUVOWXVPWkNnPT0K",
+      "url": "https://github.com/Umbr-Corp/OpenScrcpy/releases/download/v2.0.0/OpenScrcpy_2.0.0_x64_en-US.msi"
+    },
+    "windows-x86_64-msi": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSN1BOUXlqMW9uOGp3aW5uNUZNQlY0VFBtNHJpS3hyVjJIM3NIVWFGRDVxVmtrTTdyRTlxUFpvN0NuYzJmVVJoMGJMVG5kUEZzcUdvaGJhTk9Qb1d4REF5TG5mQmNHN3dvPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NjE2NTI1CWZpbGU6T3BlblNjcmNweV8yLjAuMF94NjRfZW4tVVMubXNpCkw0QWtEWGF1U3BJSmV4dEdVRWphRWNQYlpReFBOMnNwVWZiV1ZYZTZwdDJ1QzhrN1krdk5FVENpNHZCSjgrQVRPeFR2eTVKaG9QYkJreUVOWXVPWkNnPT0K",
+      "url": "https://github.com/Umbr-Corp/OpenScrcpy/releases/download/v2.0.0/OpenScrcpy_2.0.0_x64_en-US.msi"
     }
   }
 }
