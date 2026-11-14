@@ -196,7 +196,21 @@ básica, não substitui um linter.
 **Recomendação:** avaliar Biome ou ESLint flat config com regras para Svelte e
 rodar no CI.
 
-### O-07 — P3 — `deepmerge` transitivo sem correção
+### O-07 — P2 — `RELEASE_TOKEN` não configurado no GitHub
+
+Os workflows `bump_version.yml` e `tag_on_merge.yml` referenciam
+`secrets.RELEASE_TOKEN`, mas o repositório só tem os segredos de assinatura
+(`TAURI_SIGNING_PRIVATE_KEY` e `..._PASSWORD`). A release 2.0.0 foi publicada
+manualmente; a automação de bump/tag não vai funcionar até existir um PAT com
+`contents: write` (e `workflow`, se for criar tags que disparem workflows) ou
+até esses fluxos serem trocados por um processo manual documentado.
+
+**Recomendação:** criar um fine-grained PAT só para este repositório e salvar
+como `RELEASE_TOKEN`, ou remover os workflows de bump/tag e documentar o
+processo manual. Não foi criado nesta auditoria para não armazenar um token
+pessoal sem decisão explícita.
+
+### O-08 — P3 — `deepmerge` transitivo sem correção
 
 `npm audit` mantém 2 vulnerabilidades low em `deepmerge@4.3.1`, dependência de
 `@sveltejs/vite-plugin-svelte`. Não há versão corrigida publicada; é ferramenta
