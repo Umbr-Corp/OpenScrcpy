@@ -251,7 +251,8 @@ Rust/Cargo 1.99.1.
 - Manifesto verificado: versão `2.0.0`, 11 chaves de plataforma e URLs em
   `github.com/Umbr-Corp/OpenScrcpy/releases/download/v2.0.0`.
 
-> O workflow precisou de três correções de infraestrutura durante a publicação:
+> O workflow precisou de quatro correções de infraestrutura durante a
+> publicação: instalação do Rust com sintaxe bash no runner Windows,
 > `target_commitish` inválido no GitHub (422), coleta de bundles macOS
 > universais fora de `target/release` e branch protection bloqueando o push do
 > manifesto. A solução final publica o manifesto como asset da release, sem
