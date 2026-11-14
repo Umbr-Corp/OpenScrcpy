@@ -181,7 +181,8 @@ async function uploadMode(artifactsDir) {
     body: normalizeReleaseNotes(releaseNotes(), version),
     draft: false,
     prerelease: false,
-    target_commitish: TAG,
+    // Do not send target_commitish: GitHub rejects a tag name there (422).
+    // The tag already exists, so the release uses it as-is.
   });
 
   let files = [];
