@@ -54,9 +54,11 @@ declare QA manual como concluído sem aparelho Android real.
 - A versão precisa ser idêntica em `package.json`, `src-tauri/tauri.conf.json`,
   `src-tauri/Cargo.toml` e `src-tauri/Cargo.lock`.
   `scripts/__tests__/version-consistency.test.ts` garante isso.
-- `updater/latest.json` descreve a última release publicada; ele é reescrito pelo
-  job de manifesto depois da tag. Não o edite à mão para "bater" com a versão.
-- O endpoint do updater é o `updater/latest.json` do branch `main` no GitHub.
+- `updater/latest.json` é uma cópia local da última release publicada; o job de
+  manifesto a reconstrói e envia como asset da release depois da tag. Não o
+  edite à mão para "bater" com a versão.
+- O endpoint do updater é
+  `https://github.com/Umbr-Corp/OpenScrcpy/releases/latest/download/latest.json`.
 - A release é assinada por `TAURI_SIGNING_PRIVATE_KEY` configurada no GitHub
   Actions. A chave privada nunca entra no repositório.
 
@@ -213,8 +215,9 @@ central inteiro dentro de uma release de correção.
    ```bash
    gh release view v2.0.0 -R Umbr-Corp/OpenScrcpy
    ```
-8. Confirmar que `updater/latest.json` foi reescrito pelo job de manifesto e que
-   as URLs apontam para `github.com/Umbr-Corp/OpenScrcpy/releases/download/v2.0.0`.
+8. Confirmar que o job de manifesto enviou `latest.json` para a release e que
+   `releases/latest/download/latest.json` serve a versão 2.0.0 com URLs
+   `github.com/Umbr-Corp/OpenScrcpy/releases/download/v2.0.0`.
 9. Se o workflow falhar por segredo ausente ou assinatura, registrar o erro e
    **não** republicar a tag em cima de artefatos quebrados sem limpar a release.
 
@@ -268,4 +271,4 @@ atualizado; `gh release view` mostra a release como latest.
 > achado em `docs/AUDITORIA-2.0.0-2026-11-13.md`. No fim, rode lint, testes,
 > build, fmt, clippy e cargo test; envie `main` e a tag `v2.0.0` para o remoto
 > `github` com `gh` autenticado e acompanhe o workflow de release até os assets
-> assinados e o `updater/latest.json` estarem publicados.
+> assinados e o `latest.json` da release estarem publicados.

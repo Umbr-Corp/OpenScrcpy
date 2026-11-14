@@ -77,16 +77,18 @@ environment.systemPackages = [
 ### Updates
 
 The app updates through the Tauri updater plugin, which polls
-`updater/latest.json` on the default branch. `scripts/publish-release.mjs
-manifest` rebuilds that file from the published release assets: it maps each
+`releases/latest/download/latest.json` on GitHub. `scripts/publish-release.mjs
+manifest` rebuilds that asset from the published release assets: it maps each
 platform to the signed artifact and uses the release body as the notes. An
 empty body falls back to `Release v<version>` instead of the old placeholder.
+The manifest is uploaded to the release itself, so the protected `main` branch
+is never written by the release bot.
 
 The app version must match in `package.json`, `src-tauri/tauri.conf.json`,
 `src-tauri/Cargo.toml` and `src-tauri/Cargo.lock`.
 `scripts/__tests__/version-consistency.test.ts` enforces it.
-`updater/latest.json` is not bumped by hand: the release workflow rebuilds it
-from the published assets after the tag.
+`updater/latest.json` is a local copy for inspection; the release workflow
+rebuilds and uploads it after the tag.
 
 ---
 

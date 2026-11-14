@@ -228,8 +228,9 @@ Rust/Cargo 1.99.1.
 - Código e documentação enviados para `github/main`.
 - Tag `v2.0.0` criada e enviada; workflow `Release CI` disparado.
 - Status e assets verificados com `gh release view v2.0.0`.
-- `updater/latest.json` será reescrito pelo job de manifesto com as URLs da
-  release do GitHub.
+- O job de manifesto envia `latest.json` como asset da release, servido por
+  `releases/latest/download/latest.json`; o branch `main` não é mais escrito
+  pelo bot de release.
 
 > Este relatório é atualizado após o workflow concluir. Se o workflow falhar por
 > segredo ou assinatura, a falha fica registrada aqui e a release não é

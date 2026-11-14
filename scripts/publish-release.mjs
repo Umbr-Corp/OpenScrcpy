@@ -222,30 +222,16 @@ async function manifestMode() {
     fail('no signed artifact found in the release');
   }
 
+  const manifestPath = path.join('updater', 'latest.json');
   await mkdir('updater', { recursive: true });
-  await writeFile('updater/latest.json', `${JSON.stringify(manifest, null, 2)}\n`);
+  await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
 
-  execFileSync('git', ['add', 'updater/latest.json']);
-  const status = execFileSync('git', ['status', '--porcelain'], { encoding: 'utf8' }).trim();
-  if (!status) {
-    console.log('manifest: updater/latest.json already up to date');
-    return;
-  }
+  // Publish the manifest as a release asset. The app polls the stable
+  // `releases/latest/download/latest.json` URL, so each release carries its
+  // own manifest and no write to the protected default branch is needed.
+  await uploadAsset(release, manifestPath);
 
-  execFileSync('git', [
-    '-c', 'user.name=github-actions[bot]',
-    '-c', 'user.email=41898282+github-actions[bot]@users.noreply.github.com',
-    'commit', '-m', `chore(release): updater manifest for ${TAG}`,
-  ]);
-
-  const branch = execFileSync('git', ['rev-parse', '--abbrev-ref', 'HEAD'], {
-    encoding: 'utf8',
-  }).trim();
-  if (branch === 'HEAD') fail('detached HEAD: the manifest job must check out the default branch');
-
-  execFileSync('git', ['push', 'origin', branch], { stdio: 'inherit' });
-
-  console.log(`manifest: updater/latest.json published for ${TAG} on ${branch}`);
+  console.log(`manifest: published latest.json for ${TAG} on ${release.html_url}`);
 }
 
 const [mode, ...rest] = process.argv.slice(2);
