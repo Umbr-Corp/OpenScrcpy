@@ -92,6 +92,9 @@ jobs:
         with:
           ref: main
           fetch-depth: 0
+          # main requires a pull request and checks; the release bot must
+          # bypass that with the same PAT used by the bump/tag workflows.
+          token: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -100,5 +103,5 @@ jobs:
 
       - name: Publish updater manifest
         env:
-          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
         run: node scripts/publish-release.mjs manifest
